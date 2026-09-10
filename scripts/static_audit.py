@@ -266,8 +266,9 @@ def check_configuration() -> None:
                 failures.append(f"{relative}: not a valid property list ({error})")
         notes.append("Info.plist and privacy manifest parse as property lists")
 
-    workflow = ROOT / ".github" / "workflows" / "ios-validation.yml"
-    if workflow.is_file():
+    # Every workflow, not just Gate A: a second gate must be held to the same
+    # rules about runners, secrets and publishing.
+    for workflow in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
         text = workflow.read_text(encoding="utf-8")
         try:
             import yaml
@@ -287,10 +288,10 @@ def check_configuration() -> None:
                     runner = str(job.get("runs-on", ""))
                     if not runner.startswith("macos"):
                         failures.append(f"workflow job must run on macOS, got '{runner}'")
-                notes.append("workflow YAML parsed: " + ", ".join(sorted(jobs)))
+                notes.append(f"{workflow.name} parsed: " + ", ".join(sorted(jobs)))
         for banned in ("secrets.", "APP_STORE", "altool", "xcrun notarytool", "fastlane"):
             if banned in text:
-                failures.append(f"workflow references '{banned}' — this gate must not sign or publish")
+                failures.append(f"{workflow.name} references '{banned}' — no gate may sign or publish")
 
     for script in sorted((ROOT / "scripts").glob("*.sh")):
         text = script.read_text(encoding="utf-8")

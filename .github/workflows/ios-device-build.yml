@@ -1,0 +1,217 @@
+# RIG iOS — Gate B1: unsigned physical-device build.
+#
+# Gate A (ios-validation.yml) proves the app compiles for the simulator and the
+# unit tests pass. This proves something different and narrower: that the same
+# source compiles for a real iPhone slice — arm64, the iphoneos SDK — with code
+# signing switched off entirely.
+#
+# It stops there. No IPA is packaged, nothing is installed, nothing is signed,
+# and no Apple account, certificate, provisioning profile or secret is involved
+# or required. Gate A is not touched by this file.
+#
+# Manual trigger only, for the same reason Gate A is: GitHub-hosted macOS
+# runners are metered at a higher multiplier than Linux and are not free beyond
+# an account's included allowance.
+
+name: iOS device build (Gate B1)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-device-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-b1:
+    name: Gate B1 — unsigned iphoneos build
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    env:
+      # An explicit derived-data location so the product path is deterministic
+      # rather than something to hunt for under ~/Library/Developer/Xcode.
+      DERIVED_DIR: build/DerivedData
+      PRODUCT_DIR: build/DerivedData/Build/Products/Debug-iphoneos
+      BUILD_LOG: build/logs/device-build.log
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          # Same explicit selection as Gate A: a named stable version, never the
+          # image default and never "latest". Only stable Xcode_16*.app bundles
+          # are eligible, so a beta can never be picked.
+          PREFERRED="/Applications/Xcode_16.4.app"
+          if [ -d "$PREFERRED" ]; then
+            SELECTED="$PREFERRED"
+          else
+            SELECTED="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1 || true)"
+          fi
+          if [ -z "${SELECTED:-}" ] || [ ! -d "$SELECTED" ]; then
+            echo "No stable Xcode 16.x on this runner. Installed:" >&2
+            ls -d /Applications/Xcode*.app >&2 || true
+            exit 1
+          fi
+          sudo xcode-select --switch "$SELECTED/Contents/Developer"
+          echo "Selected: $SELECTED"
+
+      - name: Show the toolchain
+        run: |
+          set -euo pipefail
+          sw_vers
+          xcodebuild -version
+          xcode-select --print-path
+          swift --version
+          XCODE_MAJOR="$(xcodebuild -version | sed -n 's/^Xcode \([0-9][0-9]*\).*/\1/p' | head -n 1)"
+          echo "Xcode major version: ${XCODE_MAJOR:-unknown}"
+          if [ -z "${XCODE_MAJOR:-}" ] || [ "$XCODE_MAJOR" -lt 16 ]; then
+            echo "Xcode 16 or newer is required to open an objectVersion 77 project." >&2
+            exit 1
+          fi
+
+      - name: Install and verify XcodeGen
+        run: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: Static audit
+        run: python3 scripts/static_audit.py
+
+      - name: Generate the project and confirm it opens
+        run: |
+          set -euo pipefail
+          xcodegen generate
+          test -d RIG.xcodeproj || { echo "RIG.xcodeproj was not generated." >&2; exit 1; }
+          OBJECT_VERSION="$(sed -n 's/.*objectVersion = \([0-9][0-9]*\);.*/\1/p' \
+            RIG.xcodeproj/project.pbxproj | head -n 1)"
+          echo "Generated project objectVersion: ${OBJECT_VERSION:-unreadable}"
+          # Cheapest possible proof that the selected Xcode can read the project.
+          xcodebuild -project RIG.xcodeproj -list
+
+      - name: Build for a generic physical iOS device, unsigned
+        run: |
+          set -euo pipefail
+          mkdir -p "$(dirname "$BUILD_LOG")"
+
+          # The exit status of xcodebuild is the ONLY authority on whether this
+          # succeeded. No log string is consulted: "** BUILD SUCCEEDED **" is a
+          # human-facing message, not a contract, and it has moved between Xcode
+          # versions before. `set +e` around the pipeline is deliberate — with
+          # `set -e` the step would abort before the status could be captured
+          # and printed, and PIPESTATUS[0] is what survives the tee.
+          set +e
+          xcodebuild build \
+            -project RIG.xcodeproj \
+            -scheme RIG \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$DERIVED_DIR" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            2>&1 | tee "$BUILD_LOG"
+          BUILD_STATUS=${PIPESTATUS[0]}
+          set -e
+
+          echo ""
+          echo "xcodebuild exit status: $BUILD_STATUS"
+          if [ "$BUILD_STATUS" -ne 0 ]; then
+            echo ""
+            echo "First error lines from the build log:" >&2
+            grep -n -m 20 -E '(error:|fatal error:|Command .* failed|The following build commands failed)' \
+              "$BUILD_LOG" >&2 || echo "(no line matched the error patterns; read the full log artifact)" >&2
+            exit "$BUILD_STATUS"
+          fi
+
+      - name: Verify the product is a device build and describe it
+        run: |
+          set -euo pipefail
+          APP="$PRODUCT_DIR/RIG.app"
+
+          if [ ! -d "$APP" ]; then
+            echo "Expected product not found at $APP" >&2
+            echo "Products that were actually built:" >&2
+            find "$DERIVED_DIR/Build/Products" -maxdepth 2 -name '*.app' >&2 || true
+            exit 1
+          fi
+
+          PLIST="$APP/Info.plist"
+          EXECUTABLE="$APP/RIG"
+
+          # --- assertions: this must be an iphoneos product, not a simulator one
+          PLATFORM_NAME="$(plutil -extract DTPlatformName raw -o - "$PLIST")"
+          SUPPORTED_PLATFORM="$(plutil -extract CFBundleSupportedPlatforms.0 raw -o - "$PLIST")"
+          echo "DTPlatformName            : $PLATFORM_NAME"
+          echo "CFBundleSupportedPlatforms: $SUPPORTED_PLATFORM"
+          if [ "$PLATFORM_NAME" != "iphoneos" ] || [ "$SUPPORTED_PLATFORM" != "iPhoneOS" ]; then
+            echo "This is not a physical-device product." >&2
+            exit 1
+          fi
+          test -f "$EXECUTABLE" || { echo "No executable inside the bundle." >&2; exit 1; }
+          if file "$EXECUTABLE" | grep -q 'x86_64'; then
+            echo "Executable contains an x86_64 slice — that is a simulator build." >&2
+            exit 1
+          fi
+
+          # --- artifact safety: nothing credential-bearing may reach the artifact
+          if [ -e "$APP/embedded.mobileprovision" ]; then
+            echo "A provisioning profile is embedded in the bundle. Gate B1 must be unsigned." >&2
+            exit 1
+          fi
+
+          # --- description
+          echo ""
+          echo "App bundle    : $APP"
+          echo "Executable    : $EXECUTABLE (present)"
+          echo "Bundle size   : $(du -sh "$APP" | cut -f1)"
+          echo "Bundle id     : $(plutil -extract CFBundleIdentifier raw -o - "$PLIST")"
+          echo "Version       : $(plutil -extract CFBundleShortVersionString raw -o - "$PLIST") ($(plutil -extract CFBundleVersion raw -o - "$PLIST"))"
+          echo "Minimum OS    : $(plutil -extract MinimumOSVersion raw -o - "$PLIST" 2>/dev/null || echo 'not present in Info.plist')"
+          echo "SDK built with: $(plutil -extract DTSDKName raw -o - "$PLIST" 2>/dev/null || echo 'unknown')"
+          echo ""
+          echo "file:"
+          file "$EXECUTABLE"
+          echo "lipo -info:"
+          lipo -info "$EXECUTABLE"
+          echo ""
+          if [ -d "$APP/_CodeSignature" ]; then
+            echo "Note: a _CodeSignature directory is present (ad-hoc), no provisioning profile."
+          else
+            echo "No _CodeSignature directory: the bundle is unsigned, as expected."
+          fi
+
+      - name: Stage the unsigned app for upload
+        run: |
+          set -euo pipefail
+          # Staged into its own directory so the artifact keeps "RIG.app" as its
+          # top-level folder instead of being flattened to the bundle contents.
+          rm -rf build/artifact
+          mkdir -p build/artifact
+          cp -R "$PRODUCT_DIR/RIG.app" build/artifact/
+          find build/artifact -maxdepth 2 -print
+
+      - name: Upload the unsigned device app
+        uses: actions/upload-artifact@v4
+        with:
+          name: RIG-unsigned-device-app
+          path: build/artifact
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload the build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RIG-device-build-log
+          path: build/logs/device-build.log
+          if-no-files-found: ignore
+          retention-days: 7
