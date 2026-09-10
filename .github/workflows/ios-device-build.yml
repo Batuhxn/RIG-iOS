@@ -207,6 +207,97 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      # ---------------------------------------------------------------- Gate B2
+      # Packaging only. The bundle placed inside the IPA is the one Gate B1 just
+      # validated, copied verbatim with ditto; nothing is re-built, re-signed or
+      # edited on the way in.
+
+      - name: Package the validated app as an unsigned IPA
+        run: |
+          set -euo pipefail
+          STAGE="build/ipa"
+          IPA="RIG-unsigned.ipa"
+
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/Payload"
+
+          # ditto rather than cp: it is Apple's own copier and preserves bundle
+          # structure, symlinks and extended attributes exactly.
+          ditto "$PRODUCT_DIR/RIG.app" "$STAGE/Payload/RIG.app"
+
+          # Standard IPA layout: a zip whose root holds a single Payload folder.
+          # -y stores symlinks as symlinks instead of following them, -X drops
+          # uid/gid and extra attributes so the archive is reproducible.
+          ( cd "$STAGE" && zip -qryX "$IPA" Payload )
+
+          test -f "$STAGE/$IPA" || { echo "zip produced no archive." >&2; exit 1; }
+          echo "Packaged: $STAGE/$IPA"
+
+      - name: Verify the IPA
+        run: |
+          set -euo pipefail
+          IPA="build/ipa/RIG-unsigned.ipa"
+          APP="$PRODUCT_DIR/RIG.app"
+
+          # --- exists and is not empty
+          test -s "$IPA" || { echo "IPA is missing or zero length." >&2; exit 1; }
+
+          # --- the archive itself must be readable and internally consistent.
+          # unzip -t's exit status is the authority; its output is not parsed.
+          unzip -tqq "$IPA"
+          echo "Archive integrity test passed (unzip -t exit status 0)."
+
+          ENTRIES="$(unzip -Z1 "$IPA")"
+
+          # --- required structure
+          printf '%s\n' "$ENTRIES" | grep -qx 'Payload/RIG.app/' \
+            || { echo "Archive root does not contain Payload/RIG.app/" >&2; exit 1; }
+          printf '%s\n' "$ENTRIES" | grep -qx 'Payload/RIG.app/Info.plist' \
+            || { echo "Payload/RIG.app/Info.plist is missing from the archive" >&2; exit 1; }
+
+          # --- nothing may sit outside Payload/
+          if printf '%s\n' "$ENTRIES" | grep -qv '^Payload/'; then
+            echo "Archive contains entries outside Payload/:" >&2
+            printf '%s\n' "$ENTRIES" | grep -v '^Payload/' >&2
+            exit 1
+          fi
+
+          # --- nothing credential-bearing may have been introduced
+          if printf '%s\n' "$ENTRIES" | grep -Eiq '(embedded\.mobileprovision|\.mobileprovision$|\.p12$|\.cer$|\.pem$|\.key$|id_rsa|\.keychain)'; then
+            echo "A credential-like file is present in the archive:" >&2
+            printf '%s\n' "$ENTRIES" | grep -Ei '(mobileprovision|\.p12$|\.cer$|\.pem$|\.key$|id_rsa|\.keychain)' >&2
+            exit 1
+          fi
+
+          # --- the packaged binary must be the one Gate B1 validated, byte for byte
+          PACKAGED_SHA="$(unzip -p "$IPA" 'Payload/RIG.app/RIG' | shasum -a 256 | cut -d' ' -f1)"
+          VALIDATED_SHA="$(shasum -a 256 "$APP/RIG" | cut -d' ' -f1)"
+          echo "Executable sha256 in IPA   : $PACKAGED_SHA"
+          echo "Executable sha256 validated: $VALIDATED_SHA"
+          if [ "$PACKAGED_SHA" != "$VALIDATED_SHA" ]; then
+            echo "The packaged executable differs from the validated one." >&2
+            exit 1
+          fi
+
+          # --- diagnostics
+          echo ""
+          echo "IPA path  : $IPA"
+          echo "IPA size  : $(du -h "$IPA" | cut -f1) ($(wc -c < "$IPA" | tr -d ' ') bytes)"
+          echo "Entries   : $(printf '%s\n' "$ENTRIES" | wc -l | tr -d ' ') total"
+          echo ""
+          echo "First archive entries:"
+          printf '%s\n' "$ENTRIES" | head -n 15
+          echo ""
+          echo "Confirmed: Payload/RIG.app exists inside RIG-unsigned.ipa, unsigned."
+
+      - name: Upload the unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: RIG-unsigned-ipa
+          path: build/ipa/RIG-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Upload the build log on failure
         if: failure()
         uses: actions/upload-artifact@v4
