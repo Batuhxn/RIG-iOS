@@ -30,14 +30,42 @@ concurrency:
 jobs:
   gate-a:
     name: Gate A — build and unit tests
-    # macos-14 is Apple Silicon with an Xcode that ships the iOS 17 SDK, which
-    # is RIG's deployment floor. Bump to macos-15 when a newer SDK is wanted.
-    runs-on: macos-14
+    # macos-15, not macos-14. The first run of this workflow landed on macos-14
+    # with Xcode 15.4, and XcodeGen 2.46 writes projects in the Xcode 16 format
+    # (objectVersion 77), which Xcode 15.4 refuses to open:
+    #   "The project 'RIG' cannot be opened because it is in a future Xcode
+    #    project file format (77)."
+    # That is a toolchain mismatch, not a Swift problem. macos-15 carries
+    # Xcode 16.x, which reads that format. The alternative repair — pinning
+    # XcodeGen back to 2.43.0 so it emits an Xcode 15 format — is deliberately
+    # not taken: it freezes the tooling instead of the project.
+    runs-on: macos-15
     timeout-minutes: 45
 
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          # An explicit stable version, not the image default and not "latest".
+          # 16.4 is the newest stable Xcode 16 on the macos-15 image; the
+          # fallback keeps an image refresh from hard-breaking the pin, and
+          # betas are never eligible because only Xcode_16*.app is considered.
+          PREFERRED="/Applications/Xcode_16.4.app"
+          if [ -d "$PREFERRED" ]; then
+            SELECTED="$PREFERRED"
+          else
+            SELECTED="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1 || true)"
+          fi
+          if [ -z "${SELECTED:-}" ] || [ ! -d "$SELECTED" ]; then
+            echo "No stable Xcode 16.x on this runner. Installed:" >&2
+            ls -d /Applications/Xcode*.app >&2 || true
+            exit 1
+          fi
+          sudo xcode-select --switch "$SELECTED/Contents/Developer"
+          echo "Selected: $SELECTED"
 
       - name: Show the toolchain
         run: |
@@ -46,6 +74,13 @@ jobs:
           xcodebuild -version
           xcode-select --print-path
           swift --version
+          # Fail closed rather than discover the format mismatch at build time.
+          XCODE_MAJOR="$(xcodebuild -version | sed -n 's/^Xcode \([0-9][0-9]*\).*/\1/p' | head -n 1)"
+          echo "Xcode major version: ${XCODE_MAJOR:-unknown}"
+          if [ -z "${XCODE_MAJOR:-}" ] || [ "$XCODE_MAJOR" -lt 16 ]; then
+            echo "Xcode 16 or newer is required to open an objectVersion 77 project." >&2
+            exit 1
+          fi
 
       - name: Install and verify XcodeGen
         run: |
@@ -59,6 +94,22 @@ jobs:
 
       - name: Static audit
         run: python3 scripts/static_audit.py
+
+      - name: Generate the project and check its format
+        run: |
+          set -euo pipefail
+          xcodegen generate
+          OBJECT_VERSION="$(sed -n 's/.*objectVersion = \([0-9][0-9]*\);.*/\1/p' \
+            RIG.xcodeproj/project.pbxproj | head -n 1)"
+          echo "Generated project objectVersion: ${OBJECT_VERSION:-unreadable}"
+          if [ -z "${OBJECT_VERSION:-}" ]; then
+            echo "Could not read objectVersion from the generated project." >&2
+            exit 1
+          fi
+          # The decisive, cheap test: this is the command that reported the
+          # "future Xcode project file format" error on the first run. If the
+          # selected Xcode can list the project's targets, it can open it.
+          xcodebuild -project RIG.xcodeproj -list
 
       - name: Gate A — generate, build, test
         # One script, the same one a developer runs locally. It fails closed,
