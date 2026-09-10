@@ -28,6 +28,11 @@ targets:
         PRODUCT_NAME: RIG
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Support/Info.plist
+        # Xcode's application product type defaults this to AppIcon, which is
+        # why actool was invoked with `--app-icon AppIcon` against a catalogue
+        # that had no such set. Stated explicitly so the catalogue and the
+        # build setting cannot drift apart again unnoticed.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_STYLE: Automatic
