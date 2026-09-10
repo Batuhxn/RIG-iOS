@@ -8,7 +8,7 @@ struct GarmentCard: View {
         VStack(alignment: .leading, spacing: RIGTheme.Spacing.s) {
             ZStack(alignment: .topTrailing) {
                 GarmentImageView(
-                    relativePath: item.thumbnailRelativePath ?? item.preferredImageRelativePath,
+                    relativePath: item.displayImageRelativePath,
                     symbolName: item.category.symbolName
                 )
                 .padding(RIGTheme.Spacing.s)

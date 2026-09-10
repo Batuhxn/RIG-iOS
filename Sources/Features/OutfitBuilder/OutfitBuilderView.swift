@@ -132,7 +132,7 @@ struct OutfitBuilderView: View {
             ForEach(chosen) { item in
                 HStack(spacing: RIGTheme.Spacing.s) {
                     GarmentImageView(
-                        relativePath: item.thumbnailRelativePath ?? item.preferredImageRelativePath,
+                        relativePath: item.displayImageRelativePath,
                         symbolName: category.symbolName
                     )
                     .frame(width: 44, height: 44)
@@ -214,7 +214,7 @@ struct GarmentPickerSheet: View {
                         } label: {
                             HStack(spacing: RIGTheme.Spacing.m) {
                                 GarmentImageView(
-                                    relativePath: item.thumbnailRelativePath ?? item.preferredImageRelativePath,
+                                    relativePath: item.displayImageRelativePath,
                                     symbolName: category.symbolName
                                 )
                                 .frame(width: 48, height: 48)

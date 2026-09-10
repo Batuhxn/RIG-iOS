@@ -27,7 +27,7 @@ struct LookCompositionView: View {
             LazyVGrid(columns: columns, spacing: RIGTheme.Spacing.s) {
                 ForEach(visibleItems) { item in
                     GarmentImageView(
-                        relativePath: item.thumbnailRelativePath ?? item.preferredImageRelativePath,
+                        relativePath: item.displayImageRelativePath,
                         symbolName: item.category.symbolName
                     )
                     .padding(RIGTheme.Spacing.xs)

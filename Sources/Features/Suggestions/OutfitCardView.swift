@@ -31,8 +31,7 @@ struct OutfitCardView: View {
                 ForEach(suggestion.items) { snapshot in
                     VStack(spacing: RIGTheme.Spacing.xs) {
                         GarmentImageView(
-                            relativePath: garments[snapshot.id]?.thumbnailRelativePath
-                                ?? garments[snapshot.id]?.preferredImageRelativePath,
+                            relativePath: garments[snapshot.id].flatMap(\.displayImageRelativePath),
                             symbolName: snapshot.category.symbolName
                         )
                         .padding(RIGTheme.Spacing.xs)

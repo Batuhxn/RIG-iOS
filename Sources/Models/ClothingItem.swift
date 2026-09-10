@@ -25,6 +25,11 @@ final class ClothingItem {
     /// original photograph is being shown instead.
     var isBackgroundRemoved: Bool
 
+    /// Looks that use this garment. Annotated explicitly, and with the delete
+    /// rule spelled out, so no later edit can turn this into a cascade:
+    /// deleting a garment must never delete the looks it appeared in.
+    /// The inverse is declared once, on `SavedOutfit.items`.
+    @Relationship(deleteRule: .nullify)
     var outfits: [SavedOutfit] = []
 
     init(
@@ -85,6 +90,16 @@ extension ClothingItem {
     /// otherwise the original photograph.
     var preferredImageRelativePath: String? {
         cutoutImageRelativePath ?? originalImageRelativePath
+    }
+
+    /// What a grid or a card should draw: the thumbnail when one exists, then
+    /// the cutout, then the original photograph.
+    ///
+    /// Written as a single property rather than chained `??` at each call site.
+    /// Chaining on an optional garment produces a doubly-optional value whose
+    /// `??` collapses the wrong layer, which silently swallows the fallback.
+    var displayImageRelativePath: String? {
+        thumbnailRelativePath ?? preferredImageRelativePath
     }
 
     var relativeImagePaths: [String] {

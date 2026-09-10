@@ -58,10 +58,11 @@ RIG-iOS/
 │   ├── DesignSystem/   (3)    theme, components, garment image view
 │   ├── Features/      (13)    Home, Wardrobe, GarmentEditor, Suggestions, OutfitBuilder, Looks
 │   └── Resources/             asset catalogue with an accent colour
-├── Tests/             (10)    102 test functions
-├── docs/               (3)    scope, architecture, decisions
+├── Tests/             (10)    106 test functions
+├── docs/               (4)    scope, architecture, decisions, Apple validation checklist
 ├── reports/            (1)    this file
-└── scripts/            (2)    validate_macos.sh, static_audit.py
+├── scripts/            (2)    validate_macos.sh, static_audit.py
+└── .github/workflows/     ios-validation.yml (prepared, never run, manual trigger only)
 ```
 
 Largest file: 254 lines. No file exceeds 420 lines; the static audit fails if one does.
@@ -261,17 +262,182 @@ Deferred within v0.1's own areas:
 - Wardrobe filtering happens in memory rather than in the query predicate, which
   is right at personal-wardrobe scale and will need revisiting at thousands.
 
+# Pre-Apple Validation Hardening
+
+A bounded pass performed after the implementation above, with one goal: give the
+first real Apple build the best chance of being informative rather than
+mechanical. No product features were added and no scope moved.
+
+## Compile-risk fixes made
+
+Six defects, each with specific evidence rather than a hunch:
+
+1. **Unit tests had no host application.** `RIGTests` is a `bundle.unit-test`
+   target that does `@testable import RIG`, which cannot link against an
+   *application* target without a host. Added `TEST_HOST` and `BUNDLE_LOADER` to
+   the target in `project.yml`. This alone would very likely have failed the
+   first `xcodebuild test`.
+2. **Doubly-optional image paths silently discarded the fallback.** Four call
+   sites wrote `garment?.thumbnailRelativePath ?? garment?.preferredImageRelativePath`.
+   Optional chaining through an optional garment produces `String??`, and `??`
+   unwraps the *outer* layer — so a garment with no thumbnail rendered a
+   placeholder instead of falling back to its cutout or original photograph.
+   Replaced with one `ClothingItem.displayImageRelativePath` property, and
+   `flatMap` at the two genuinely optional sites. A test now pins the
+   thumbnail → cutout → original order.
+3. **`PhotosPicker` asked for a permission RIG does not need.** It was
+   constructed with `photoLibrary: .shared()`, which gives the picker in-process
+   library access and therefore requires photo library authorisation and an
+   `NSPhotoLibraryUsageDescription` — a key the app deliberately does not
+   declare. RIG only ever reads the chosen image's bytes via
+   `loadTransferable(type: Data.self)` and never touches a `PHAsset`, so the
+   argument was removed. The permission surface is now camera-only, matching
+   what the README claims.
+4. **Actor isolation across the UIKit camera bridge was implicit.** The
+   `CameraPicker` callbacks arrive from a `UIImagePickerController` delegate and
+   mutated `@State` and called a `@MainActor` method. The hop is now explicit
+   (`Task { @MainActor in … }`) at all three call sites rather than inherited
+   from an ambiguous context.
+5. **`SuggestionsModel` is `@MainActor` but is created as a `@State` default
+   value** inside a view struct that is not itself isolated. Added a
+   `nonisolated init()`; every stored property starts from a `Sendable`
+   constant, so there is nothing isolated to touch.
+6. **`UILaunchScreen` carried an empty `UIColorName`.** An empty string is not a
+   valid colour reference; replaced with an empty dictionary so the system
+   default applies.
+
+Verified against Apple's documentation during the pass rather than assumed:
+`VNGenerateForegroundInstanceMaskRequest.results` is `[VNInstanceMaskObservation]?`,
+`generateMaskedImage(ofInstances:from:croppedToInstancesExtent:)` takes an
+`IndexSet` and throws returning `CVPixelBuffer`, and the `@Relationship` macro's
+`deleteRule` defaults to `.nullify`. All are iOS 17.0, at RIG's deployment floor,
+so no `@available` annotations are needed anywhere — and a scan confirms none are
+present or missing.
+
+## SwiftData review result
+
+The many-to-many between `ClothingItem` and `SavedOutfit` was the largest
+residual risk in the previous report. The review found the shape correct but
+under-specified, and made the smallest defensible correction rather than
+redesigning persistence:
+
+- Both sides are now annotated, matching the pattern in Apple's own
+  `@Relationship` documentation, which annotates the inverse-bearing side and
+  the collection side.
+- `deleteRule: .nullify` is now stated explicitly on both sides. It was already
+  the default, but writing it down means no later edit can quietly introduce a
+  cascade — and a cascade here would be severe in either direction: deleting one
+  garment would destroy every look it appeared in, or deleting a look would
+  destroy the garments.
+- `inverse:` remains declared once, on `SavedOutfit.items`. There is exactly one
+  relationship between these two types, so inference on the other side is
+  unambiguous.
+
+Four tests were added: deleting a look must not delete its garments; a garment
+may belong to several looks and the inverse must populate from the other side;
+deleting one look leaves the other intact; and the image-path fallback order.
+
+**Remaining runtime-only uncertainty.** Whether SwiftData actually honours
+nullify in both directions, whether the inverse populates without an explicit
+fetch, and whether `@Attribute(.unique)` behaves alongside a many-to-many
+relationship are all questions only a simulator run answers. `PersistenceTests`
+is where they will surface.
+
+## Validation script changes
+
+`scripts/validate_macos.sh` was rewritten as the canonical first gate:
+
+- `bash` with `set -euo pipefail`; every required step ends the run non-zero on
+  failure, and the final line is always `RESULT: PASS` or `RESULT: FAIL`.
+- Eight numbered steps: host, Xcode, XcodeGen, static audit, generate, build,
+  simulator selection, test.
+- Prints `sw_vers`, `xcodebuild -version`, `xcode-select -p`, `swift --version`
+  and `xcodegen --version`, so a failing log identifies the toolchain that
+  produced it.
+- Installs nothing. A missing XcodeGen prints exactly `brew install xcodegen`
+  and stops.
+- Simulator selection no longer depends on `python3` and hard-codes no device
+  model: it parses `xcrun simctl list devices available`, restricts to the iOS
+  section so a watchOS device can never be picked, and takes the last iPhone
+  listed. The parser was exercised against sample `simctl` output.
+- Writes `build/RIGTests.xcresult`, which is gitignored and is what the optional
+  CI job uploads.
+
+## Optional GitHub Actions preparation
+
+`.github/workflows/ios-validation.yml` is **prepared and not enabled**. It has
+never run and this repository has no remote.
+
+- `runs-on: macos-14`, `workflow_dispatch` only. The `push:` and `pull_request:`
+  triggers are present but commented out, deliberately: GitHub-hosted macOS
+  runners are metered at a higher multiplier than Linux and are not free beyond
+  an account's included allowance. This is not a zero-cost gate, and the README
+  says so.
+- It checks out, prints the toolchain, installs and verifies XcodeGen, runs the
+  static audit, then calls `scripts/validate_macos.sh` — the same script a
+  developer runs locally, so there is one gate rather than two that drift apart.
+- It uploads the `.xcresult` bundle as an artifact.
+- No secrets, no signing, no notarisation, no upload of the app, no release, no
+  App Store step. The static audit fails if any of those appear in the workflow.
+
+The README explains how to enable it after pushing to a **private** repository.
+
+## Static checks actually executed
+
+All on the Windows host. None of this is a compile.
+
+| Check | Result |
+|---|---|
+| `scripts/static_audit.py` (extended this pass) | **PASS** — 48 source files, 10 test files, 106 test functions, 102 declared types |
+| Duplicate type declarations across all 58 Swift files | PASS — none |
+| Project-symbol cross-reference (every `RIG*`/`Garment*`/`Outfit*`-family type used is declared) | PASS |
+| Extensions on types that do not exist | PASS — none |
+| `@available` audit against the iOS 17 floor | PASS — no iOS-18+ API used, none needed |
+| `project.yml` parses; declares both targets, the scheme, `TEST_HOST`/`BUNDLE_LOADER`, and a checked-in Info.plist | PASS |
+| `Info.plist` and `PrivacyInfo.xcprivacy` parse as property lists | PASS |
+| `.github/workflows/ios-validation.yml` parses; job runs on macOS; contains no secret, signing or publishing step | PASS |
+| `bash -n scripts/validate_macos.sh` | PASS |
+| Shell scripts have a shebang, fail closed, and balanced quotes | PASS |
+| Simulator-selection parser against sample `simctl` output | PASS — picks an iPhone, ignores the watchOS section |
+| Forbidden networking, cloud, analytics, tracking, location and CoreML symbols | PASS — none |
+| Force `try!` / `as!` / `fatalError` in production code | PASS — none |
+| Model or archive artefacts inside the app | PASS — none |
+| Git checkpoint created and repository readable | PASS — first commit `987d9ed`, 71 files tracked |
+
+**STATIC PASS is not APPLE BUILD PASS.** Nothing here type-checks Swift, expands
+a macro, or runs a test. The audit is a lint, and it says so on every run.
+
+## Remaining Apple-only uncertainty
+
+Unchanged in kind from the previous report, and now the entire remaining risk:
+
+1. **First compile will still not be clean.** Six defects were removed; four
+   thousand lines of never-compiled Swift remain.
+2. **SwiftData at runtime** — relationship nullify in both directions, inverse
+   population, and `@Attribute(.unique)` alongside the relationship.
+3. **Vision cutout quality on real garment photographs.** Still the product
+   risk, and still untouchable without a device.
+4. **The camera bridge**, its permission prompt, and capture on hardware.
+5. **Memory and scrolling** with a realistic wardrobe.
+6. **The validation script and the CI workflow themselves**, neither of which
+   has ever executed.
+
+`docs/APPLE_VALIDATION_CHECKLIST.md` turns all of the above into three ordered
+gates with concrete boxes to tick.
+
 ## Recommended Next Step
 
 Open this on a Mac and run one command:
 
 ```sh
-cd RIG-iOS && sh scripts/validate_macos.sh
+cd RIG-iOS && bash scripts/validate_macos.sh
 ```
 
-That generates the project, builds for the simulator, and runs the 102 tests. Fix
-the compile errors it finds — that is the expected outcome of the first run, not
-a failure of the design. Once it is green, the single most valuable thing after
-that is to photograph ten real garments on a device and look at the cutouts,
-because Vision extraction quality is the one risk that no amount of further code
-review can retire.
+That is Gate A: it generates the project, builds for the simulator, and runs the
+106 tests. Fix the compile errors it finds — that is the expected outcome of a
+first run, not a failure of the design. Then work down
+`docs/APPLE_VALIDATION_CHECKLIST.md`.
+
+The single most valuable thing after Gate A is Gate C's first item: photograph
+ten real garments on a device and look at the cutouts. Vision extraction quality
+is the one risk that no further code review can retire.

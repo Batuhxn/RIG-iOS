@@ -18,6 +18,12 @@ final class SuggestionsModel {
 
     private var seenSignatures: Set<String> = []
 
+    /// Nonisolated on purpose: this is created as a `@State` default value
+    /// inside a view struct, which is not itself actor-isolated. Every
+    /// stored property above starts from a `Sendable` constant, so there is
+    /// nothing isolated to touch here.
+    nonisolated init() {}
+
     func generate(
         wardrobe: [GarmentSnapshot],
         engine: OutfitEngine,

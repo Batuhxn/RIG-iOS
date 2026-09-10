@@ -124,6 +124,7 @@ def main() -> int:
     notes.append(f"{len(sources)} source files, {len(tests)} test files")
 
     declared_types: set[str] = set()
+    type_counts: dict[str, int] = {}
     test_functions = 0
 
     for path in sources + tests:
@@ -138,9 +139,21 @@ def main() -> int:
             failures.append(f"{path.relative_to(ROOT)}: unexpected module import '{module}'")
 
         declared_types |= set(
-            re.findall(r"^\s*(?:public\s+|final\s+|@\w+\s+)*(?:struct|class|enum|protocol|actor)\s+([A-Za-z_]\w*)",
-                       code, re.MULTILINE)
+            re.findall(
+                r"^\s*(?:(?:public|internal|fileprivate|private|final|indirect)\s+|@\w+(?:\([^)]*\))?\s+)*"
+                r"(?:struct|class|enum|protocol|actor)\s+([A-Za-z_]\w*)",
+                code,
+                re.MULTILINE,
+            )
         )
+        for name in re.findall(
+            r"^\s*(?:(?:public|internal|fileprivate|private|final|indirect)\s+|@\w+(?:\([^)]*\))?\s+)*"
+            r"(?:struct|class|enum|protocol|actor)\s+([A-Za-z_]\w*)",
+            code,
+            re.MULTILINE,
+        ):
+            type_counts[name] = type_counts.get(name, 0) + 1
+
         test_functions += len(re.findall(r"\bfunc\s+test[A-Z]\w*\s*\(", code))
 
         is_test = path in tests
@@ -158,6 +171,10 @@ def main() -> int:
         line_count = raw.count("\n") + 1
         if line_count > 420:
             failures.append(f"{path.relative_to(ROOT)}: {line_count} lines — split this file")
+
+    duplicates = sorted(name for name, count in type_counts.items() if count > 1)
+    for name in duplicates:
+        failures.append(f"type '{name}' is declared {type_counts[name]} times")
 
     if test_functions < 60:
         failures.append(f"only {test_functions} test functions found")
@@ -181,6 +198,8 @@ def main() -> int:
         if path.is_file() and path.suffix.lower() in BINARY_SUFFIXES:
             failures.append(f"{path.relative_to(ROOT)}: model or archive artefact inside the app")
 
+    check_configuration()
+
     # Privacy manifest must be present and must claim nothing.
     manifest = ROOT / "Support" / "PrivacyInfo.xcprivacy"
     if not manifest.is_file():
@@ -197,6 +216,92 @@ def main() -> int:
         failures.append("Info.plist is missing NSCameraUsageDescription")
 
     return report()
+
+
+def check_configuration() -> None:
+    """Parse the files that gate the build: project spec, plists, workflow, shell."""
+    try:
+        import plistlib
+    except ImportError:  # pragma: no cover - stdlib
+        plistlib = None
+
+    project = ROOT / "project.yml"
+    if not project.is_file():
+        failures.append("project.yml is missing")
+    else:
+        try:
+            import yaml
+        except ImportError:
+            notes.append("PyYAML not installed; project.yml parsed only for required keys")
+            text = project.read_text(encoding="utf-8")
+            for key in ("targets:", "RIGTests:", "TEST_HOST:", "schemes:"):
+                if key not in text:
+                    failures.append(f"project.yml is missing '{key}'")
+        else:
+            spec = yaml.safe_load(project.read_text(encoding="utf-8"))
+            targets = spec.get("targets", {})
+            for name in ("RIG", "RIGTests"):
+                if name not in targets:
+                    failures.append(f"project.yml declares no '{name}' target")
+            tests = targets.get("RIGTests", {}).get("settings", {}).get("base", {})
+            # Without a host application, `@testable import RIG` cannot link.
+            if "TEST_HOST" not in tests or "BUNDLE_LOADER" not in tests:
+                failures.append("RIGTests needs TEST_HOST and BUNDLE_LOADER to host an app target")
+            if "RIG" not in spec.get("schemes", {}):
+                failures.append("project.yml declares no RIG scheme")
+            app = targets.get("RIG", {}).get("settings", {}).get("base", {})
+            if app.get("GENERATE_INFOPLIST_FILE") not in (False, "NO"):
+                failures.append("The app target must use the checked-in Info.plist")
+            notes.append("project.yml parsed: targets " + ", ".join(sorted(targets)))
+
+    if plistlib is not None:
+        for relative in ("Support/Info.plist", "Support/PrivacyInfo.xcprivacy"):
+            path = ROOT / relative
+            if not path.is_file():
+                continue
+            try:
+                with path.open("rb") as handle:
+                    plistlib.load(handle)
+            except Exception as error:  # noqa: BLE001 - report any malformed plist
+                failures.append(f"{relative}: not a valid property list ({error})")
+        notes.append("Info.plist and privacy manifest parse as property lists")
+
+    workflow = ROOT / ".github" / "workflows" / "ios-validation.yml"
+    if workflow.is_file():
+        text = workflow.read_text(encoding="utf-8")
+        try:
+            import yaml
+        except ImportError:
+            notes.append("PyYAML not installed; workflow checked textually only")
+        else:
+            try:
+                data = yaml.safe_load(text)
+            except Exception as error:  # noqa: BLE001
+                failures.append(f"workflow YAML does not parse ({error})")
+                data = None
+            if isinstance(data, dict):
+                jobs = data.get("jobs", {})
+                if not jobs:
+                    failures.append("workflow declares no jobs")
+                for job in jobs.values():
+                    runner = str(job.get("runs-on", ""))
+                    if not runner.startswith("macos"):
+                        failures.append(f"workflow job must run on macOS, got '{runner}'")
+                notes.append("workflow YAML parsed: " + ", ".join(sorted(jobs)))
+        for banned in ("secrets.", "APP_STORE", "altool", "xcrun notarytool", "fastlane"):
+            if banned in text:
+                failures.append(f"workflow references '{banned}' — this gate must not sign or publish")
+
+    for script in sorted((ROOT / "scripts").glob("*.sh")):
+        text = script.read_text(encoding="utf-8")
+        if not text.startswith("#!"):
+            failures.append(f"{script.relative_to(ROOT)}: no shebang")
+        if "set -e" not in text:
+            failures.append(f"{script.relative_to(ROOT)}: does not fail closed (no 'set -e')")
+        # Cheap unbalanced-quote detection; `bash -n` is the real check and runs
+        # in validate_macos.sh's own CI step.
+        if text.count("'") % 2 or text.count('"') % 2:
+            failures.append(f"{script.relative_to(ROOT)}: unbalanced quotes")
 
 
 def report() -> int:

@@ -1,89 +1,138 @@
-#!/bin/sh
-# RIG iOS — the Apple-side validation this project cannot run anywhere else.
+#!/bin/bash
+# RIG iOS — the first Apple gate.
 #
-# UNVERIFIED: this script has never been executed. It was written on a Windows
-# host with no Apple toolchain. Treat a green run here as the first real
-# evidence that RIG builds; nothing before it is.
+# This is the canonical build/test gate for RIG. It fails closed: any required
+# step that fails stops the script with a non-zero status, and the last line of
+# output is always either "RESULT: PASS" or "RESULT: FAIL".
+#
+# NEVER EXECUTED. This script was authored on a Windows host with no Apple
+# toolchain. A green run here is the first real evidence that RIG compiles;
+# nothing before it is.
 #
 # Requirements: macOS, Xcode 15 or later (iOS 17 SDK), XcodeGen.
 #   brew install xcodegen
-#   sh scripts/validate_macos.sh
+#   bash scripts/validate_macos.sh
 #
-# Fails closed: any step that fails stops the script with a non-zero status.
-set -eu
+# It installs nothing. If a required tool is missing it prints the exact
+# command to install it and stops.
+
+set -euo pipefail
 
 cd "$(dirname "$0")/.."
-PROJECT_DIR="$(pwd)"
+PROJECT_ROOT="$(pwd)"
+PROJECT="RIG.xcodeproj"
+SCHEME="RIG"
+RESULT_DIR="$PROJECT_ROOT/build"
 
-echo "==> Host check"
-if [ "$(uname -s)" != "Darwin" ]; then
-  echo "This script requires macOS. iOS targets cannot be built anywhere else." >&2
+fail() {
+  echo ""
+  echo "RESULT: FAIL — $1"
   exit 1
+}
+
+step() {
+  echo ""
+  echo "==> $1"
+}
+
+# ---------------------------------------------------------------- 1. host ----
+step "1/8 Host"
+if [ "$(uname -s)" != "Darwin" ]; then
+  fail "this script requires macOS; iOS targets cannot be built anywhere else"
 fi
-command -v xcodebuild >/dev/null 2>&1 || { echo "xcodebuild not found. Install Xcode and run xcode-select --install." >&2; exit 1; }
-command -v xcodegen >/dev/null 2>&1 || { echo "xcodegen not found. Run: brew install xcodegen" >&2; exit 1; }
+sw_vers || true
+
+# --------------------------------------------------------------- 2. Xcode ----
+step "2/8 Xcode"
+if ! command -v xcodebuild >/dev/null 2>&1; then
+  echo "xcodebuild was not found." >&2
+  echo "Install Xcode from the App Store, then run: sudo xcode-select --switch /Applications/Xcode.app" >&2
+  fail "xcodebuild missing"
+fi
 xcodebuild -version
+xcode-select --print-path
+swift --version 2>/dev/null || true
 
-echo "==> Static audit (no toolchain required)"
+# ------------------------------------------------------------ 3. XcodeGen ----
+step "3/8 XcodeGen"
+if ! command -v xcodegen >/dev/null 2>&1; then
+  echo "xcodegen was not found." >&2
+  echo "Install it with exactly this command:" >&2
+  echo "" >&2
+  echo "    brew install xcodegen" >&2
+  echo "" >&2
+  echo "Nothing has been installed automatically." >&2
+  fail "xcodegen missing"
+fi
+xcodegen --version
+
+# --------------------------------------------------------- 4. static audit ----
+step "4/8 Static audit (no toolchain required)"
 if command -v python3 >/dev/null 2>&1; then
-  python3 scripts/static_audit.py
+  python3 scripts/static_audit.py || fail "static audit reported findings"
 else
-  echo "python3 not found; skipping the static audit." >&2
+  echo "python3 not found; skipping the static audit (not a required step)."
 fi
 
-echo "==> Generating the Xcode project from project.yml"
+# ------------------------------------------------------ 5. generate project ----
+step "5/8 Generating $PROJECT from project.yml"
 xcodegen generate
-test -d "$PROJECT_DIR/RIG.xcodeproj" || { echo "RIG.xcodeproj was not generated." >&2; exit 1; }
+[ -d "$PROJECT_ROOT/$PROJECT" ] || fail "$PROJECT was not generated"
 
-echo "==> Building for the iOS Simulator (code signing disabled)"
+# ---------------------------------------------------------------- 6. build ----
+step "6/8 Building for the iOS Simulator (code signing disabled)"
+mkdir -p "$RESULT_DIR"
 xcodebuild build \
-  -project RIG.xcodeproj \
-  -scheme RIG \
+  -project "$PROJECT" \
+  -scheme "$SCHEME" \
   -configuration Debug \
   -destination 'generic/platform=iOS Simulator' \
   CODE_SIGNING_ALLOWED=NO \
-  CODE_SIGNING_REQUIRED=NO
+  CODE_SIGNING_REQUIRED=NO \
+  || fail "the app did not compile for the simulator"
 
-echo "==> Selecting an installed iOS simulator for the test run"
-# Tests need a real simulator runtime, unlike the build above. Pick whatever
-# this machine actually has rather than hard-coding a device that may not exist.
-SIMULATOR_ID="$(
-  xcrun simctl list devices available -j 2>/dev/null \
-  | /usr/bin/python3 -c '
-import json,sys
-data = json.load(sys.stdin).get("devices", {})
-best = None
-for runtime, devices in data.items():
-    if "iOS" not in runtime:
-        continue
-    for device in devices:
-        if not device.get("isAvailable"):
-            continue
-        if "iPhone" in device.get("name", ""):
-            best = device["udid"]
-if best:
-    print(best)
-'
+# ------------------------------------------------------------ 7. simulator ----
+step "7/8 Selecting an installed iPhone simulator"
+# Tests need a real simulator runtime, unlike the build above. No device model
+# is hard-coded: whatever iPhone this machine actually has is used, and the last
+# one listed is taken so a newer runtime wins on a machine with several.
+SIMULATOR_LINE="$(
+  xcrun simctl list devices available \
+    | awk '/^-- iOS/ { ios = 1; next } /^-- / { ios = 0 } ios && /iPhone/ { print }' \
+    | tail -n 1
 )"
 
-if [ -z "${SIMULATOR_ID:-}" ]; then
+if [ -z "${SIMULATOR_LINE}" ]; then
   echo "No available iPhone simulator runtime was found." >&2
   echo "Install one in Xcode > Settings > Platforms, then re-run this script." >&2
-  echo "The build above still passed; only the test run was skipped." >&2
-  exit 1
+  echo "The build in step 6 still passed; only the test run was not attempted." >&2
+  fail "no iOS simulator runtime available"
 fi
-echo "Using simulator $SIMULATOR_ID"
 
-echo "==> Running unit tests"
+SIMULATOR_ID="$(printf '%s\n' "$SIMULATOR_LINE" | sed -n 's/.*(\([0-9A-Fa-f-]\{36\}\)).*/\1/p' | head -n 1)"
+[ -n "${SIMULATOR_ID}" ] || fail "could not parse a simulator identifier from: $SIMULATOR_LINE"
+echo "Using:$SIMULATOR_LINE"
+echo "Simulator id: $SIMULATOR_ID"
+
+# ---------------------------------------------------------------- 8. tests ----
+step "8/8 Running RIGTests"
+rm -rf "$RESULT_DIR/RIGTests.xcresult"
 xcodebuild test \
-  -project RIG.xcodeproj \
-  -scheme RIG \
+  -project "$PROJECT" \
+  -scheme "$SCHEME" \
   -configuration Debug \
   -destination "id=$SIMULATOR_ID" \
+  -resultBundlePath "$RESULT_DIR/RIGTests.xcresult" \
   CODE_SIGNING_ALLOWED=NO \
-  CODE_SIGNING_REQUIRED=NO
+  CODE_SIGNING_REQUIRED=NO \
+  || fail "unit tests did not pass"
 
-echo
-echo "==> PASS: project generated, app built for the simulator, unit tests ran."
-echo "    Still unverified by this script: behaviour on real hardware, Vision"
-echo "    foreground extraction quality, and memory or thermal behaviour."
+echo ""
+echo "Gate A complete: project generated, app compiled for the simulator, unit tests passed."
+echo "Still unverified by this script, and only reachable on real hardware:"
+echo "  - Vision foreground extraction quality on real garment photographs"
+echo "  - camera capture and its permission prompt"
+echo "  - memory, thermal and scrolling behaviour with a realistic wardrobe"
+echo "See docs/APPLE_VALIDATION_CHECKLIST.md for gates B and C."
+echo ""
+echo "RESULT: PASS"

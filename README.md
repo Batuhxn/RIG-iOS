@@ -84,13 +84,18 @@ checked in. There are no package dependencies to resolve.
 Everything the script does, in one command:
 
 ```sh
-sh scripts/validate_macos.sh
+bash scripts/validate_macos.sh
 ```
 
 It refuses to run off macOS, checks for Xcode and XcodeGen, runs the static
 audit, generates the project, builds for the simulator with code signing
 disabled, picks an installed iPhone simulator, and runs the unit tests. Any
-failure stops it with a non-zero status.
+failure stops it with a non-zero status, and the last line is always
+`RESULT: PASS` or `RESULT: FAIL`.
+
+That script is Gate A. `docs/APPLE_VALIDATION_CHECKLIST.md` has all three gates:
+the build, a simulator smoke pass, and the physical-iPhone pass that is the only
+way to find out whether Vision produces usable cutouts.
 
 By hand:
 
@@ -107,6 +112,34 @@ The host-side audit needs no toolchain and runs anywhere:
 ```sh
 python3 scripts/static_audit.py
 ```
+
+## Optional: running the Apple gate on GitHub Actions
+
+`.github/workflows/ios-validation.yml` is prepared but **not enabled**. It has
+never run, and this repository has no remote. To use it later:
+
+1. Create a **private** repository on GitHub. Do not make it public — it holds a
+   personal wardrobe application, and nothing here has been reviewed for
+   publication.
+2. Add it as a remote and push:
+   ```sh
+   git remote add origin git@github.com:<you>/rig-ios.git
+   git push -u origin main
+   ```
+3. Open the repository's **Actions** tab and enable workflows if prompted.
+4. Run **iOS validation** manually from that tab (`workflow_dispatch`).
+
+The workflow checks out the repository, prints the toolchain versions, installs
+and verifies XcodeGen, and then runs `scripts/validate_macos.sh` — the same
+script a developer runs locally, so there is one gate and not two. It uploads
+the `.xcresult` bundle as an artifact. It uses no secrets, signs nothing,
+deploys nothing and publishes nothing.
+
+**On cost:** it is deliberately manual-only. GitHub-hosted macOS runners are
+metered at a higher multiplier than Linux runners and are not free beyond an
+account's included allowance, so this is not a zero-cost gate — check your
+account's current billing before enabling the commented-out `push:` trigger.
+A Mac you already own runs the identical script for nothing.
 
 ## Deliberately not implemented
 
@@ -147,7 +180,8 @@ could later contribute a capped signal without any of this being rewritten.
 | | |
 |---|---|
 | Static audit (delimiters, imports, forbidden APIs, force unwraps) | PASS on the development host |
-| `project.yml` parses as YAML | PASS |
+| `project.yml`, workflow YAML and `Info.plist` / privacy manifest parse | PASS |
+| `scripts/validate_macos.sh` shell syntax (`bash -n`) | PASS |
 | Swift compilation | **NOT RUN** — no Apple toolchain |
 | Unit tests | **NOT RUN** — written, never executed |
 | Simulator launch | **NOT RUN** |

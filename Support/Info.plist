@@ -25,10 +25,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>RIG uses the camera so you can photograph a garment you own. Photos stay on this device.</string>
 	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIColorName</key>
-		<string></string>
-	</dict>
+	<dict/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

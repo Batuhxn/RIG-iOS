@@ -1,0 +1,75 @@
+# RIG iOS — Gate A on a macOS runner.
+#
+# PREPARED, NOT ENABLED. This workflow has never run. It exists so that the
+# Apple build/test gate can be executed on a hosted Mac once this repository is
+# pushed to GitHub, without anyone having to reinvent the commands.
+#
+# The trigger is deliberately manual only. GitHub-hosted macOS runners are
+# metered at a higher multiplier than Linux runners and are NOT free beyond an
+# account's included allowance, so nothing here starts on its own. To run it on
+# every push instead, uncomment the `push:` block below and accept that cost.
+#
+# It builds and tests. It does not sign, deploy, upload the app, publish a
+# release, touch the App Store, or use any secret.
+
+name: iOS validation
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  # pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-a:
+    name: Gate A — build and unit tests
+    # macos-14 is Apple Silicon with an Xcode that ships the iOS 17 SDK, which
+    # is RIG's deployment floor. Bump to macos-15 when a newer SDK is wanted.
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Show the toolchain
+        run: |
+          set -euo pipefail
+          sw_vers
+          xcodebuild -version
+          xcode-select --print-path
+          swift --version
+
+      - name: Install and verify XcodeGen
+        run: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          # The resolved version is printed so a failing run can be reproduced
+          # against the exact tool that produced it.
+          xcodegen --version
+
+      - name: Static audit
+        run: python3 scripts/static_audit.py
+
+      - name: Gate A — generate, build, test
+        # One script, the same one a developer runs locally. It fails closed,
+        # so a non-zero exit here fails the job.
+        run: bash scripts/validate_macos.sh
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RIGTests-xcresult
+          path: build/RIGTests.xcresult
+          if-no-files-found: ignore
+          retention-days: 7

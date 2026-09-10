@@ -54,16 +54,23 @@ struct AddGarmentFlow: View {
             .sheet(isPresented: $isPresentingCamera) {
                 CameraPicker(
                     onCapture: { data in
-                        isPresentingCamera = false
-                        Task { await process(data) }
+                        // The hop is explicit rather than inherited: these
+                        // callbacks arrive from a UIKit delegate, and everything
+                        // they touch here is main-actor state.
+                        Task { @MainActor in
+                            isPresentingCamera = false
+                            await process(data)
+                        }
                     },
-                    onCancel: { isPresentingCamera = false }
+                    onCancel: {
+                        Task { @MainActor in isPresentingCamera = false }
+                    }
                 )
                 .ignoresSafeArea()
             }
             .onChange(of: photoSelection) { _, newValue in
                 guard let newValue else { return }
-                Task { await loadFromPhotos(newValue) }
+                Task { @MainActor in await loadFromPhotos(newValue) }
             }
         }
     }
@@ -97,7 +104,12 @@ struct AddGarmentFlow: View {
             Spacer(minLength: 0)
 
             VStack(spacing: RIGTheme.Spacing.s) {
-                PhotosPicker(selection: $photoSelection, matching: .images, photoLibrary: .shared()) {
+                // No `photoLibrary:` argument on purpose. That overload gives the
+                // picker in-process access to the library, which requires photo
+                // library authorisation and an NSPhotoLibraryUsageDescription.
+                // RIG only ever asks for the chosen image's bytes, so the
+                // out-of-process picker is both sufficient and permission-free.
+                PhotosPicker(selection: $photoSelection, matching: .images) {
                     Text("Choose from Photos")
                         .font(.body.weight(.semibold))
                         .frame(maxWidth: .infinity, minHeight: 50)
@@ -140,7 +152,7 @@ struct AddGarmentFlow: View {
         Form {
             Section {
                 GarmentImageView(
-                    relativePath: importResult?.cutoutRelativePath ?? importResult?.originalRelativePath,
+                    relativePath: importResult.flatMap { $0.cutoutRelativePath ?? $0.originalRelativePath },
                     symbolName: fields.category.symbolName
                 )
                 .frame(height: 220)

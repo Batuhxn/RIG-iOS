@@ -29,7 +29,12 @@ final class SavedOutfit {
     /// garment is deleted from the wardrobe.
     var signature: String
 
-    @Relationship(inverse: \ClothingItem.outfits)
+    /// Many-to-many with `ClothingItem`. `nullify` in both directions:
+    /// deleting a look leaves every garment in the wardrobe, and deleting a
+    /// garment leaves the look standing with one fewer item — which
+    /// `hasMissingGarments` then detects against the signature recorded at
+    /// save time. The inverse is declared here and only here.
+    @Relationship(deleteRule: .nullify, inverse: \ClothingItem.outfits)
     var items: [ClothingItem]
 
     init(

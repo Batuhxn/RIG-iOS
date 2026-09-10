@@ -133,6 +133,69 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(outfit.items.count, 1)
     }
 
+    func testDeletingALookNeverDeletesItsGarments() throws {
+        let top = makeItem(1, .top)
+        let bottom = makeItem(2, .bottom)
+        let outfit = SavedOutfit(name: "A", source: .manual, items: [top, bottom])
+        context.insert(outfit)
+        try context.save()
+
+        context.delete(outfit)
+        try context.save()
+
+        let remaining = try context.fetch(FetchDescriptor<ClothingItem>())
+        XCTAssertEqual(remaining.count, 2, "Both relationships are nullify; neither side may cascade")
+        XCTAssertTrue(try context.fetch(FetchDescriptor<SavedOutfit>()).isEmpty)
+    }
+
+    func testAGarmentCanBelongToSeveralLooks() throws {
+        let top = makeItem(1, .top)
+        let bottomA = makeItem(2, .bottom)
+        let bottomB = makeItem(3, .bottom)
+
+        let first = SavedOutfit(name: "A", source: .manual, items: [top, bottomA])
+        let second = SavedOutfit(name: "B", source: .manual, items: [top, bottomB])
+        context.insert(first)
+        context.insert(second)
+        try context.save()
+
+        XCTAssertEqual(top.outfits.count, 2, "The inverse must populate from the SavedOutfit side")
+        XCTAssertEqual(Set(top.outfits.map(\.id)), [first.id, second.id])
+        XCTAssertNotEqual(first.signature, second.signature)
+    }
+
+    func testDeletingOneLookLeavesTheOtherIntact() throws {
+        let top = makeItem(1, .top)
+        let bottomA = makeItem(2, .bottom)
+        let bottomB = makeItem(3, .bottom)
+        let first = SavedOutfit(name: "A", source: .manual, items: [top, bottomA])
+        let second = SavedOutfit(name: "B", source: .manual, items: [top, bottomB])
+        context.insert(first)
+        context.insert(second)
+        try context.save()
+
+        context.delete(first)
+        try context.save()
+
+        XCTAssertEqual(second.items.count, 2)
+        XCTAssertFalse(second.hasMissingGarments)
+        XCTAssertEqual(top.outfits.count, 1)
+    }
+
+    func testDisplayImagePathPrefersThumbnailThenCutoutThenOriginal() {
+        let item = makeItem(6, .top)
+        XCTAssertNil(item.displayImageRelativePath)
+
+        item.originalImageRelativePath = "Garments/A/original.jpg"
+        XCTAssertEqual(item.displayImageRelativePath, "Garments/A/original.jpg")
+
+        item.cutoutImageRelativePath = "Garments/A/cutout.png"
+        XCTAssertEqual(item.displayImageRelativePath, "Garments/A/cutout.png")
+
+        item.thumbnailRelativePath = "Garments/A/thumbnail.png"
+        XCTAssertEqual(item.displayImageRelativePath, "Garments/A/thumbnail.png")
+    }
+
     func testFeedbackRoundTripsAndIsQueryableBySignature() throws {
         let signature = OutfitSignature.signature(forGarmentIDs: [Fixture.id(2), Fixture.id(1)])
         context.insert(OutfitFeedback(outfitSignature: signature, rating: .liked))

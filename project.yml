@@ -43,6 +43,10 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: dev.rig.app.tests
+        # An app-hosted test bundle. Without a host, `@testable import RIG`
+        # cannot link against an application target.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/RIG.app/RIG
+        BUNDLE_LOADER: $(TEST_HOST)
     dependencies:
       - target: RIG
 
