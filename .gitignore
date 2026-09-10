@@ -1,0 +1,55 @@
+# Xcode build products and derived state
+build/
+DerivedData/
+*.o
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Generated project — project.yml is the source of truth, the project is not
+*.xcodeproj/
+*.xcworkspace/
+
+# User-specific Xcode state
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+*.perspectivev3
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.moved-aside
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Simulator / instruments output
+*.xcresult/
+*.xctestrun
+
+# macOS and editor noise
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Python bytecode from scripts/
+__pycache__/
+*.pyc
+
+# Anything that must never enter the app bundle
+*.mlmodel
+*.mlmodelc
+*.mlpackage/
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.safetensors
