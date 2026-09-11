@@ -22,14 +22,6 @@ struct ProcessingStep: View {
     var isFinishing: Bool = false
 
     @State private var estimate: Double = 0
-    @State private var timer: Timer?
-    /// Mirrors `isFinishing` into state the timer can actually see.
-    ///
-    /// The repeating closure is created once and captures the `ProcessingStep`
-    /// value that existed then, so reading the `isFinishing` *property* inside
-    /// it would read the value from that first render forever. `@State` is
-    /// reference-backed and shared across re-renders, so this flag is not.
-    @State private var hasRealResult = false
 
     private var percent: Int { Int((estimate * 100).rounded()) }
 
@@ -86,12 +78,11 @@ struct ProcessingStep: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(RIGTheme.pageBackground)
-        .onAppear(perform: start)
-        .onDisappear(perform: stop)
+        .task {
+            await advanceEstimate()
+        }
         .onChange(of: isFinishing) { _, finishing in
             guard finishing else { return }
-            hasRealResult = true
-            stop()
             withAnimation(NocturneMotion.progress) { estimate = 1 }
         }
     }
@@ -102,23 +93,22 @@ struct ProcessingStep: View {
         return .waiting
     }
 
-    private func start() {
-        stop()
+    /// Walks the estimate up to 0.9 and stops there.
+    ///
+    /// A `.task` rather than a `Timer`: it is already main-actor, SwiftUI
+    /// cancels it when the step goes away, and it reads `isFinishing` from the
+    /// current view value instead of one captured at first render.
+    private func advanceEstimate() async {
         estimate = 0
-        hasRealResult = false
-        timer = Timer.scheduledTimer(withTimeInterval: 0.055, repeats: true) { _ in
-            Task { @MainActor in
-                guard !hasRealResult else { return }
-                // Stalls at 0.9: the remaining tenth belongs to the real result.
-                let step = estimate < 0.65 ? 0.03 : 0.02
+        while !Task.isCancelled, !isFinishing, estimate < 0.9 {
+            try? await Task.sleep(nanoseconds: 55_000_000)
+            guard !isFinishing else { return }
+            // Stalls at 0.9: the remaining tenth belongs to the real result.
+            let step = estimate < 0.65 ? 0.03 : 0.02
+            withAnimation(NocturneMotion.progress) {
                 estimate = min(0.9, estimate + step)
             }
         }
-    }
-
-    private func stop() {
-        timer?.invalidate()
-        timer = nil
     }
 }
 

@@ -248,39 +248,6 @@ struct RIGStatTile: View {
     }
 }
 
-/// A settings row: accent icon, title, chevron.
-struct RIGSettingsRow: View {
-    let symbol: String
-    let title: String
-    var action: (() -> Void)? = nil
-
-    var body: some View {
-        Button {
-            action?()
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: symbol)
-                    .font(.system(size: 17))
-                    .foregroundStyle(RIGTheme.accent)
-                    .frame(width: 20)
-                Text(title)
-                    .font(.system(size: 14))
-                    .foregroundStyle(RIGTheme.textPrimary)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
-                    .foregroundStyle(RIGTheme.text(32))
-            }
-            .padding(.vertical, 13)
-            .padding(.horizontal, 14)
-            .frame(minHeight: 44)
-            .background(RIGTheme.cardBackground, in: RoundedRectangle(cornerRadius: RIGTheme.Radius.medium, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(action == nil)
-    }
-}
-
 /// The gradient that lifts a floating action clear of scrolling content at the
 /// bottom of the wardrobe and outfit tabs.
 struct RIGBottomScrim: View {
