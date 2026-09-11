@@ -23,6 +23,8 @@ struct OutfitPhotoSessionView: View {
     /// A smaller decoded copy, and the only thing ever drawn. Rectangles are
     /// fractions, so the small copy and the big one always agree.
     @State private var displayImage: UIImage?
+    @State private var sourcePixelSize: CGSize = .zero
+    @State private var rawCropData: Data?
     @State private var session = OutfitPhotoSession()
     @State private var draftRegion: NormalizedCropRect = .centeredDefault
     @State private var fields = GarmentMetadataFields()
@@ -61,6 +63,10 @@ struct OutfitPhotoSessionView: View {
                 candidateFailureScreen(message)
             } else if isProcessing {
                 processingScreen
+            } else if let rawCropData, let preview = UIImage(data: rawCropData) {
+                RawGarmentCropPreview(image: preview, onAdjust: { self.rawCropData = nil }) {
+                    Task { await processDraft() }
+                }
             } else {
                 croppingScreen(image)
             }
@@ -118,7 +124,7 @@ struct OutfitPhotoSessionView: View {
 
     private func croppingScreen(_ image: UIImage) -> some View {
         VStack(spacing: RIGTheme.Spacing.s) {
-            GarmentCropView(image: image, region: $draftRegion)
+            GarmentCropView(image: image, sourcePixelSize: sourcePixelSize, region: $draftRegion)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.horizontal, RIGTheme.Spacing.s)
 
@@ -127,9 +133,7 @@ struct OutfitPhotoSessionView: View {
                 .foregroundStyle(.secondary)
 
             VStack(spacing: RIGTheme.Spacing.s) {
-                Button("Use this area") {
-                    Task { await processDraft() }
-                }
+                Button("Preview crop", action: previewDraft)
                 .buttonStyle(RIGPrimaryButtonStyle())
                 .disabled(!draftRegion.isUsable)
 
@@ -242,37 +246,44 @@ struct OutfitPhotoSessionView: View {
                 loadFailure = "RIG could not read that image."
                 return
             }
-            sourceData = bounded
-            displayImage = GarmentImageProcessing
-                .jpegData(from: bounded, maxDimension: Self.displayMaxDimension)
-                .flatMap(UIImage.init(data:))
-            if displayImage == nil {
-                loadFailure = "RIG could not display that image."
+            guard let prepared = UIImage(data: bounded), let raster = prepared.cgImage else {
+                loadFailure = "RIG could not read that image."
+                return
             }
+            sourceData = bounded
+            sourcePixelSize = CGSize(width: raster.width, height: raster.height)
+            displayImage = GarmentImageProcessing.resized(prepared, maxDimension: Self.displayMaxDimension)
         } catch {
             loadFailure = "Try picking it again, or choose another photo."
         }
     }
 
     private func beginCandidate() {
+        rawCropData = nil
         draftRegion = .centeredDefault
         fields = GarmentMetadataFields()
         session.beginCandidate(region: draftRegion)
     }
 
-    /// Cuts the drawn region out of the retained source and hands it to the
-    /// ordinary import pipeline. This is the only point at which a crop is
-    /// decoded, so panning the rectangle around costs nothing.
-    @MainActor
-    private func processDraft() async {
-        guard let sourceData, let candidate = session.active else { return }
+    /// Export once. Review these exact bytes before any background removal or
+    /// file writes; the confirmation action imports the same bytes.
+    private func previewDraft() {
+        guard let sourceData, session.active != nil else { return }
         session.updateRegion(draftRegion)
-        isProcessing = true
-        defer { isProcessing = false }
-
         guard let cropped = GarmentImageCropping.croppedData(from: sourceData, region: draftRegion) else {
             session.markFailed("That area could not be cropped. Try a slightly bigger box.")
             return
+        }
+        rawCropData = cropped
+    }
+
+    @MainActor
+    private func processDraft() async {
+        guard !isProcessing, let cropped = rawCropData, let candidate = session.active else { return }
+        isProcessing = true
+        defer {
+            isProcessing = false
+            rawCropData = nil
         }
         do {
             let result = try await services.importService.importImage(cropped, garmentID: candidate.id)
@@ -322,6 +333,7 @@ struct OutfitPhotoSessionView: View {
     /// Back to the rectangle. The previous attempt's files go now; the
     /// identifier is reused, so a second attempt overwrites rather than orphans.
     private func recrop() {
+        rawCropData = nil
         if let candidate = session.active {
             try? services.imageStore.removeAll(for: candidate.id)
             draftRegion = candidate.region
@@ -330,6 +342,7 @@ struct OutfitPhotoSessionView: View {
     }
 
     private func discard() {
+        rawCropData = nil
         if let candidate = session.active {
             try? services.imageStore.removeAll(for: candidate.id)
         }
@@ -339,6 +352,7 @@ struct OutfitPhotoSessionView: View {
 
     /// Saved garments stay. Everything else leaves no files behind.
     private func finish() {
+        rawCropData = nil
         for id in session.garmentIDsPendingCleanup {
             try? services.imageStore.removeAll(for: id)
         }

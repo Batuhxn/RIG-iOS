@@ -1,152 +1,116 @@
 import SwiftUI
 import UIKit
 
-/// Drag a rectangle over the photograph. That is the whole of v0.3 cropping.
-///
-/// Deliberately plain. A rectangle a finger can move and resize is predictable
-/// on a portrait mirror photo, needs no third-party dependency, and leaves the
-/// source image untouched — the rectangle is only ever fractions, and the cut
-/// is taken later from the full-resolution bytes.
 struct GarmentCropView: View {
     let image: UIImage
+    let sourcePixelSize: CGSize
     @Binding var region: NormalizedCropRect
-
-    /// The rectangle as it was when the current drag began. Drag translations
-    /// are cumulative from the start of the gesture, so applying them to live
-    /// state instead would compound and run away.
-    @State private var dragOrigin: NormalizedCropRect?
-
-    private let handleSize: CGFloat = 28
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         GeometryReader { proxy in
-            let fitted = Self.fittedSize(for: image.size, in: proxy.size)
-            ZStack {
-                Image(uiImage: image)
-                    .resizable()
-                    .frame(width: fitted.width, height: fitted.height)
-                    .accessibilityHidden(true)
-                overlay(in: fitted)
-                    .frame(width: fitted.width, height: fitted.height)
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height)
+            CropCanvas(image: image, pixels: sourcePixelSize, size: proxy.size, region: $region)
+                // Replacing the canvas cancels in-flight gestures on layout and
+                // app interruption. GestureState resets on system cancellation.
+                .id(proxy.size.width)
+                .id(proxy.size.height)
+                .id(scenePhase)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Crop area")
     }
 
-    /// Aspect-fit, so the whole photograph is visible and no part of a garment
-    /// can be hiding outside the frame.
     static func fittedSize(for imageSize: CGSize, in container: CGSize) -> CGSize {
-        guard imageSize.width > 0, imageSize.height > 0,
-              container.width > 0, container.height > 0 else { return container }
-        let scale = min(container.width / imageSize.width, container.height / imageSize.height)
-        return CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-    }
-
-    // MARK: - Overlay
-
-    private func overlay(in fitted: CGSize) -> some View {
-        let rect = CGRect(
-            x: region.x * fitted.width,
-            y: region.y * fitted.height,
-            width: region.width * fitted.width,
-            height: region.height * fitted.height
-        )
-        return ZStack(alignment: .topLeading) {
-            dimming(around: rect, in: fitted)
-
-            Rectangle()
-                .strokeBorder(Color.white, lineWidth: 2)
-                .background(Color.white.opacity(0.001))
-                .frame(width: rect.width, height: rect.height)
-                .offset(x: rect.minX, y: rect.minY)
-                .contentShape(Rectangle())
-                .gesture(moveGesture(in: fitted))
-
-            ForEach(CropCorner.allCases, id: \.self) { corner in
-                handle(corner, rect: rect, fitted: fitted)
-            }
-        }
-    }
-
-    /// Four bands rather than a mask: no blend modes, nothing to render wrong
-    /// on a device, and each band is trivially correct.
-    private func dimming(around rect: CGRect, in fitted: CGSize) -> some View {
-        let shade = Color.black.opacity(0.45)
-        return ZStack(alignment: .topLeading) {
-            shade
-                .frame(width: fitted.width, height: max(rect.minY, 0))
-            shade
-                .frame(width: fitted.width, height: max(fitted.height - rect.maxY, 0))
-                .offset(y: rect.maxY)
-            shade
-                .frame(width: max(rect.minX, 0), height: rect.height)
-                .offset(y: rect.minY)
-            shade
-                .frame(width: max(fitted.width - rect.maxX, 0), height: rect.height)
-                .offset(x: rect.maxX, y: rect.minY)
-        }
-        .allowsHitTesting(false)
-    }
-
-    private func handle(_ corner: CropCorner, rect: CGRect, fitted: CGSize) -> some View {
-        let point = Self.cornerPoint(corner, in: rect)
-        return Circle()
-            .fill(Color.white)
-            .overlay(Circle().strokeBorder(Color.black.opacity(0.25), lineWidth: 1))
-            .frame(width: handleSize, height: handleSize)
-            .offset(x: point.x - handleSize / 2, y: point.y - handleSize / 2)
-            .gesture(resizeGesture(corner, in: fitted))
-            .accessibilityLabel(corner.accessibilityLabel)
+        guard imageSize.width > 0, imageSize.height > 0 else { return container }
+        return CropGeometry.imageRect(for: imageSize, in: container).size
     }
 
     static func cornerPoint(_ corner: CropCorner, in rect: CGRect) -> CGPoint {
-        switch corner {
-        case .topLeading: return CGPoint(x: rect.minX, y: rect.minY)
-        case .topTrailing: return CGPoint(x: rect.maxX, y: rect.minY)
-        case .bottomLeading: return CGPoint(x: rect.minX, y: rect.maxY)
-        case .bottomTrailing: return CGPoint(x: rect.maxX, y: rect.maxY)
-        }
-    }
-
-    // MARK: - Gestures
-
-    private func moveGesture(in fitted: CGSize) -> some Gesture {
-        DragGesture()
-            .onChanged { value in
-                let start = dragOrigin ?? region
-                if dragOrigin == nil { dragOrigin = start }
-                region = start.translated(
-                    dx: Double(value.translation.width / max(fitted.width, 1)),
-                    dy: Double(value.translation.height / max(fitted.height, 1))
-                )
-            }
-            .onEnded { _ in dragOrigin = nil }
-    }
-
-    private func resizeGesture(_ corner: CropCorner, in fitted: CGSize) -> some Gesture {
-        DragGesture()
-            .onChanged { value in
-                let start = dragOrigin ?? region
-                if dragOrigin == nil { dragOrigin = start }
-                region = start.resized(
-                    corner,
-                    dx: Double(value.translation.width / max(fitted.width, 1)),
-                    dy: Double(value.translation.height / max(fitted.height, 1))
-                )
-            }
-            .onEnded { _ in dragOrigin = nil }
+        CropGeometry.cornerPoint(corner, in: rect)
     }
 }
 
-extension CropCorner {
-    var accessibilityLabel: String {
-        switch self {
-        case .topLeading: return "Top left corner"
-        case .topTrailing: return "Top right corner"
-        case .bottomLeading: return "Bottom left corner"
-        case .bottomTrailing: return "Bottom right corner"
-        }
+private struct CropCanvas: View {
+    let image: UIImage
+    let pixels: CGSize
+    let size: CGSize
+    @Binding var region: NormalizedCropRect
+    @GestureState private var interaction: CropInteraction?
+    @Namespace private var canvasSpace
+
+    private var imageRect: CGRect { CropGeometry.imageRect(for: pixels, in: size) }
+    private var visibleRegion: NormalizedCropRect { interaction?.region(in: imageRect) ?? region }
+
+    var body: some View {
+        let selection = CropGeometry.selectionRect(for: visibleRegion, pixels: pixels, in: imageRect)
+        let handles = CropGeometry.handleRect(for: selection, in: size)
+        // A fixed base owns layout. Overlays never contribute their own size.
+        Color.clear
+            .frame(width: size.width, height: size.height)
+            .overlay(alignment: .topLeading) {
+                Image(uiImage: image)
+                    .resizable()
+                    .frame(width: imageRect.width, height: imageRect.height)
+                    .position(x: imageRect.midX, y: imageRect.midY)
+                    .accessibilityHidden(true)
+            }
+            .overlay {
+                Canvas { context, _ in
+                    var shade = Path(imageRect)
+                    shade.addRect(selection)
+                    context.fill(shade, with: .color(.black.opacity(0.45)), style: FillStyle(eoFill: true))
+                    context.stroke(Path(selection), with: .color(.white), lineWidth: 2)
+                    for corner in CropCorner.allCases {
+                        let actual = CropGeometry.cornerPoint(corner, in: selection)
+                        let handle = CropGeometry.cornerPoint(corner, in: handles)
+                        var connector = Path()
+                        connector.move(to: actual)
+                        connector.addLine(to: handle)
+                        context.stroke(connector, with: .color(.white), lineWidth: 1)
+                        let circle = CGRect(x: handle.x - 7, y: handle.y - 7, width: 14, height: 14)
+                        context.fill(Path(ellipseIn: circle), with: .color(.white))
+                    }
+                }
+                .allowsHitTesting(false)
+            }
+            .overlay(alignment: .topLeading) {
+                if selection.width < CropGeometry.touchSize * 2 || selection.height < CropGeometry.touchSize * 2 {
+                    Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black, radius: 1)
+                        .position(x: handles.midX, y: handles.midY)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .contentShape(Rectangle())
+            .coordinateSpace(name: canvasSpace)
+            .gesture(dragGesture)
+            .accessibilityHint("Drag inside the selection to move it. Drag a corner handle to resize it.")
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .named(canvasSpace))
+            .updating($interaction) { value, state, _ in
+                if state == nil {
+                    state = beginInteraction(at: value.startLocation)
+                }
+                state?.translation = value.translation
+            }
+            .onEnded { value in
+                // The binding stays unchanged during the gesture, so the final
+                // event also works if SwiftUI has already reset GestureState.
+                var completed = interaction ?? beginInteraction(at: value.startLocation)
+                completed.translation = value.translation
+                region = completed.region(in: imageRect)
+            }
+    }
+
+    private func beginInteraction(at point: CGPoint) -> CropInteraction {
+        let selection = CropGeometry.selectionRect(for: region, pixels: pixels, in: imageRect)
+        let handles = CropGeometry.handleRect(for: selection, in: size)
+        return CropInteraction(start: region, operation: CropGeometry.operation(
+            at: point, selection: selection, handles: handles))
     }
 }

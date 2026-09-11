@@ -9,9 +9,6 @@ import UIKit
 /// source the crop is actually taken from, and in a future where the rectangle
 /// arrives from something other than a finger.
 struct NormalizedCropRect: Equatable, Sendable {
-    /// Below this, a rectangle is a mis-tap rather than a garment.
-    static let minimumSide: Double = 0.05
-
     var x: Double
     var y: Double
     var width: Double
@@ -24,13 +21,14 @@ struct NormalizedCropRect: Equatable, Sendable {
     static let centeredDefault = NormalizedCropRect(x: 0.2, y: 0.2, width: 0.6, height: 0.6)
 
     var isUsable: Bool {
-        width >= Self.minimumSide && height >= Self.minimumSide
+        x.isFinite && y.isFinite && width.isFinite && height.isFinite && width > 0 && height > 0
     }
 
-    /// Pulls the rectangle inside the image and enforces the minimum side.
+    /// Keeps movement inside the image without imposing a touch-size policy.
     func clamped() -> NormalizedCropRect {
-        let boundedWidth = min(max(width, Self.minimumSide), 1)
-        let boundedHeight = min(max(height, Self.minimumSide), 1)
+        guard isUsable else { return NormalizedCropRect(x: 0, y: 0, width: 0, height: 0) }
+        let boundedWidth = min(width, 1)
+        let boundedHeight = min(height, 1)
         return NormalizedCropRect(
             x: min(max(x, 0), 1 - boundedWidth),
             y: min(max(y, 0), 1 - boundedHeight),
@@ -47,7 +45,12 @@ struct NormalizedCropRect: Equatable, Sendable {
     ///
     /// The dragged edge stops at the minimum size rather than crossing over the
     /// one opposite it, so a fast drag cannot invert the rectangle.
-    func resized(_ corner: CropCorner, dx: Double, dy: Double) -> NormalizedCropRect {
+    func resized(_ corner: CropCorner, dx: Double, dy: Double,
+                 minimumSize: CGSize = CGSize(width: 0.000001, height: 0.000001)) -> NormalizedCropRect {
+        guard isUsable, dx.isFinite, dy.isFinite else { return self }
+        // A pre-existing small region must not jump larger when grabbed.
+        let minWidth = min(width, max(Double(minimumSize.width), 0.000001))
+        let minHeight = min(height, max(Double(minimumSize.height), 0.000001))
         var leading = x
         var top = y
         var trailing = x + width
@@ -75,17 +78,17 @@ struct NormalizedCropRect: Equatable, Sendable {
 
         switch corner {
         case .topLeading:
-            leading = min(leading, trailing - Self.minimumSide)
-            top = min(top, bottom - Self.minimumSide)
+            leading = min(leading, trailing - minWidth)
+            top = min(top, bottom - minHeight)
         case .topTrailing:
-            trailing = max(trailing, leading + Self.minimumSide)
-            top = min(top, bottom - Self.minimumSide)
+            trailing = max(trailing, leading + minWidth)
+            top = min(top, bottom - minHeight)
         case .bottomLeading:
-            leading = min(leading, trailing - Self.minimumSide)
-            bottom = max(bottom, top + Self.minimumSide)
+            leading = min(leading, trailing - minWidth)
+            bottom = max(bottom, top + minHeight)
         case .bottomTrailing:
-            trailing = max(trailing, leading + Self.minimumSide)
-            bottom = max(bottom, top + Self.minimumSide)
+            trailing = max(trailing, leading + minWidth)
+            bottom = max(bottom, top + minHeight)
         }
 
         return NormalizedCropRect(
@@ -97,13 +100,22 @@ struct NormalizedCropRect: Equatable, Sendable {
     }
 
     func pixelRect(in size: CGSize) -> CGRect {
-        let rect = clamped()
-        return CGRect(
-            x: (rect.x * Double(size.width)).rounded(.down),
-            y: (rect.y * Double(size.height)).rounded(.down),
-            width: max((rect.width * Double(size.width)).rounded(), 1),
-            height: max((rect.height * Double(size.height)).rounded(), 1)
-        )
+        guard isUsable, size.width.isFinite, size.height.isFinite,
+              size.width >= 1, size.height >= 1 else { return .null }
+        let w = Double(size.width.rounded(.down))
+        let h = Double(size.height.rounded(.down))
+        let left = Self.pixelEdge(min(max(x, 0), 1) * w).rounded(.down)
+        let top = Self.pixelEdge(min(max(y, 0), 1) * h).rounded(.down)
+        let right = Self.pixelEdge(min(max(x + width, 0), 1) * w).rounded(.up)
+        let bottom = Self.pixelEdge(min(max(y + height, 0), 1) * h).rounded(.up)
+        guard right > left, bottom > top else { return .null }
+        return CGRect(x: left, y: top, width: right - left, height: bottom - top)
+    }
+
+    /// Remove only floating-point round-trip noise at an integer pixel edge.
+    private static func pixelEdge(_ value: Double) -> Double {
+        let nearest = value.rounded()
+        return abs(value - nearest) <= max(value.ulp, nearest.ulp) * 8 ? nearest : value
     }
 }
 
