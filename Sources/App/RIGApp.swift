@@ -19,8 +19,10 @@ struct RIGApp: App {
                 RootView()
                     .environment(\.rigServices, services)
                     .modelContainer(container)
+                    .nocturneAppearance()
             case let .failed(message):
                 StartupFailureView(message: message)
+                    .nocturneAppearance()
             }
         }
     }
@@ -41,6 +43,18 @@ enum StartupResult {
     }
 }
 
+extension View {
+    /// Nocturne is a dark-only system with no light variant, so the app pins
+    /// its appearance rather than following the device. Doing it once here is
+    /// what lets every view below take its colours from `RIGTheme` literals
+    /// without each one guarding against a light rendering it never gets.
+    func nocturneAppearance() -> some View {
+        preferredColorScheme(.dark)
+            .tint(RIGTheme.accent)
+            .background(RIGTheme.pageBackground.ignoresSafeArea())
+    }
+}
+
 /// Shown when local storage could not be opened. There is nothing to retry
 /// automatically and nothing to sync from, so the honest thing is to say so.
 struct StartupFailureView: View {
@@ -49,8 +63,8 @@ struct StartupFailureView: View {
     var body: some View {
         RIGEmptyState(
             symbol: "externaldrive.badge.exclamationmark",
-            title: "RIG could not open your wardrobe",
-            message: "Local storage is unavailable on this device, so nothing can be loaded or saved right now.\n\n\(message)"
+            title: "Dolabın açılamadı",
+            message: "Bu cihazda yerel depolama kullanılamıyor, bu yüzden şu anda hiçbir şey yüklenemez veya kaydedilemez.\n\n\(message)"
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(RIGTheme.pageBackground)
