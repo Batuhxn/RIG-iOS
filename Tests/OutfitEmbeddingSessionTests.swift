@@ -2,15 +2,21 @@ import XCTest
 @testable import RIG
 
 /// `NormalizedCropRect` is only `Equatable` in production code — nothing
-/// there ever needs to key a collection by one. `GatedSegmenter` below does,
-/// purely so this test file can gate two overlapping prompts independently
-/// by the region each was issued for.
-extension NormalizedCropRect: Hashable {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(x)
-        hasher.combine(y)
-        hasher.combine(width)
-        hasher.combine(height)
+/// there ever needs to key a collection by one, and it isn't this test
+/// target's place to add that retroactively. `GatedSegmenter` below needs to
+/// gate two overlapping prompts independently by the region each was issued
+/// for, so it keys its bookkeeping by this small test-local wrapper instead.
+private struct RegionKey: Hashable {
+    let x: Double
+    let y: Double
+    let width: Double
+    let height: Double
+
+    init(_ region: NormalizedCropRect) {
+        x = region.x
+        y = region.y
+        width = region.width
+        height = region.height
     }
 }
 
@@ -47,8 +53,8 @@ final class OutfitEmbeddingSessionTests: XCTestCase {
     /// the test controls the exact order in which two overlapping prompts'
     /// decodes complete.
     private actor GatedSegmenter: GarmentSegmenting {
-        private var continuations: [NormalizedCropRect: CheckedContinuation<Void, Never>] = [:]
-        private var released: Set<NormalizedCropRect> = []
+        private var continuations: [RegionKey: CheckedContinuation<Void, Never>] = [:]
+        private var released: Set<RegionKey> = []
         var isAvailable: Bool { get async { true } }
 
         func encodeSource(_ imageData: Data) async throws -> SegmentationSourceToken {
@@ -64,17 +70,19 @@ final class OutfitEmbeddingSessionTests: XCTestCase {
         }
 
         private func waitUntilReleased(_ region: NormalizedCropRect) async {
-            if released.contains(region) { return }
+            let key = RegionKey(region)
+            if released.contains(key) { return }
             await withCheckedContinuation { continuation in
-                continuations[region] = continuation
+                continuations[key] = continuation
             }
         }
 
         /// Lets a gated `segment` call for `region` proceed. Safe to call
         /// before or after that call has actually started waiting.
         func release(_ region: NormalizedCropRect) {
-            released.insert(region)
-            if let continuation = continuations.removeValue(forKey: region) {
+            let key = RegionKey(region)
+            released.insert(key)
+            if let continuation = continuations.removeValue(forKey: key) {
                 continuation.resume()
             }
         }
