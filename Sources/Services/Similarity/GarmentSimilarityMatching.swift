@@ -28,8 +28,8 @@ enum SimilarityBand: String, CaseIterable, Sendable, Equatable {
 /// where 0 is identical and larger values are less alike; it is not bounded
 /// to `[0, 1]` and its useful range depends on the feature-print revision.
 /// The literal numbers below are a conservative starting point, not a
-/// calibrated result — see the v0.4 Slice 2 report's "known limitations" for
-/// why these specifically still need real wardrobe photographs to tune.
+/// calibrated result, but they have been exercised against a real wardrobe on
+/// device and behave well; retuning them is a deliberate, separate decision.
 /// Change only these three numbers to retune the bands; nothing else in this
 /// file depends on their values.
 struct SimilarityThresholds: Sendable, Equatable {
@@ -77,8 +77,8 @@ struct WardrobeSimilarityMatch: Identifiable, Sendable, Equatable {
 /// Turns already-computed distances into ranked, banded matches.
 ///
 /// Split out from `GarmentSimilarityMatching` so the ordering and threshold
-/// behaviour — the part v0.4 Slice 2's tests actually need to pin down — is
-/// plain Foundation logic with no dependency on Vision ever running.
+/// behaviour — the part the tests actually pin down — is plain Foundation
+/// logic with no dependency on Vision ever running.
 enum WardrobeSimilarityRanking {
     /// Bands and sorts, most similar first. A distance that does not clear
     /// even the weakest threshold is dropped rather than included as "no
@@ -104,8 +104,8 @@ enum WardrobeSimilarityQuery {
     ///
     /// Category filtering happens here, at the call site, rather than inside
     /// the matching protocol — deliberately, so it can only ever run once a
-    /// category is actually confirmed. v0.4 Slice 2 asks for that
-    /// confirmation during metadata review, before this is ever called.
+    /// category is actually confirmed. Metadata review confirms it before
+    /// this is ever called.
     static func candidates(
         from items: [WardrobeSimilarityCandidateItem],
         category: GarmentCategory,
@@ -123,7 +123,7 @@ enum WardrobeSimilarityQuery {
 /// possible honest answers, not a special case — "no comparison suggestion
 /// available" is success, not failure. `GarmentSimilarityMatching` deals in
 /// `Data` and Foundation-only value types for the same reason
-/// `GarmentBackgroundRemoving` and `GarmentSegmenting` do.
+/// `GarmentBackgroundRemoving` does.
 protocol GarmentSimilarityMatching: Sendable {
     /// Ranks `items` by visual similarity to `candidateImageData`, most
     /// similar first, keeping only matches at or above `thresholds`' weakest

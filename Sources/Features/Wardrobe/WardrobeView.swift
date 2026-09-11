@@ -77,9 +77,9 @@ struct WardrobeView: View {
             .navigationTitle("Wardrobe")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    // One entry point. Single, several and whole-outfit photos
-                    // are all the same intention to the user; which pipeline
-                    // runs is decided after they have answered one question.
+                    // One entry point. One photo or twenty is the same
+                    // intention to the user; the count decides which review
+                    // they land in, and they are never asked.
                     Button {
                         isPresentingImport = true
                     } label: {

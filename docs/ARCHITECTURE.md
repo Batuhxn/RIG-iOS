@@ -13,6 +13,7 @@
       │  OutfitEngine/    │      │  Services/         │
       │  pure rules,      │      │  ImageStorage      │
       │  Foundation only  │      │  BackgroundRemoval │
+      │                   │      │  Similarity        │
       │                   │      │  Camera            │
       └─────────┬─────────┘      └─────────┬──────────┘
                 │                          │

@@ -8,7 +8,7 @@ import SwiftUI
 /// save.** If Vision cannot isolate the garment the user is told plainly and
 /// carries on with the original photograph.
 struct AddGarmentFlow: View {
-    private enum Step: Equatable {
+    enum Step: Equatable {
         case chooseSource
         case processing
         case review
@@ -22,17 +22,27 @@ struct AddGarmentFlow: View {
     /// source step rather than to a dead end.
     var startsWithCamera: Bool = false
 
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.rigServices) private var services
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) var modelContext
+    @Environment(\.rigServices) var services
+    @Environment(\.dismiss) var dismiss
 
-    @State private var step: Step = .chooseSource
+    /// Everything already in the wardrobe, for the duplicate comparison. The
+    /// query lives here rather than inside the matcher for the same reason
+    /// `WardrobeSimilarityCandidateItem` is not a `ClothingItem`: the
+    /// similarity layer must stay free of SwiftData.
+    @Query(sort: [SortDescriptor(\ClothingItem.createdAt, order: .reverse)]) var wardrobeItems: [ClothingItem]
+
+    @State var step: Step = .chooseSource
     @State private var photoSelection: PhotosPickerItem?
     @State private var isPresentingCamera = false
-    @State private var importResult: GarmentImportResult?
-    @State private var fields = GarmentMetadataFields()
-    @State private var errorMessage: String?
+    @State var importResult: GarmentImportResult?
+    @State var fields = GarmentMetadataFields()
+    @State var errorMessage: String?
     @State private var didBootstrap = false
+
+    @State var duplicateReview: DuplicateReviewState?
+    @State var duplicateCandidateImageData: Data?
+    @State var isCheckingForDuplicates = false
 
     var body: some View {
         NavigationStack {
@@ -55,8 +65,8 @@ struct AddGarmentFlow: View {
                 }
                 if step == .review {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Save", action: save)
-                            .disabled(!fields.isValid)
+                        Button("Save", action: beginSave)
+                            .disabled(!fields.isValid || isCheckingForDuplicates)
                     }
                 }
             }
@@ -91,6 +101,10 @@ struct AddGarmentFlow: View {
                 }
             }
         }
+        // Attached outside the navigation stack, and deliberately not stacked
+        // on the same view as the camera sheet: two sheet modifiers on one
+        // view is a well-known way to lose one of them.
+        .sheet(isPresented: duplicateSheetBinding) { duplicateSheet }
     }
 
     // MARK: - Steps
@@ -230,47 +244,16 @@ struct AddGarmentFlow: View {
         step = .chooseSource
     }
 
-    private func save() {
-        guard let importResult else {
-            errorMessage = "There is no processed photo to save."
-            return
-        }
-
-        let item = ClothingItem(
-            id: importResult.garmentID,
-            displayName: fields.trimmedName,
-            subtype: fields.subtype.trimmingCharacters(in: .whitespacesAndNewlines),
-            category: fields.category,
-            primaryColor: fields.colorFamily,
-            seasons: fields.seasons,
-            isFavorite: fields.isFavorite,
-            notes: fields.notes,
-            originalImageRelativePath: importResult.originalRelativePath,
-            cutoutImageRelativePath: importResult.cutoutRelativePath,
-            thumbnailRelativePath: importResult.thumbnailRelativePath,
-            isBackgroundRemoved: importResult.isBackgroundRemoved
-        )
-        modelContext.insert(item)
-
-        do {
-            try modelContext.save()
-        } catch {
-            // The row did not persist, so the files it would have owned are
-            // removed too rather than left behind as orphans.
-            modelContext.delete(item)
-            try? services.imageStore.removeAll(for: importResult.garmentID)
-            errorMessage = "That garment could not be saved to this device."
-            return
-        }
+    private func cancel() {
+        discardCandidateFiles()
         dismiss()
     }
 
-    private func cancel() {
-        // Abandoning the flow must not leave written files behind.
+    /// Abandoning the flow must not leave written files behind.
+    func discardCandidateFiles() {
         if let importResult {
             try? services.imageStore.removeAll(for: importResult.garmentID)
         }
-        dismiss()
     }
 }
 

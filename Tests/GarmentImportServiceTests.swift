@@ -120,7 +120,7 @@ final class GarmentImportServiceTests: XCTestCase {
         XCTAssertEqual(max(image.size.width, image.size.height) * image.scale, 120, accuracy: 1)
     }
 
-    // MARK: - v0.4 Slice 2: an approved AI mask's alpha must survive
+    // MARK: - A cutout's alpha must survive into storage
 
     /// A PNG with a genuinely transparent region — the alpha the JPEG "original"
     /// path would destroy, and the bug an approved mask must never be routed
@@ -146,54 +146,44 @@ final class GarmentImportServiceTests: XCTestCase {
         }
     }
 
-    func testPrecomputedCutoutSkipsBackgroundRemovalAndPreservesAlpha() async throws {
-        let remover = CallCountingRemover()
-        let service = GarmentImportService(store: store, backgroundRemover: remover)
-        let cutout = try transparentImageData()
-
-        let result = try await service.importImage(
-            try sampleImageData(),
-            garmentID: Fixture.id(6),
-            precomputedCutout: cutout
-        )
-
-        XCTAssertTrue(result.isBackgroundRemoved)
-        XCTAssertNil(result.backgroundRemovalMessage)
-        let cutoutPath = try XCTUnwrap(result.cutoutRelativePath)
-        XCTAssertTrue(store.exists(atRelativePath: cutoutPath))
-
-        let callCount = await remover.callCount
-        XCTAssertEqual(callCount, 0, "background removal must not run a second time on an already-approved mask")
-
-        let written = try XCTUnwrap(store.data(atRelativePath: cutoutPath))
-        let image = try XCTUnwrap(UIImage(data: written))
-        let alphaInfo = image.cgImage?.alphaInfo
-        XCTAssertNotNil(alphaInfo)
-        XCTAssertNotEqual(alphaInfo, .none, "the approved mask's alpha must survive, not be flattened through JPEG")
+    private actor FixedCutoutRemover: GarmentBackgroundRemoving {
+        let cutout: Data
+        private(set) var callCount = 0
+        init(cutout: Data) { self.cutout = cutout }
+        func removeBackground(from imageData: Data) async throws -> BackgroundRemovalResult {
+            callCount += 1
+            return BackgroundRemovalResult(imageData: cutout, isolated: true)
+        }
     }
 
-    func testWithoutAPrecomputedCutoutBackgroundRemovalRunsNormally() async throws {
+    func testBackgroundRemovalRunsExactlyOncePerImport() async throws {
         let remover = CallCountingRemover()
         let service = GarmentImportService(store: store, backgroundRemover: remover)
 
         _ = try await service.importImage(try sampleImageData(), garmentID: Fixture.id(7))
 
         let callCount = await remover.callCount
-        XCTAssertEqual(callCount, 1, "the default nil precomputedCutout must reproduce the exact v0.1 behaviour")
+        XCTAssertEqual(callCount, 1, "one import asks the background remover once and no more")
     }
 
-    func testAnUnreadablePrecomputedCutoutFailsSoftlyRatherThanBlockingImport() async throws {
-        let service = GarmentImportService(store: store, backgroundRemover: PassthroughBackgroundRemover())
+    /// The canonical import writes its cutout as PNG precisely so a Vision
+    /// cutout's transparency survives into the stored file. Flattening it
+    /// through JPEG would put a white box behind every garment.
+    func testAnIsolatedCutoutKeepsItsAlphaInStorage() async throws {
+        let remover = FixedCutoutRemover(cutout: try transparentImageData())
+        let service = GarmentImportService(store: store, backgroundRemover: remover)
 
-        let result = try await service.importImage(
-            try sampleImageData(),
-            garmentID: Fixture.id(8),
-            precomputedCutout: Data("not an image".utf8)
-        )
+        let result = try await service.importImage(try sampleImageData(), garmentID: Fixture.id(6))
 
-        XCTAssertFalse(result.isBackgroundRemoved)
-        XCTAssertNil(result.cutoutRelativePath)
-        XCTAssertNotNil(result.backgroundRemovalMessage)
-        XCTAssertTrue(store.exists(atRelativePath: result.originalRelativePath), "the garment itself must still import")
+        XCTAssertTrue(result.isBackgroundRemoved)
+        XCTAssertNil(result.backgroundRemovalMessage)
+        let cutoutPath = try XCTUnwrap(result.cutoutRelativePath)
+        XCTAssertTrue(store.exists(atRelativePath: cutoutPath))
+
+        let written = try XCTUnwrap(store.data(atRelativePath: cutoutPath))
+        let image = try XCTUnwrap(UIImage(data: written))
+        let alphaInfo = image.cgImage?.alphaInfo
+        XCTAssertNotNil(alphaInfo)
+        XCTAssertNotEqual(alphaInfo, .none, "the cutout's alpha must survive, not be flattened through JPEG")
     }
 }

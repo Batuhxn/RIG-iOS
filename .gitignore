@@ -44,12 +44,9 @@ Thumbs.db
 __pycache__/
 *.pyc
 
-# Anything that must never enter the app bundle — except the bundled
-# EdgeSAM artifacts under the dedicated model-assets path, which the app
-# genuinely needs at runtime. See docs/DECISIONS.md, "EdgeSAM and the Core
-# ML exception (v0.4)", and docs/EDGESAM_PROVENANCE.md. This mirrors the
-# same narrow, path-scoped exception already carved into
-# scripts/static_audit.py — everywhere else, these patterns are unchanged.
+# Anything that must never enter the app bundle. RIG ships no model
+# artefacts of any kind — see docs/DECISIONS.md, "Rules before ML, and the ML
+# seam stays inert". The same patterns are enforced by scripts/static_audit.py.
 *.mlmodel
 *.mlmodelc
 *.mlpackage/
@@ -58,4 +55,3 @@ __pycache__/
 *.ckpt
 *.onnx
 *.safetensors
-!Sources/Resources/Models/**

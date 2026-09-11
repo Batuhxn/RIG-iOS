@@ -23,7 +23,7 @@ TESTS = ROOT / "Tests"
 APPLE_MODULES = {
     "Foundation", "SwiftUI", "SwiftData", "UIKit", "Vision", "PhotosUI",
     "CoreImage", "CoreGraphics", "Observation", "XCTest", "Combine",
-    "AVFoundation", "ImageIO", "os", "CoreML",
+    "AVFoundation", "ImageIO", "os",
 }
 
 # Anything here would contradict the v0.1 privacy and dependency posture.
@@ -33,6 +33,7 @@ FORBIDDEN_PATTERNS = {
     "third-party analytics or backend": r"\b(Firebase|Amplitude|Mixpanel|Sentry|Segment|Supabase|Crashlytics|AppsFlyer)\b",
     "tracking": r"\b(ATTrackingManager|ASIdentifierManager|AdSupport)\b",
     "location": r"\b(CLLocationManager|CoreLocation)\b",
+    "machine-learning runtime": r"\b(CoreML|MLModel|MLMultiArray)\b",
 }
 
 FORCE_PATTERNS = {
@@ -42,19 +43,6 @@ FORCE_PATTERNS = {
 }
 
 BINARY_SUFFIXES = {".mlmodel", ".mlpackage", ".pth", ".pt", ".ckpt", ".onnx", ".zip", ".bin", ".safetensors"}
-
-# v0.4 exception, narrow and path-scoped: EdgeSAM is an on-device Core ML
-# segmentation model, bundled locally, never uploaded, never called over a
-# network. Everywhere else in the app, CoreML/MLModel/MLMultiArray and a
-# bundled model artifact remain exactly as forbidden as they always were —
-# see DECISIONS.md, "EdgeSAM and the Core ML exception (v0.4)".
-ML_RUNTIME_PATTERN = r"\b(CoreML|MLModel|MLMultiArray)\b"
-ML_SEAM_SOURCE_ROOT = SOURCES / "Services" / "Segmentation"
-ML_ASSET_ROOT = SOURCES / "Resources" / "Models"
-
-
-def _is_under(path: Path, root: Path) -> bool:
-    return path == root or root in path.parents
 
 failures: list[str] = []
 notes: list[str] = []
@@ -174,16 +162,6 @@ def main() -> int:
                 line = code[: match.start()].count("\n") + 1
                 failures.append(f"{path.relative_to(ROOT)}:{line}: {label} ({match.group(0)})")
 
-        # Core ML is allowed only inside the segmentation seam, and only in
-        # production sources — never in tests, which exercise the protocol
-        # with plain Foundation doubles and should never need the framework.
-        if not (is_test is False and _is_under(path, ML_SEAM_SOURCE_ROOT)):
-            for match in re.finditer(ML_RUNTIME_PATTERN, code):
-                line = code[: match.start()].count("\n") + 1
-                failures.append(
-                    f"{path.relative_to(ROOT)}:{line}: machine-learning runtime outside the segmentation seam ({match.group(0)})"
-                )
-
         if not is_test:
             for label, pattern in FORCE_PATTERNS.items():
                 for match in re.finditer(pattern, code):
@@ -215,13 +193,13 @@ def main() -> int:
     if "compatibilityProvider: nil" not in app_services:
         failures.append("The live engine must be wired with no compatibility provider in v0.1")
 
-    # Nothing resembling a model or checkpoint may be inside the app, except
-    # the bundled EdgeSAM Core ML package under the one dedicated assets path
-    # (v0.4 — see DECISIONS.md). Anywhere else, unchanged from v0.1.
+    # Nothing resembling a model or checkpoint may be inside the app. RIG
+    # ships no bundled model of any kind — see DECISIONS.md, "Rules before ML,
+    # and the ML seam stays inert".
     for path in ROOT.rglob("*"):
+        if ".git" in path.parts:
+            continue
         if path.is_file() and path.suffix.lower() in BINARY_SUFFIXES:
-            if _is_under(path, ML_ASSET_ROOT):
-                continue
             failures.append(f"{path.relative_to(ROOT)}: model or archive artefact inside the app")
 
     check_configuration()

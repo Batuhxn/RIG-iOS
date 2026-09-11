@@ -2,10 +2,14 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-/// The wardrobe-duplicate comparison half of `OutfitPhotoSessionView`, split
-/// into its own file purely for the static audit's line cap — see the type's
-/// own doc comment in `OutfitPhotoSessionView.swift`.
-extension OutfitPhotoSessionView {
+/// The wardrobe-duplicate half of `AddGarmentFlow`, in its own file purely
+/// for the static audit's line cap.
+///
+/// Duplicate protection belongs to the canonical single-item import: it is
+/// the only place in RIG where a new `ClothingItem` is created from a fresh
+/// photograph one at a time, and so the only place where "you may already own
+/// this" is a question worth interrupting for.
+extension AddGarmentFlow {
     var duplicateSheetBinding: Binding<Bool> {
         Binding(get: { duplicateReview != nil }, set: { if !$0 { duplicateReview = nil } })
     }
@@ -22,13 +26,11 @@ extension OutfitPhotoSessionView {
                 onUseExisting: useExisting,
                 onAddAsNew: commitSave,
                 onShowAnother: showAnotherDuplicate,
-                onAdjustCandidate: {
-                    self.duplicateReview = nil
-                    recrop()
-                },
                 onSkip: {
                     self.duplicateReview = nil
-                    discard()
+                    self.duplicateCandidateImageData = nil
+                    discardCandidateFiles()
+                    dismiss()
                 }
             )
         }
@@ -52,12 +54,13 @@ extension OutfitPhotoSessionView {
     /// problem here falls straight through to `commitSave()`, exactly as if
     /// nothing had been asked.
     func beginSave() {
-        guard let candidate = session.active,
-              let result = candidate.importResult,
-              fields.isValid else { return }
+        guard let importResult, fields.isValid else {
+            errorMessage = "There is no processed photo to save."
+            return
+        }
 
         guard let imageData = services.imageStore.data(
-            atRelativePath: result.cutoutRelativePath ?? result.originalRelativePath
+            atRelativePath: importResult.cutoutRelativePath ?? importResult.originalRelativePath
         ) else {
             commitSave()
             return
@@ -70,7 +73,7 @@ extension OutfitPhotoSessionView {
         // `ClothingItem` is a SwiftData model and must not cross an actor
         // boundary, only the handful of facts this comparison actually needs.
         let sameCategoryItems: [(garmentID: UUID, imagePath: String)] = wardrobeItems.compactMap { item in
-            guard item.category == category, item.id != candidate.id,
+            guard item.category == category, item.id != importResult.garmentID,
                   let path = item.preferredImageRelativePath else { return nil }
             return (item.id, path)
         }
@@ -86,7 +89,11 @@ extension OutfitPhotoSessionView {
 
             let matches = await matcher.rankSimilarItems(
                 to: imageData,
-                among: WardrobeSimilarityQuery.candidates(from: items, category: category, excluding: candidate.id)
+                among: WardrobeSimilarityQuery.candidates(
+                    from: items,
+                    category: category,
+                    excluding: importResult.garmentID
+                )
             )
             let review = DuplicateReviewState(matches: matches)
             if review.isExhausted {
@@ -99,12 +106,13 @@ extension OutfitPhotoSessionView {
     }
 
     func commitSave() {
-        guard let candidate = session.active,
-              let result = candidate.importResult,
-              fields.isValid else { return }
+        guard let importResult, fields.isValid else {
+            errorMessage = "There is no processed photo to save."
+            return
+        }
 
-        let garment = ClothingItem(
-            id: result.garmentID,
+        let item = ClothingItem(
+            id: importResult.garmentID,
             displayName: fields.trimmedName,
             subtype: fields.subtype.trimmingCharacters(in: .whitespacesAndNewlines),
             category: fields.category,
@@ -112,40 +120,40 @@ extension OutfitPhotoSessionView {
             seasons: fields.seasons,
             isFavorite: fields.isFavorite,
             notes: fields.notes,
-            originalImageRelativePath: result.originalRelativePath,
-            cutoutImageRelativePath: result.cutoutRelativePath,
-            thumbnailRelativePath: result.thumbnailRelativePath,
-            isBackgroundRemoved: result.isBackgroundRemoved
+            originalImageRelativePath: importResult.originalRelativePath,
+            cutoutImageRelativePath: importResult.cutoutRelativePath,
+            thumbnailRelativePath: importResult.thumbnailRelativePath,
+            isBackgroundRemoved: importResult.isBackgroundRemoved
         )
-        modelContext.insert(garment)
+        modelContext.insert(item)
 
         do {
             try modelContext.save()
         } catch {
-            // Neither the row nor its files are left behind, and the session
-            // carries on with the photograph still open.
-            modelContext.delete(garment)
-            try? services.imageStore.removeAll(for: result.garmentID)
-            session.markFailed("That garment could not be saved to this device.")
+            // The row did not persist, so the files it would have owned are
+            // removed too rather than left behind as orphans.
+            modelContext.delete(item)
+            try? services.imageStore.removeAll(for: importResult.garmentID)
+            duplicateReview = nil
+            duplicateCandidateImageData = nil
+            errorMessage = "That garment could not be saved to this device."
             return
         }
 
-        session.markSaved()
-        fields = GarmentMetadataFields()
         duplicateReview = nil
         duplicateCandidateImageData = nil
+        dismiss()
     }
 
     /// "Use this existing item": no new `ClothingItem`, and the existing
     /// item's own stored image is never touched. This candidate's own files —
-    /// which never became a garment of their own — are cleaned up exactly
-    /// like any other unresolved candidate's.
+    /// which never became a garment of their own — are removed exactly like
+    /// any other abandoned import's.
     func useExisting(_ garmentID: UUID) {
-        guard let candidate = session.active, candidate.importResult != nil else { return }
-        try? services.imageStore.removeAll(for: candidate.id)
-        session.markLinkedExisting(garmentID)
-        fields = GarmentMetadataFields()
+        guard importResult != nil else { return }
+        discardCandidateFiles()
         duplicateReview = nil
         duplicateCandidateImageData = nil
+        dismiss()
     }
 }

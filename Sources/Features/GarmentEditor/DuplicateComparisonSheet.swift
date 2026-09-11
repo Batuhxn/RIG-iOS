@@ -10,8 +10,8 @@ import UIKit
 /// own; every path out of this screen is a decision the user made, and
 /// "not a match" or "skip" leave the wardrobe exactly as it was.
 struct DuplicateComparisonSheet: View {
-    /// The freshly extracted candidate's own bytes — not yet any garment's
-    /// file, so this is drawn from `Data` directly rather than through
+    /// The freshly imported candidate's own bytes — not yet any garment's
+    /// row, so this is drawn from `Data` directly rather than through
     /// `GarmentImageView`, which reads from the store by relative path.
     let candidateImageData: Data
     let candidateCategory: GarmentCategory
@@ -25,7 +25,6 @@ struct DuplicateComparisonSheet: View {
     let onUseExisting: (UUID) -> Void
     let onAddAsNew: () -> Void
     let onShowAnother: () -> Void
-    let onAdjustCandidate: () -> Void
     let onSkip: () -> Void
 
     var body: some View {
@@ -60,12 +59,9 @@ struct DuplicateComparisonSheet: View {
                         Button("Not a match — show another", action: onShowAnother)
                             .font(.footnote)
                     }
-                    HStack(spacing: RIGTheme.Spacing.m) {
-                        Button("Adjust candidate", action: onAdjustCandidate)
-                        Button("Skip", role: .destructive, action: onSkip)
-                    }
-                    .font(.footnote)
-                    .padding(.top, RIGTheme.Spacing.xs)
+                    Button("Discard this photo", role: .destructive, action: onSkip)
+                        .font(.footnote)
+                        .padding(.top, RIGTheme.Spacing.xs)
                 }
                 .padding(.horizontal, RIGTheme.Spacing.m)
                 .padding(.bottom, RIGTheme.Spacing.l)

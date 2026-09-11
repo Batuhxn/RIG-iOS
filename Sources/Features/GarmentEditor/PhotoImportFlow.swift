@@ -7,21 +7,19 @@ import SwiftUI
 /// Before this, the wardrobe offered "add one garment", "import multiple
 /// photos" and a camera button side by side — three names for one intention,
 /// and the user had to understand RIG's implementation before they had even
-/// opened their photo library. Now there is one button and one question.
+/// opened their photo library. Now there is one button.
 ///
-/// Everything after the question is a consequence, not another decision: the
-/// number of photographs chosen picks between the single-garment review and
-/// the bulk queue, and the user is never told which one they are in.
+/// Everything after it is a consequence, not another decision: the number of
+/// photographs chosen picks between the single-garment review and the bulk
+/// queue, and the user is never told which one they are in.
 struct PhotoImportFlow: View {
     @Environment(\.dismiss) private var dismiss
 
-    @State private var intent: PhotoImportIntent?
     @State private var selection: [PhotosPickerItem] = []
-    @State private var isPickerPresented = false
     @State private var isUsingCamera = false
 
     private var route: PhotoImportRoute {
-        PhotoImportRouter.route(for: intent, selectionCount: selection.count)
+        PhotoImportRouter.route(selectionCount: selection.count)
     }
 
     var body: some View {
@@ -32,65 +30,64 @@ struct PhotoImportFlow: View {
                 routedContent
             }
         }
-        // No `photoLibrary:` argument, as everywhere else in RIG: the
-        // out-of-process picker hands over the chosen bytes and needs no photo
-        // library authorisation at all.
-        .photosPicker(
-            isPresented: $isPickerPresented,
-            selection: $selection,
-            maxSelectionCount: intent?.maximumSelectionCount ?? 1,
-            selectionBehavior: .ordered,
-            matching: .images
-        )
-        .onChange(of: isPickerPresented) { _, isPresented in
-            // Backing out of the picker returns to the question rather than
-            // stranding the user on a blank sheet.
-            if !isPresented, selection.isEmpty { intent = nil }
-        }
     }
 
     @ViewBuilder
     private var routedContent: some View {
         switch route {
         case .awaitingSelection:
-            intentStep
+            sourceStep
         case .singleGarment:
             AddGarmentFlow(initialSelection: selection.first)
         case .bulkReview:
             BulkImportFlow(items: selection)
-        case .outfitSession:
-            if let source = selection.first {
-                OutfitPhotoSessionView(source: source)
-            } else {
-                intentStep
-            }
         }
     }
 
-    private var intentStep: some View {
+    private var sourceStep: some View {
         NavigationStack {
             VStack(spacing: RIGTheme.Spacing.m) {
                 Spacer(minLength: 0)
 
-                Text("What are you adding?")
+                Image(systemName: "square.grid.2x2")
+                    .font(.system(size: 40, weight: .light))
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+
+                Text("Add what you own")
                     .font(.title3.weight(.semibold))
+                Text("One garment per photo. Pick as many as you like.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, RIGTheme.Spacing.l)
+
+                Spacer(minLength: 0)
 
                 VStack(spacing: RIGTheme.Spacing.s) {
-                    ForEach(PhotoImportIntent.allCases) { option in
-                        ImportIntentCard(intent: option) { choose(option) }
+                    // No `photoLibrary:` argument, as everywhere else in RIG:
+                    // the out-of-process picker hands over the chosen bytes and
+                    // needs no photo library authorisation at all.
+                    PhotosPicker(
+                        selection: $selection,
+                        maxSelectionCount: PhotoImportRouter.maximumSelectionCount,
+                        selectionBehavior: .ordered,
+                        matching: .images
+                    ) {
+                        Text("Choose from Photos")
+                            .font(.body.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .background(Color.accentColor)
+                            .foregroundStyle(Color(uiColor: .systemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
+                    }
+
+                    if CameraPicker.isAvailable {
+                        Button("Take a photo") { isUsingCamera = true }
+                            .buttonStyle(RIGSecondaryButtonStyle())
                     }
                 }
                 .padding(.horizontal, RIGTheme.Spacing.m)
-
-                if CameraPicker.isAvailable {
-                    Button("Take a photo instead") {
-                        isUsingCamera = true
-                    }
-                    .font(.subheadline)
-                    .padding(.top, RIGTheme.Spacing.xs)
-                }
-
-                Spacer(minLength: 0)
 
                 Text("Everything happens on this device — nothing is uploaded.")
                     .font(.footnote)
@@ -109,52 +106,6 @@ struct PhotoImportFlow: View {
                 }
             }
         }
-    }
-
-    private func choose(_ option: PhotoImportIntent) {
-        intent = option
-        selection = []
-        isPickerPresented = true
-    }
-}
-
-/// One answer to "what are you adding?".
-struct ImportIntentCard: View {
-    let intent: PhotoImportIntent
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: RIGTheme.Spacing.m) {
-                Image(systemName: intent.symbolName)
-                    .font(.system(size: 26, weight: .light))
-                    .frame(width: 40)
-                    .foregroundStyle(Color.accentColor)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(intent.title)
-                        .font(.body.weight(.semibold))
-                    Text(intent.subtitle)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.footnote)
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
-            }
-            .padding(RIGTheme.Spacing.m)
-            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-            .background(RIGTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.card, style: .continuous))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(intent.title). \(intent.subtitle)")
     }
 }
 

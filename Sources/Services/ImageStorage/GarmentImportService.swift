@@ -42,25 +42,12 @@ struct GarmentImportService: Sendable {
     }
 
     /// - Parameters:
-    ///   - imageData: the raw crop or source pixels for the retained
-    ///     "original" — always downscaled and written as JPEG, exactly as
-    ///     before. These are never expected to carry alpha, so that
-    ///     conversion has never been the problem.
-    ///   - precomputedCutout: an already-segmented, user-approved cutout —
-    ///     v0.4's EdgeSAM mask review, accepted — supplied instead of asking
-    ///     `backgroundRemover` to find one. When present, its alpha is
-    ///     preserved end to end: it is written straight through
-    ///     `GarmentImageProcessing.pngData`, the same PNG path an ordinary
-    ///     Vision cutout already takes, and `backgroundRemover` is never
-    ///     consulted — running foreground removal a second time on something
-    ///     already segmented would be both wasted work and a chance to
-    ///     silently replace what the user approved. `nil` (the default)
-    ///     reproduces the exact v0.1–v0.4-Slice-1 behaviour: the manual crop
-    ///     goes to `backgroundRemover` exactly as it always did.
+    ///   - imageData: the source pixels for the retained "original" — always
+    ///     downscaled and written as JPEG. These are never expected to carry
+    ///     alpha, so that conversion has never been the problem.
     func importImage(
         _ imageData: Data,
-        garmentID: UUID = UUID(),
-        precomputedCutout: Data? = nil
+        garmentID: UUID = UUID()
     ) async throws -> GarmentImportResult {
         guard let originalData = GarmentImageProcessing.jpegData(
             from: imageData,
@@ -75,34 +62,22 @@ struct GarmentImportService: Sendable {
         var isolated = false
         var failureMessage: String?
 
-        if let precomputedCutout {
-            if let cutoutData = GarmentImageProcessing.pngData(
-                from: precomputedCutout,
-                maxDimension: GarmentImageProcessing.cutoutMaxDimension
-            ) {
+        do {
+            let result = try await backgroundRemover.removeBackground(from: originalData)
+            if result.isolated,
+               let cutoutData = GarmentImageProcessing.pngData(
+                   from: result.imageData,
+                   maxDimension: GarmentImageProcessing.cutoutMaxDimension
+               ) {
                 cutoutPath = try store.write(cutoutData, for: garmentID, kind: .cutout)
                 isolated = true
             } else {
-                failureMessage = BackgroundRemovalError.renderingFailed.errorDescription
+                failureMessage = BackgroundRemovalError.noForegroundFound.errorDescription
             }
-        } else {
-            do {
-                let result = try await backgroundRemover.removeBackground(from: originalData)
-                if result.isolated,
-                   let cutoutData = GarmentImageProcessing.pngData(
-                       from: result.imageData,
-                       maxDimension: GarmentImageProcessing.cutoutMaxDimension
-                   ) {
-                    cutoutPath = try store.write(cutoutData, for: garmentID, kind: .cutout)
-                    isolated = true
-                } else {
-                    failureMessage = BackgroundRemovalError.noForegroundFound.errorDescription
-                }
-            } catch let error as BackgroundRemovalError {
-                failureMessage = error.errorDescription
-            } catch {
-                failureMessage = BackgroundRemovalError.maskGenerationFailed.errorDescription
-            }
+        } catch let error as BackgroundRemovalError {
+            failureMessage = error.errorDescription
+        } catch {
+            failureMessage = BackgroundRemovalError.maskGenerationFailed.errorDescription
         }
 
         let thumbnailSource = cutoutPath.flatMap { store.data(atRelativePath: $0) } ?? originalData

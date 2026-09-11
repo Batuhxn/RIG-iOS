@@ -9,16 +9,6 @@ struct RIGServices: Sendable {
     let imageStore: GarmentImageStore
     let backgroundRemover: any GarmentBackgroundRemoving
     let engine: OutfitEngine
-    /// v0.4 seam — see `docs/DECISIONS.md`, "EdgeSAM and the Core ML
-    /// exception (v0.4)", and `docs/EDGESAM_PROVENANCE.md` for the bundled
-    /// model's exact interface. `EdgeSAMSegmenter` loads its models lazily
-    /// and reports `isAvailable == false` on any load failure rather than
-    /// throwing out of this initializer, so a missing/corrupt model asset
-    /// degrades to the same behaviour as `UnavailableSegmenter` instead of
-    /// preventing the app from launching. The outfit session behaves
-    /// identically either way; it only ever offers AI mask review when
-    /// `isAvailable` is true.
-    let segmenter: any GarmentSegmenting
     let similarityMatcher: any GarmentSimilarityMatching
 
     var importService: GarmentImportService {
@@ -32,7 +22,6 @@ struct RIGServices: Sendable {
             imageStore: try GarmentImageStore.applicationSupport(),
             backgroundRemover: VisionBackgroundRemover(),
             engine: OutfitEngine(configuration: .default, compatibilityProvider: nil),
-            segmenter: EdgeSAMSegmenter(),
             similarityMatcher: VisionFeaturePrintSimilarityMatcher()
         )
     }
@@ -46,7 +35,6 @@ struct RIGServices: Sendable {
             imageStore: GarmentImageStore(baseDirectory: directory),
             backgroundRemover: PassthroughBackgroundRemover(),
             engine: OutfitEngine(),
-            segmenter: UnavailableSegmenter(),
             similarityMatcher: PassthroughSimilarityMatcher()
         )
     }
