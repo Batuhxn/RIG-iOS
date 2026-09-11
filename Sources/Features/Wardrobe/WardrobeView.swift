@@ -10,6 +10,7 @@ struct WardrobeView: View {
     @State private var seasonFilter: Season?
     @State private var favoritesOnly = false
     @State private var isPresentingAdd = false
+    @State private var isPresentingBulkImport = false
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: RIGTheme.Spacing.m)]
 
@@ -34,7 +35,9 @@ struct WardrobeView: View {
                         title: "Your wardrobe is empty",
                         message: "Add a garment you own. RIG will try to cut it out from its background and keep it here on this device.",
                         actionTitle: "Add a garment",
-                        action: { isPresentingAdd = true }
+                        action: { isPresentingAdd = true },
+                        secondaryActionTitle: "Import multiple photos",
+                        secondaryAction: { isPresentingBulkImport = true }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -77,16 +80,31 @@ struct WardrobeView: View {
             .navigationTitle("Wardrobe")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isPresentingAdd = true
+                    // A menu rather than a second toolbar button: the two ways
+                    // in are the same action at different scales, and the
+                    // single-garment flow stays exactly where it was.
+                    Menu {
+                        Button {
+                            isPresentingAdd = true
+                        } label: {
+                            Label("Add one garment", systemImage: "camera")
+                        }
+                        Button {
+                            isPresentingBulkImport = true
+                        } label: {
+                            Label("Import multiple photos", systemImage: "square.stack")
+                        }
                     } label: {
-                        Label("Add a garment", systemImage: "plus")
+                        Label("Add garments", systemImage: "plus")
                     }
-                    .accessibilityLabel("Add a garment")
+                    .accessibilityLabel("Add garments")
                 }
             }
             .sheet(isPresented: $isPresentingAdd) {
                 AddGarmentFlow()
+            }
+            .sheet(isPresented: $isPresentingBulkImport) {
+                BulkImportFlow()
             }
         }
     }
