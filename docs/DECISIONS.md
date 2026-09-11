@@ -76,6 +76,47 @@ No Apple toolchain was available on the development host. Hand-writing a
 nobody verified. A `project.yml` is reviewable, diffable, and generates a real
 project in one command on macOS.
 
+## EdgeSAM and the Core ML exception (v0.4)
+
+v0.1's static audit banned `CoreML`, `MLModel` and `MLMultiArray` everywhere,
+and banned `.mlmodel`/`.mlpackage` anywhere in the repository. That rule
+existed because v0.1 shipped no model at all: `FashionMLSpike` had reached
+CONDITIONAL GO, not GO, its evaluated head returned a saturated constant, its
+converted artefacts weighed roughly 806 MB, and its checkpoint licensing was
+unresolved. Banning the symbols outright was the cheapest way to guarantee
+that unresolved research never quietly became production code.
+
+v0.4 Slice 2 adds a real, bounded on-device use of Core ML: EdgeSAM-3x, for
+interactive garment mask proposals inside a manually drawn region. This is a
+different situation on every axis that mattered above — the model runs
+on-device only, nothing is uploaded, its artefact provenance, checksums and
+license (NTU S-Lab License 1.0, non-commercial; verbatim text at
+`Sources/Resources/Models/EdgeSAM-NOTICE/LICENSE.txt`, full provenance in
+`docs/EDGESAM_PROVENANCE.md`) are recorded rather than unresolved, and its
+role is capped by construction: a mask is a proposal the user must accept,
+adjust or reject, never an automatic write. So the blanket ban is no longer
+the correct rule, and keeping it would have blocked a change the product
+now deliberately makes.
+
+The exception the static audit now enforces is narrow and mechanical, not a
+change of posture:
+
+- `CoreML` / `MLModel` / `MLMultiArray` may appear only inside
+  `Sources/Services/Segmentation/`, and only in production sources — never in
+  tests, which exercise the seam through `GarmentSegmenting`, a Foundation-only
+  protocol that never leaks a Core ML type outward.
+- A bundled `.mlmodel` / `.mlpackage` / `.mlmodelc` artefact is permitted only
+  under `Sources/Resources/Models/`.
+- Every other forbidden pattern (network calls, cloud sync, third-party
+  analytics, tracking, location) is checked exactly as before, everywhere.
+- Nothing about this exception permits network access for the model itself:
+  `GarmentSegmenting` takes and returns `Data`/`Foundation` values, runs
+  encode-once/decode-many against a locally bundled package, and the "no
+  networking code at all" decision above is otherwise unchanged.
+
+If a later slice wants Core ML somewhere else in the app, that is a new
+decision to write down here, not an automatic extension of this one.
+
 ## The outfit engine works on snapshots, not on models
 
 Every rule takes `GarmentSnapshot`, a Foundation-only value type. That is why

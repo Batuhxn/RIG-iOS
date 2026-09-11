@@ -8,6 +8,11 @@ import Foundation
 /// rectangle. Nothing in this file knows that cropping exists.
 enum OutfitCandidateOrigin: Equatable, Sendable {
     case manualCrop
+    /// The saved region's content came from an EdgeSAM mask proposed inside a
+    /// manually drawn box and accepted by the user. The box itself was still
+    /// drawn by hand — v0.4 Slice 2 never proposes a region on its own, only
+    /// a mask within one already drawn.
+    case aiAssistedCrop
 }
 
 /// How far one garment has got.
@@ -18,8 +23,14 @@ enum OutfitCandidateStage: Equatable {
     case ready(GarmentImportResult)
     /// Cropping, processing or saving failed. Recoverable, and local to this candidate.
     case failed(String)
-    /// Persisted as a `ClothingItem`. Its files must survive the session.
+    /// Persisted as a new `ClothingItem`. Its files must survive the session.
     case saved
+    /// Resolved to a wardrobe item that already existed, instead of becoming
+    /// a new one. No new `ClothingItem` was created and no existing item's
+    /// canonical image was touched, so — unlike `.saved` — this candidate's
+    /// own files own nothing that must survive; they are cleaned up exactly
+    /// like a discarded candidate's.
+    case linkedExisting(garmentID: UUID)
     /// Abandoned by the user. Its files must not survive.
     case discarded
 }
@@ -35,6 +46,11 @@ struct OutfitGarmentCandidate: Identifiable, Equatable {
     /// automatic proposer has somewhere to put a guess without a model change.
     var suggestedCategory: GarmentCategory?
     var confidence: Double?
+    /// The AI mask currently proposed or accepted for this candidate, when
+    /// `origin == .aiAssistedCrop`. `qualityScore` on it describes
+    /// segmentation quality only — see `SegmentationMaskResult` — and must
+    /// never be presented as garment confidence.
+    var proposedMask: SegmentationMaskResult?
     var stage: OutfitCandidateStage
 
     init(
@@ -43,6 +59,7 @@ struct OutfitGarmentCandidate: Identifiable, Equatable {
         origin: OutfitCandidateOrigin = .manualCrop,
         suggestedCategory: GarmentCategory? = nil,
         confidence: Double? = nil,
+        proposedMask: SegmentationMaskResult? = nil,
         stage: OutfitCandidateStage = .drafting
     ) {
         self.id = id
@@ -50,6 +67,7 @@ struct OutfitGarmentCandidate: Identifiable, Equatable {
         self.origin = origin
         self.suggestedCategory = suggestedCategory
         self.confidence = confidence
+        self.proposedMask = proposedMask
         self.stage = stage
     }
 
@@ -63,7 +81,17 @@ struct OutfitGarmentCandidate: Identifiable, Equatable {
         return nil
     }
 
+    var linkedGarmentID: UUID? {
+        if case .linkedExisting(let garmentID) = stage { return garmentID }
+        return nil
+    }
+
     var isSaved: Bool { stage == .saved }
+    /// A final resolution the user actually chose: either a new garment, or a
+    /// link to one that already existed. Used wherever the session needs to
+    /// count what this photo produced, not just what got persisted as a
+    /// brand-new row.
+    var isResolved: Bool { isSaved || linkedGarmentID != nil }
     var isDrafting: Bool { stage == .drafting }
     var isFailed: Bool { failureMessage != nil }
 }
@@ -98,14 +126,21 @@ struct OutfitPhotoSession: Equatable {
 
     var savedCount: Int { candidates.filter(\.isSaved).count }
     var savedGarmentIDs: [UUID] { candidates.filter(\.isSaved).map(\.id) }
+    /// Candidates resolved to an existing wardrobe item rather than saved as
+    /// new. Their own identifiers are never real garments — see
+    /// `OutfitCandidateStage.linkedExisting`.
+    var linkedCount: Int { candidates.filter { $0.linkedGarmentID != nil }.count }
+    /// Every candidate this photograph actually resolved, new or linked.
+    var resolvedCount: Int { candidates.filter(\.isResolved).count }
     var failedCount: Int { candidates.filter(\.isFailed).count }
 
     /// Every identifier whose files must not outlive the session.
     ///
-    /// Saved garments own their files; everything else does not, including
-    /// candidates that never got as far as writing one. Removing a directory
-    /// that was never written is a no-op, so over-reporting here is safe and
-    /// under-reporting is not.
+    /// Only a newly saved garment owns files that must survive. Everything
+    /// else does not — including a candidate linked to an existing item,
+    /// which never became a garment of its own, and any candidate that never
+    /// got as far as writing one. Removing a directory that was never written
+    /// is a no-op, so over-reporting here is safe and under-reporting is not.
     var garmentIDsPendingCleanup: [UUID] {
         candidates.filter { !$0.isSaved }.map(\.id)
     }
@@ -139,6 +174,22 @@ struct OutfitPhotoSession: Equatable {
     mutating func updateRegion(_ region: NormalizedCropRect) {
         guard let activeIndex, candidates.indices.contains(activeIndex) else { return }
         candidates[activeIndex].region = region.clamped()
+        // A mask proposed for the previous rectangle no longer describes this
+        // one. Clearing it here, rather than trusting every call site to
+        // remember to, is what keeps a stale overlay from ever being shown.
+        candidates[activeIndex].proposedMask = nil
+        candidates[activeIndex].origin = .manualCrop
+    }
+
+    /// Records an AI-proposed mask against the open candidate without
+    /// changing its stage — the user still has to accept it (`markReady`) or
+    /// reject it before anything is written to disk. Passing `nil` clears a
+    /// previously proposed mask, e.g. when the user asks to see the plain
+    /// rectangular crop instead.
+    mutating func proposeMask(_ mask: SegmentationMaskResult?) {
+        guard let activeIndex, candidates.indices.contains(activeIndex) else { return }
+        candidates[activeIndex].proposedMask = mask
+        candidates[activeIndex].origin = mask != nil ? .aiAssistedCrop : .manualCrop
     }
 
     mutating func markReady(_ result: GarmentImportResult) {
@@ -164,6 +215,23 @@ struct OutfitPhotoSession: Equatable {
         return true
     }
 
+    /// Resolves the open candidate to an existing wardrobe item instead of
+    /// saving it as new. Returns false, exactly like `markSaved`, when there
+    /// is nothing processed yet to resolve.
+    ///
+    /// This never creates a `ClothingItem` and never touches the linked
+    /// item's own stored image — the caller is only recording that this
+    /// source-photo garment refers to `garmentID`. See
+    /// `OutfitCandidateStage.linkedExisting`.
+    @discardableResult
+    mutating func markLinkedExisting(_ garmentID: UUID) -> Bool {
+        guard let activeIndex, candidates.indices.contains(activeIndex),
+              candidates[activeIndex].importResult != nil else { return false }
+        candidates[activeIndex].stage = .linkedExisting(garmentID: garmentID)
+        self.activeIndex = nil
+        return true
+    }
+
     mutating func discardActive() {
         guard let activeIndex, candidates.indices.contains(activeIndex) else { return }
         candidates[activeIndex].stage = .discarded
@@ -172,10 +240,14 @@ struct OutfitPhotoSession: Equatable {
 
     /// Sends a reviewed or failed candidate back to its rectangle. Any files it
     /// already wrote are the caller's to remove; the identifier is reused, so a
-    /// second attempt overwrites rather than orphans.
+    /// second attempt overwrites rather than orphans. Any previously proposed
+    /// mask is cleared along with it — a fresh crop starts fresh.
     mutating func recrop() {
         guard let activeIndex, candidates.indices.contains(activeIndex),
-              !candidates[activeIndex].isSaved else { return }
+              !candidates[activeIndex].isSaved,
+              candidates[activeIndex].linkedGarmentID == nil else { return }
         candidates[activeIndex].stage = .drafting
+        candidates[activeIndex].proposedMask = nil
+        candidates[activeIndex].origin = .manualCrop
     }
 }

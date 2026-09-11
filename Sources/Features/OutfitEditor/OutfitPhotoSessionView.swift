@@ -10,28 +10,68 @@ import UIKit
 /// called "me". So an outfit photo gets its own sitting — the source stays on
 /// screen, the user draws a box round one thing at a time, and each box goes
 /// through the ordinary garment pipeline as if it had been photographed alone.
+///
+/// **v0.4 Slice 2** adds two optional detours inside that same sitting, both
+/// off by construction unless their model actually answers:
+///
+/// - after a box is drawn, EdgeSAM may propose a mask for what is inside it
+///   (`MaskReviewSheet`), with the plain rectangular crop always one tap away
+///   — see `OutfitPhotoSessionView+Segmentation.swift`;
+/// - before a garment is saved as new, RIG may find the wardrobe already
+///   looks like it owns something similar (`DuplicateComparisonSheet`), and
+///   asks rather than guessing — see `OutfitPhotoSessionView+Duplicates.swift`.
+///
+/// Neither detour changes what already worked: with no segmenter and no
+/// similarity match, this is exactly the v0.4 Slice 1 flow.
+///
+/// This type's implementation is split across three files purely to stay
+/// under the static audit's per-file line cap — it is one type throughout,
+/// and every stored property below is touched from all three. Swift's
+/// `private` is file-scoped even for extensions of the same type, so
+/// properties and cross-file members are left at their default (internal)
+/// access rather than exposed to the rest of the module some other way.
 struct OutfitPhotoSessionView: View {
     let source: PhotosPickerItem
 
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.rigServices) private var services
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) var modelContext
+    @Environment(\.rigServices) var services
+    @Environment(\.dismiss) var dismiss
+
+    @Query var wardrobeItems: [ClothingItem]
 
     /// The crop authority: one bounded copy of the photograph, held for the
-    /// life of the session so every crop comes from the same pixels.
-    @State private var sourceData: Data?
+    /// life of the session so every crop comes from the same pixels. It is
+    /// also the one image EdgeSAM's encoder ever sees — see
+    /// `OutfitEmbeddingSession`.
+    @State var sourceData: Data?
     /// A smaller decoded copy, and the only thing ever drawn. Rectangles are
     /// fractions, so the small copy and the big one always agree.
-    @State private var displayImage: UIImage?
-    @State private var sourcePixelSize: CGSize = .zero
-    @State private var rawCropData: Data?
-    @State private var session = OutfitPhotoSession()
-    @State private var draftRegion: NormalizedCropRect = .centeredDefault
-    @State private var fields = GarmentMetadataFields()
-    @State private var isProcessing = false
-    @State private var loadFailure: String?
+    @State var displayImage: UIImage?
+    @State var sourcePixelSize: CGSize = .zero
+    @State var rawCropData: Data?
+    @State var session = OutfitPhotoSession()
+    @State var draftRegion: NormalizedCropRect = .centeredDefault
+    @State var fields = GarmentMetadataFields()
+    @State var isProcessing = false
+    @State var loadFailure: String?
 
-    private static let displayMaxDimension: CGFloat = 1000
+    /// One embedding session for the whole sitting — created once the first
+    /// candidate asks for a mask, reused by every candidate after it, and
+    /// invalidated only when this view goes away. See "Session embedding
+    /// reuse" in the v0.4 Slice 2 report.
+    @State var embeddingSession: OutfitEmbeddingSession?
+    @State var maskProposalTask: Task<Void, Never>?
+    @State var isProposingMask = false
+    @State var maskProposal: SegmentationMaskResult?
+    /// The region `maskProposal` was actually computed for — needed to place
+    /// the overlay correctly even if `draftRegion` has since moved on.
+    @State var maskReviewRegion: NormalizedCropRect = .centeredDefault
+
+    @State var isCheckingForDuplicates = false
+    @State var duplicateReview: DuplicateReviewState?
+    @State var duplicateCandidateImageData: Data?
+
+    static let displayMaxDimension: CGFloat = 1000
 
     var body: some View {
         NavigationStack {
@@ -49,13 +89,16 @@ struct OutfitPhotoSessionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
             .task { await loadSource() }
+            .sheet(isPresented: duplicateSheetBinding) {
+                duplicateSheet
+            }
         }
     }
 
     // MARK: - Screens
 
     @ViewBuilder
-    private func content(_ image: UIImage) -> some View {
+    func content(_ image: UIImage) -> some View {
         if let candidate = session.active {
             if let result = candidate.importResult {
                 reviewScreen(result)
@@ -63,6 +106,25 @@ struct OutfitPhotoSessionView: View {
                 candidateFailureScreen(message)
             } else if isProcessing {
                 processingScreen
+            } else if isProposingMask {
+                MaskProposingScreen()
+            } else if let maskProposal, let rawCropData, let preview = UIImage(data: rawCropData) {
+                MaskReviewSheet(
+                    rawCropImage: preview,
+                    cropRegion: maskReviewRegion,
+                    mask: maskProposal,
+                    onUseMask: { acceptMask(maskProposal) },
+                    onAdjustSelection: {
+                        self.rawCropData = nil
+                        self.maskProposal = nil
+                        cancelMaskProposal()
+                    },
+                    onUseRectangularCrop: {
+                        self.maskProposal = nil
+                        cancelMaskProposal()
+                    },
+                    onSkip: discard
+                )
             } else if let rawCropData, let preview = UIImage(data: rawCropData) {
                 RawGarmentCropPreview(image: preview, onAdjust: { self.rawCropData = nil }) {
                     Task { await processDraft() }
@@ -75,7 +137,7 @@ struct OutfitPhotoSessionView: View {
         }
     }
 
-    private var loadingScreen: some View {
+    var loadingScreen: some View {
         VStack(spacing: RIGTheme.Spacing.m) {
             ProgressView()
             Text("Opening your photo…")
@@ -85,7 +147,7 @@ struct OutfitPhotoSessionView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var processingScreen: some View {
+    var processingScreen: some View {
         VStack(spacing: RIGTheme.Spacing.m) {
             ProgressView()
             Text("Separating the garment…")
@@ -97,7 +159,7 @@ struct OutfitPhotoSessionView: View {
         .accessibilityLabel("Processing the cropped garment")
     }
 
-    private func sourceScreen(_ image: UIImage) -> some View {
+    func sourceScreen(_ image: UIImage) -> some View {
         VStack(spacing: RIGTheme.Spacing.m) {
             Image(uiImage: image)
                 .resizable()
@@ -122,7 +184,7 @@ struct OutfitPhotoSessionView: View {
         }
     }
 
-    private func croppingScreen(_ image: UIImage) -> some View {
+    func croppingScreen(_ image: UIImage) -> some View {
         VStack(spacing: RIGTheme.Spacing.s) {
             GarmentCropView(image: image, sourcePixelSize: sourcePixelSize, region: $draftRegion)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -145,7 +207,7 @@ struct OutfitPhotoSessionView: View {
         }
     }
 
-    private func reviewScreen(_ result: GarmentImportResult) -> some View {
+    func reviewScreen(_ result: GarmentImportResult) -> some View {
         Form {
             Section {
                 GarmentImageView(
@@ -161,6 +223,14 @@ struct OutfitPhotoSessionView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+                if isCheckingForDuplicates {
+                    HStack(spacing: RIGTheme.Spacing.s) {
+                        ProgressView().controlSize(.small)
+                        Text("Checking your wardrobe for anything similar…")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             GarmentMetadataForm(fields: $fields)
@@ -174,7 +244,7 @@ struct OutfitPhotoSessionView: View {
         }
     }
 
-    private func candidateFailureScreen(_ message: String) -> some View {
+    func candidateFailureScreen(_ message: String) -> some View {
         VStack(spacing: RIGTheme.Spacing.m) {
             Spacer(minLength: 0)
             RIGErrorBanner(message: message)
@@ -195,7 +265,7 @@ struct OutfitPhotoSessionView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func sourceFailureScreen(_ message: String) -> some View {
+    func sourceFailureScreen(_ message: String) -> some View {
         RIGEmptyState(
             symbol: "exclamationmark.triangle",
             title: "That photo could not be opened",
@@ -207,23 +277,34 @@ struct OutfitPhotoSessionView: View {
     }
 
     @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
+    var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button(session.savedCount > 0 ? "Done" : "Cancel", action: finish)
+            Button(session.resolvedCount > 0 ? "Done" : "Cancel", action: finish)
         }
         if session.active?.importResult != nil {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save", action: save)
-                    .disabled(!fields.isValid)
+                Button("Save", action: beginSave)
+                    .disabled(!fields.isValid || isCheckingForDuplicates)
             }
         }
     }
 
-    private var savedSummary: String {
-        switch session.savedCount {
-        case 0: return "Nothing saved from this photo yet."
-        case 1: return "1 garment saved from this photo."
-        default: return "\(session.savedCount) garments saved from this photo."
+    var savedSummary: String {
+        switch session.resolvedCount {
+        case 0:
+            return "Nothing saved from this photo yet."
+        default:
+            if session.linkedCount == 0 {
+                return session.savedCount == 1
+                    ? "1 garment saved from this photo."
+                    : "\(session.savedCount) garments saved from this photo."
+            }
+            if session.savedCount == 0 {
+                return session.linkedCount == 1
+                    ? "1 garment linked to your wardrobe from this photo."
+                    : "\(session.linkedCount) garments linked to your wardrobe from this photo."
+            }
+            return "\(session.savedCount) new, \(session.linkedCount) linked to your wardrobe, from this photo."
         }
     }
 
@@ -232,7 +313,7 @@ struct OutfitPhotoSessionView: View {
     /// Loads the photograph once, bounds it once, and releases the original
     /// bytes. Nothing else in the session ever touches a full-resolution image.
     @MainActor
-    private func loadSource() async {
+    func loadSource() async {
         guard sourceData == nil, loadFailure == nil else { return }
         do {
             guard let raw = try await source.loadTransferable(type: Data.self) else {
@@ -258,16 +339,22 @@ struct OutfitPhotoSessionView: View {
         }
     }
 
-    private func beginCandidate() {
+    func beginCandidate() {
         rawCropData = nil
+        maskProposal = nil
+        cancelMaskProposal()
         draftRegion = .centeredDefault
         fields = GarmentMetadataFields()
         session.beginCandidate(region: draftRegion)
     }
 
     /// Export once. Review these exact bytes before any background removal or
-    /// file writes; the confirmation action imports the same bytes.
-    private func previewDraft() {
+    /// file writes; the confirmation action imports the same bytes. Also
+    /// kicks off an AI mask proposal for the same region — see
+    /// `OutfitPhotoSessionView+Segmentation.swift` — which is purely
+    /// additive: `rawCropData` alone is already everything the manual flow
+    /// needs.
+    func previewDraft() {
         guard let sourceData, session.active != nil else { return }
         session.updateRegion(draftRegion)
         guard let cropped = GarmentImageCropping.croppedData(from: sourceData, region: draftRegion) else {
@@ -275,65 +362,16 @@ struct OutfitPhotoSessionView: View {
             return
         }
         rawCropData = cropped
-    }
-
-    @MainActor
-    private func processDraft() async {
-        guard !isProcessing, let cropped = rawCropData, let candidate = session.active else { return }
-        isProcessing = true
-        defer {
-            isProcessing = false
-            rawCropData = nil
-        }
-        do {
-            let result = try await services.importService.importImage(cropped, garmentID: candidate.id)
-            session.markReady(result)
-        } catch {
-            let described = (error as? LocalizedError)?.errorDescription
-            session.markFailed(described ?? "That garment could not be processed. Crop again or discard it.")
-        }
-    }
-
-    private func save() {
-        guard let candidate = session.active,
-              let result = candidate.importResult,
-              fields.isValid else { return }
-
-        let garment = ClothingItem(
-            id: result.garmentID,
-            displayName: fields.trimmedName,
-            subtype: fields.subtype.trimmingCharacters(in: .whitespacesAndNewlines),
-            category: fields.category,
-            primaryColor: fields.colorFamily,
-            seasons: fields.seasons,
-            isFavorite: fields.isFavorite,
-            notes: fields.notes,
-            originalImageRelativePath: result.originalRelativePath,
-            cutoutImageRelativePath: result.cutoutRelativePath,
-            thumbnailRelativePath: result.thumbnailRelativePath,
-            isBackgroundRemoved: result.isBackgroundRemoved
-        )
-        modelContext.insert(garment)
-
-        do {
-            try modelContext.save()
-        } catch {
-            // Neither the row nor its files are left behind, and the session
-            // carries on with the photograph still open.
-            modelContext.delete(garment)
-            try? services.imageStore.removeAll(for: result.garmentID)
-            session.markFailed("That garment could not be saved to this device.")
-            return
-        }
-
-        session.markSaved()
-        fields = GarmentMetadataFields()
+        maskProposal = nil
+        startMaskProposal(for: draftRegion, source: sourceData)
     }
 
     /// Back to the rectangle. The previous attempt's files go now; the
     /// identifier is reused, so a second attempt overwrites rather than orphans.
-    private func recrop() {
+    func recrop() {
         rawCropData = nil
+        maskProposal = nil
+        cancelMaskProposal()
         if let candidate = session.active {
             try? services.imageStore.removeAll(for: candidate.id)
             draftRegion = candidate.region
@@ -341,8 +379,10 @@ struct OutfitPhotoSessionView: View {
         session.recrop()
     }
 
-    private func discard() {
+    func discard() {
         rawCropData = nil
+        maskProposal = nil
+        cancelMaskProposal()
         if let candidate = session.active {
             try? services.imageStore.removeAll(for: candidate.id)
         }
@@ -350,11 +390,17 @@ struct OutfitPhotoSessionView: View {
         fields = GarmentMetadataFields()
     }
 
-    /// Saved garments stay. Everything else leaves no files behind.
-    private func finish() {
+    /// Saved and linked garments stay. Everything else leaves no files
+    /// behind, and any cached AI embedding for this photograph goes with it.
+    func finish() {
         rawCropData = nil
+        maskProposal = nil
+        cancelMaskProposal()
         for id in session.garmentIDsPendingCleanup {
             try? services.imageStore.removeAll(for: id)
+        }
+        if let embeddingSession {
+            Task { await embeddingSession.invalidate() }
         }
         dismiss()
     }

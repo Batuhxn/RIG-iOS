@@ -217,4 +217,133 @@ final class OutfitPhotoSessionTests: XCTestCase {
             XCTAssertEqual(GarmentImagePaths.garmentID(fromRelativePath: path), candidate.id)
         }
     }
+
+    // MARK: - v0.4 Slice 2: AI-proposed masks
+
+    private func mask(quality: Double? = 0.8) -> SegmentationMaskResult {
+        SegmentationMaskResult(cutoutData: Data([0x01]), boundingRegion: .centeredDefault, qualityScore: quality)
+    }
+
+    func testProposingAMaskSetsOriginToAIAssisted() {
+        var session = OutfitPhotoSession()
+        session.beginCandidate(id: Fixture.id(1))
+        session.proposeMask(mask())
+
+        XCTAssertEqual(session.active?.origin, .aiAssistedCrop)
+        XCTAssertNotNil(session.active?.proposedMask)
+    }
+
+    func testClearingAProposedMaskRevertsOriginToManual() {
+        var session = OutfitPhotoSession()
+        session.beginCandidate(id: Fixture.id(1))
+        session.proposeMask(mask())
+        session.proposeMask(nil)
+
+        XCTAssertEqual(session.active?.origin, .manualCrop)
+        XCTAssertNil(session.active?.proposedMask)
+    }
+
+    func testUpdatingRegionClearsAPreviouslyProposedMask() {
+        var session = OutfitPhotoSession()
+        session.beginCandidate(id: Fixture.id(1))
+        session.proposeMask(mask())
+        session.updateRegion(NormalizedCropRect(x: 0.1, y: 0.1, width: 0.3, height: 0.3))
+
+        XCTAssertNil(session.active?.proposedMask, "a mask proposed for the old rectangle must not survive a redrawn one")
+        XCTAssertEqual(session.active?.origin, .manualCrop)
+    }
+
+    func testRecropClearsAProposedMask() {
+        var session = OutfitPhotoSession()
+        let id = Fixture.id(1)
+        session.beginCandidate(id: id)
+        session.proposeMask(mask())
+        session.markReady(result(id))
+        session.recrop()
+
+        XCTAssertNil(session.active?.proposedMask)
+        XCTAssertEqual(session.active?.origin, .manualCrop)
+    }
+
+    func testProposingNilMaskWithNoActiveCandidateIsANoOp() {
+        var session = OutfitPhotoSession()
+        session.proposeMask(mask())
+        XCTAssertTrue(session.isIdle)
+    }
+
+    // MARK: - v0.4 Slice 2: resolving to an existing wardrobe item
+
+    func testMarkLinkedExistingResolvesTheCandidateWithoutCreatingAGarment() {
+        var session = OutfitPhotoSession()
+        let id = Fixture.id(1)
+        session.beginCandidate(id: id)
+        session.markReady(result(id))
+        let existingID = Fixture.id(99)
+
+        XCTAssertTrue(session.markLinkedExisting(existingID))
+        XCTAssertTrue(session.isIdle)
+        XCTAssertEqual(session.savedCount, 0)
+        XCTAssertEqual(session.linkedCount, 1)
+        XCTAssertEqual(session.resolvedCount, 1)
+        XCTAssertEqual(session.candidates.first?.linkedGarmentID, existingID)
+    }
+
+    func testALinkedCandidatesOwnFilesAreCleanedUpLikeADiscardedOnes() {
+        var session = OutfitPhotoSession()
+        let id = Fixture.id(1)
+        session.beginCandidate(id: id)
+        session.markReady(result(id))
+        session.markLinkedExisting(Fixture.id(99))
+
+        XCTAssertEqual(
+            session.garmentIDsPendingCleanup, [id],
+            "a candidate linked to an existing item never became a garment of its own"
+        )
+    }
+
+    func testAnUnprocessedCandidateCannotBeLinked() {
+        var session = OutfitPhotoSession()
+        session.beginCandidate(id: Fixture.id(1))
+
+        XCTAssertFalse(session.markLinkedExisting(Fixture.id(99)))
+        XCTAssertEqual(session.linkedCount, 0)
+        XCTAssertFalse(session.isIdle)
+    }
+
+    func testALinkedCandidateCannotBeLinkedTwice() {
+        var session = OutfitPhotoSession()
+        let id = Fixture.id(1)
+        session.beginCandidate(id: id)
+        session.markReady(result(id))
+        session.markLinkedExisting(Fixture.id(99))
+
+        XCTAssertFalse(session.markLinkedExisting(Fixture.id(100)), "nothing is active to link a second time")
+        XCTAssertEqual(session.linkedCount, 1)
+    }
+
+    func testALinkedGarmentCannotBeSentBackToCropping() {
+        var session = OutfitPhotoSession()
+        let id = Fixture.id(1)
+        session.beginCandidate(id: id)
+        session.markReady(result(id))
+        session.markLinkedExisting(Fixture.id(99))
+        session.recrop()
+
+        XCTAssertTrue(session.isIdle)
+        XCTAssertEqual(session.linkedCount, 1)
+    }
+
+    func testResolvedCountCombinesNewAndLinkedGarments() {
+        var session = OutfitPhotoSession()
+        saveOne(&session, 1)
+
+        let id2 = Fixture.id(2)
+        session.beginCandidate(id: id2)
+        session.markReady(result(id2))
+        session.markLinkedExisting(Fixture.id(50))
+
+        XCTAssertEqual(session.savedCount, 1)
+        XCTAssertEqual(session.linkedCount, 1)
+        XCTAssertEqual(session.resolvedCount, 2)
+    }
 }
