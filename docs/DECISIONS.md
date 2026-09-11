@@ -93,10 +93,18 @@ it went the bundled `.mlpackage` assets, the Core ML carve-outs in
 so the v0.1 rule that no model artefact and no Core ML runtime may appear
 anywhere in the app is whole again.
 
-What survived is what canonical import actually uses: Vision background
-removal, Vision feature-print similarity, and the duplicate comparison, which
-moved out of the cancelled session and into the single-item import review
-where it belongs.
+Canonical import is now the only import. One photograph is one garment, and
+the user is never asked which kind of import they want: `PhotoImportRouter`
+reads the size of the selection and sends one photograph to the individual
+review in `AddGarmentFlow` and several to the one-at-a-time queue in
+`BulkImportFlow`. Both arrive at the same place — `GarmentImportService`,
+Vision background removal, and the three fixed image sizes — so the two
+reviews differ in pacing, not in what they produce.
+
+What survived from the cancelled path is what that pipeline actually uses:
+Vision background removal and Vision feature-print similarity, whose duplicate
+comparison moved out of the cancelled session and into the individual import
+review, where the user is already looking at one candidate garment.
 
 If multi-garment decomposition is revisited, it starts from the requirement,
 not from this code.
