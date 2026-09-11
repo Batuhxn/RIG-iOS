@@ -259,4 +259,78 @@ enum EdgeSAMGeometry {
         )
         return ThresholdResult(boundingRegion: region, minX: minX, minY: minY, maxX: maxX, maxY: maxY)
     }
+
+    // MARK: - Strided-buffer reordering (v0.4 Slice 2.1 repair)
+
+    /// The default row-major (C-contiguous) strides for `shape`: the last
+    /// dimension has stride 1, and each earlier dimension's stride is the
+    /// product of every dimension after it. This is the layout
+    /// `MLMultiArray(shape:dataType:)` gives an array it allocates fresh —
+    /// and the layout every consumer in this adapter needs a decoder or
+    /// encoder *output* array reordered into before touching it with a
+    /// flat linear index. `[]` for an empty shape.
+    static func contiguousStrides(for shape: [Int]) -> [Int] {
+        guard !shape.isEmpty else { return [] }
+        var strides = [Int](repeating: 1, count: shape.count)
+        for d in stride(from: shape.count - 2, through: 0, by: -1) {
+            strides[d] = strides[d + 1] * shape[d + 1]
+        }
+        return strides
+    }
+
+    /// Reorders `source` — read as `shape` laid out with `strides` (in
+    /// elements, Core ML's own convention) — into plain row-major
+    /// (contiguous) order.
+    ///
+    /// **Why this exists**: Core ML does not guarantee an *output*
+    /// `MLMultiArray`'s backing memory is contiguous for its declared
+    /// shape — outputs computed on the Neural Engine in particular are
+    /// commonly padded per dimension, so `array.strides` can differ from
+    /// `contiguousStrides(for:)`. Reading such a buffer with a flat linear
+    /// index (`pointer[i]` for `i` in `0..<count`) silently assumes
+    /// contiguity Core ML never promised — every row after the first
+    /// would be read from the wrong offset, corrupting the data without
+    /// any error. This is the regression `docs/EDGESAM_PROVENANCE.md`
+    /// ("Regression: the deep-copy strides bug") traces: `EdgeSAMSegmenter`
+    /// originally deep-copied its cached embedding with exactly this
+    /// assumption, and `EdgeSAMMaskConversion` originally read the
+    /// decoder's `masks`/`scores` outputs the same way. Kept here, with no
+    /// Core ML import in this file, so `Tests/EdgeSAMGeometryTests.swift`
+    /// can exercise the actual reordering arithmetic with synthetic padded
+    /// buffers — something no test in this target may do against a real
+    /// `MLMultiArray` (see `scripts/static_audit.py`'s Core ML seam rule).
+    /// The common contiguous case is fast-pathed with a single copy.
+    ///
+    /// `nil` when `shape`/`strides` disagree in length, `shape` is empty,
+    /// or `source` is too short for what `strides` claims it needs to
+    /// reach — safer to refuse than read past the end of a buffer that
+    /// does not match its own declared layout.
+    static func reorderToContiguous(_ source: [Float], shape: [Int], strides: [Int]) -> [Float]? {
+        guard !shape.isEmpty, shape.count == strides.count, shape.allSatisfy({ $0 > 0 }) else { return nil }
+        let count = shape.reduce(1, *)
+        let maxOffset = zip(shape, strides).reduce(0) { $0 + ($1.0 - 1) * $1.1 }
+        guard maxOffset >= 0, source.count > maxOffset else { return nil }
+
+        let contiguous = contiguousStrides(for: shape)
+        if strides == contiguous {
+            return Array(source.prefix(count))
+        }
+
+        var result = [Float](repeating: 0, count: count)
+        var indices = [Int](repeating: 0, count: shape.count)
+        for i in 0..<count {
+            var offset = 0
+            for d in 0..<shape.count { offset += indices[d] * strides[d] }
+            result[i] = source[offset]
+
+            var d = shape.count - 1
+            while d >= 0 {
+                indices[d] += 1
+                if indices[d] < shape[d] { break }
+                indices[d] = 0
+                d -= 1
+            }
+        }
+        return result
+    }
 }

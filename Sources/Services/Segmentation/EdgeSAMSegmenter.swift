@@ -179,19 +179,32 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
         )
     }
 
-    /// A byte-for-byte copy of a Core ML output `MLMultiArray`, backed by
-    /// freshly allocated memory this adapter owns outright — see the
-    /// deep-copy comment in `encodeSource` for why the encoder's own output
-    /// buffer must never be cached directly. `nil` if allocation fails, or
-    /// if `array` is not the float32 buffer EdgeSAM's encoder always
-    /// produces (`docs/EDGESAM_PROVENANCE.md`) — safer to reject than guess
-    /// at another data type's element size.
+    /// A copy of a Core ML output `MLMultiArray`, backed by freshly
+    /// allocated memory this adapter owns outright — see the deep-copy
+    /// comment in `encodeSource` for why the encoder's own output buffer
+    /// must never be cached directly.
+    ///
+    /// **v0.4 Slice 2.1 repair**: this originally copied `array.count`
+    /// elements from `array.dataPointer` in one flat linear pass — which
+    /// silently assumed `array`'s own memory was contiguous (row-major)
+    /// for its shape. Core ML does not guarantee that for an output array;
+    /// on a real device this corrupted the cached embedding outright,
+    /// breaking mask conversion on the very first garment of a session
+    /// (`docs/EDGESAM_PROVENANCE.md`, "Regression: the deep-copy strides
+    /// bug"). `EdgeSAMMultiArraySupport.floatElements` now reads through
+    /// `array.strides` instead, so this is correct regardless of the
+    /// source array's actual memory layout. `nil` if allocation fails, or
+    /// `array` is not the float32 buffer EdgeSAM's encoder always produces
+    /// (`docs/EDGESAM_PROVENANCE.md`) — safer to reject than guess at
+    /// another data type's element size.
     private static func copied(_ array: MLMultiArray) -> MLMultiArray? {
-        guard array.dataType == .float32,
+        guard let elements = EdgeSAMMultiArraySupport.floatElements(of: array),
               let copy = try? MLMultiArray(shape: array.shape, dataType: .float32) else { return nil }
-        let source = array.dataPointer.bindMemory(to: Float32.self, capacity: array.count)
         let destination = copy.dataPointer.bindMemory(to: Float32.self, capacity: copy.count)
-        destination.update(from: source, count: array.count)
+        elements.withUnsafeBufferPointer { source in
+            guard let base = source.baseAddress else { return }
+            destination.update(from: base, count: elements.count)
+        }
         return copy
     }
 

@@ -257,4 +257,148 @@ final class EdgeSAMGeometryTests: XCTestCase {
             EdgeSAMGeometry.promptEntries(for: .full, points: atCapacity, resizeMetadata: metadata)?.count, 16
         )
     }
+
+    // MARK: - Regression (v0.4 Slice 2.1 repair): decoder output strides
+
+    func testContiguousStridesMatchesTheStandardRowMajorFormula() {
+        // A 3D [1, 4, 6] buffer: the last dimension has stride 1, the
+        // middle dimension steps by the last dimension's size, the first
+        // by the product of both that follow it.
+        XCTAssertEqual(EdgeSAMGeometry.contiguousStrides(for: [1, 4, 6]), [24, 6, 1])
+        XCTAssertEqual(EdgeSAMGeometry.contiguousStrides(for: [2, 3]), [3, 1])
+        XCTAssertEqual(EdgeSAMGeometry.contiguousStrides(for: [5]), [1])
+        XCTAssertEqual(EdgeSAMGeometry.contiguousStrides(for: []), [])
+    }
+
+    func testReorderToContiguousIsAnIdentityCopyWhenAlreadyContiguous() {
+        let shape = [1, 2, 2]
+        let source: [Float] = [1, 2, 3, 4]
+        let result = EdgeSAMGeometry.reorderToContiguous(
+            source, shape: shape, strides: EdgeSAMGeometry.contiguousStrides(for: shape)
+        )
+        XCTAssertEqual(result, source)
+    }
+
+    /// The actual regression: simulates a real-device Core ML output whose
+    /// rows carry one extra element of padding beyond the logical row
+    /// width — a documented Core ML behaviour (Neural-Engine-computed
+    /// outputs in particular) — and pins that `reorderToContiguous` skips
+    /// that padding rather than folding it into the data, which is exactly
+    /// what a flat linear read (`EdgeSAMSegmenter`'s and
+    /// `EdgeSAMMaskConversion`'s original code) silently failed to do.
+    func testReorderToContiguousUndoesRowPaddingCoreMLCanIntroduce() {
+        let shape = [2, 3] // 2 rows, 3 logical columns.
+        let paddedStrides = [4, 1] // ...but a 4-element stride between rows.
+        // Row 0: [0, 1, 2, <pad>], Row 1: [10, 11, 12, <pad>].
+        let padded: [Float] = [0, 1, 2, 999, 10, 11, 12, 999]
+
+        let result = EdgeSAMGeometry.reorderToContiguous(padded, shape: shape, strides: paddedStrides)
+
+        XCTAssertEqual(result, [0, 1, 2, 10, 11, 12], "the padding slot at the end of each row must be skipped")
+    }
+
+    func testReorderToContiguousHandlesPaddingOnAHigherDimensionToo() {
+        // [2, 2, 2] logical, with the outermost dimension padded by one
+        // extra 2x2 "page" worth of stride — the shape EdgeSAM's own
+        // masks output ([1, 4, 256, 256]) most resembles: padding on a
+        // dimension well above the innermost one.
+        let shape = [2, 2, 2]
+        let paddedStrides = [6, 2, 1] // contiguous would be [4, 2, 1].
+        // Page 0 (offset 0..<4 of its own 6-slot page): [1,2,3,4], then 2 pad slots.
+        // Page 1 (offset 6..<10):                       [5,6,7,8], then 2 pad slots.
+        let padded: [Float] = [1, 2, 3, 4, -1, -1, 5, 6, 7, 8, -1, -1]
+
+        let result = EdgeSAMGeometry.reorderToContiguous(padded, shape: shape, strides: paddedStrides)
+
+        XCTAssertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8])
+    }
+
+    func testReorderToContiguousRejectsAMismatchedShapeAndStridesLength() {
+        XCTAssertNil(EdgeSAMGeometry.reorderToContiguous([1, 2, 3], shape: [1, 2], strides: [1, 1, 1]))
+    }
+
+    func testReorderToContiguousRejectsABufferTooShortForTheDeclaredStrides() {
+        // strides claim the second row starts at offset 4, but only 4
+        // elements are actually given — one short of what reaching it needs.
+        XCTAssertNil(EdgeSAMGeometry.reorderToContiguous([0, 1, 2, 3], shape: [2, 3], strides: [4, 1]))
+    }
+
+    func testReorderToContiguousRejectsAnEmptyShape() {
+        XCTAssertNil(EdgeSAMGeometry.reorderToContiguous([1, 2, 3], shape: [], strides: []))
+    }
+
+    /// Reproduces `EdgeSAMMaskConversion.convert`'s full geometric pipeline
+    /// — every step after `masks`/`scores` have already been read into a
+    /// plain `[Float]` plane — end to end, on a realistic non-square
+    /// source and a non-full crop, proving the whole round trip back to
+    /// source-space still produces a valid, correctly placed mask rather
+    /// than the empty result the strides bug produced. `sourceWidth` is
+    /// chosen so `resizeMetadata.scale == 1.0` exactly (1024 is already
+    /// the longest side), which keeps every intermediate pixel coordinate
+    /// an exact integer — no bilinear-rounding slop to account for in the
+    /// assertions below.
+    func testTheFullMaskConversionPipelineProducesAValidMaskForARealisticNonSquareCrop() throws {
+        let sourceWidth = 1024
+        let sourceHeight = 512 // a wide, non-square photo — 2:1.
+        let metadata = try XCTUnwrap(EdgeSAMGeometry.resizeMetadata(sourceWidth: sourceWidth, sourceHeight: sourceHeight))
+        XCTAssertEqual(metadata.scale, 1.0, accuracy: 0.0001)
+        XCTAssertEqual(metadata.resizedWidth, sourceWidth)
+        XCTAssertEqual(metadata.resizedHeight, sourceHeight)
+
+        // Stand in for one already-reordered 256x256 decoder mask plane: a
+        // foreground rectangle in roughly the upper-left quadrant — not
+        // the full frame — background everywhere else.
+        let decoderSize = 256
+        var plane = [Float](repeating: -4, count: decoderSize * decoderSize)
+        let fgMinX = 64, fgMaxX = 128 // columns [64, 128) of 256 -> [0.25, 0.5)
+        let fgMinY = 32, fgMaxY = 96 // rows [32, 96) of 256 -> [0.125, 0.375)
+        for y in fgMinY..<fgMaxY {
+            for x in fgMinX..<fgMaxX {
+                plane[y * decoderSize + x] = 4
+            }
+        }
+
+        // Steps 1-3 of `EdgeSAMMaskConversion.convert`, reproduced exactly.
+        let upscaled = EdgeSAMGeometry.bilinearResize(
+            plane, width: decoderSize, height: decoderSize,
+            toWidth: EdgeSAMGeometry.modelInputSize, toHeight: EdgeSAMGeometry.modelInputSize
+        )
+        XCTAssertEqual(upscaled.count, EdgeSAMGeometry.modelInputSize * EdgeSAMGeometry.modelInputSize)
+
+        var cropped = [Float](repeating: 0, count: metadata.resizedWidth * metadata.resizedHeight)
+        for y in 0..<metadata.resizedHeight {
+            let srcRow = y * EdgeSAMGeometry.modelInputSize
+            let dstRow = y * metadata.resizedWidth
+            for x in 0..<metadata.resizedWidth {
+                cropped[dstRow + x] = upscaled[srcRow + x]
+            }
+        }
+
+        let full = EdgeSAMGeometry.bilinearResize(
+            cropped, width: metadata.resizedWidth, height: metadata.resizedHeight,
+            toWidth: sourceWidth, toHeight: sourceHeight
+        )
+        XCTAssertEqual(full.count, sourceWidth * sourceHeight)
+
+        let result = try XCTUnwrap(
+            EdgeSAMGeometry.thresholdAndBoundingBox(full, width: sourceWidth, height: sourceHeight),
+            "a real foreground region must survive the full round trip — this is the exact failure "
+                + "mode of 'RIG could not convert that mask back onto the photo'"
+        )
+
+        // scale == 1.0 and the final resize is an identity (resizedWidth/
+        // Height already equal sourceWidth/Height), so the source pixel
+        // coordinates are exactly 4x the plane's — no width padding (source
+        // is exactly as wide as the model frame), so the x fraction is
+        // unchanged at [0.25, 0.5); the source is only half as tall as the
+        // model frame though, so the y fraction doubles from the plane's
+        // [0.125, 0.375) to [0.25, 0.75) once re-expressed against
+        // `sourceHeight` instead of the padded 1024-tall frame. A couple of
+        // percent of tolerance absorbs bilinear edge-blending at the
+        // rectangle's boundary.
+        XCTAssertEqual(result.boundingRegion.x, 0.25, accuracy: 0.02)
+        XCTAssertEqual(result.boundingRegion.y, 0.25, accuracy: 0.02)
+        XCTAssertEqual(result.boundingRegion.width, 0.25, accuracy: 0.02)
+        XCTAssertEqual(result.boundingRegion.height, 0.5, accuracy: 0.02)
+    }
 }

@@ -36,21 +36,28 @@ enum EdgeSAMMaskConversion {
         sourceImage: CGImage
     ) -> Converted? {
         guard masks.count == candidateCount * decoderMaskSize * decoderMaskSize,
-              scores.count == candidateCount else { return nil }
+              scores.count == candidateCount,
+              // v0.4 Slice 2.1 repair: read through `strides`, not a flat
+              // linear index — `masks`/`scores` are Core ML *output*
+              // arrays, and Core ML does not guarantee their memory is
+              // contiguous for their declared shape. See
+              // `EdgeSAMMultiArraySupport`'s doc comment and
+              // `docs/EDGESAM_PROVENANCE.md`, "Regression: the deep-copy
+              // strides bug".
+              let scoreValues = EdgeSAMMultiArraySupport.floatElements(of: scores),
+              let maskValues = EdgeSAMMultiArraySupport.floatElements(of: masks)
+        else { return nil }
 
-        let scorePointer = scores.dataPointer.bindMemory(to: Float32.self, capacity: scores.count)
         var bestIndex = 0
-        var bestScore = scorePointer[0]
-        for i in 1..<candidateCount where scorePointer[i] > bestScore {
-            bestScore = scorePointer[i]
+        var bestScore = scoreValues[0]
+        for i in 1..<candidateCount where scoreValues[i] > bestScore {
+            bestScore = scoreValues[i]
             bestIndex = i
         }
 
-        let maskPointer = masks.dataPointer.bindMemory(to: Float32.self, capacity: masks.count)
         let plane = decoderMaskSize * decoderMaskSize
         let base = bestIndex * plane
-        var logits = [Float](repeating: 0, count: plane)
-        for i in 0..<plane { logits[i] = maskPointer[base + i] }
+        let logits = Array(maskValues[base..<(base + plane)])
 
         // 1) 256x256 -> the encoder's own 1024x1024 frame.
         let upscaled = EdgeSAMGeometry.bilinearResize(

@@ -247,6 +247,76 @@ depth: even if this hypothesis turns out to be wrong or incomplete, a
 future segmentation failure will surface as a visible message rather than
 silently reading as "the AI feature isn't there."
 
+## Regression: the deep-copy strides bug (v0.4 Slice 2.1 repair)
+
+Real-device testing after the fix above shipped found a *new*, worse
+failure: mask conversion now failed outright — `"RIG could not convert
+that mask back onto the photo"` — on the very first garment of a session,
+before any refinement interaction. Since `EdgeSAMMaskConversion.swift`
+itself was untouched by that commit, and the failure reproduced on the
+first garment (so `OutfitEmbeddingSession`'s encode-once/decode-many
+reuse across *garments* cannot be the cause — only one encode and one
+decode had run at all), the regression had to be in what the deep-copy
+fix itself changed: `EdgeSAMSegmenter.copied(_:)`.
+
+That function copied `array.count` `Float32` elements from
+`array.dataPointer` in a single flat linear pass — which silently assumes
+`array`'s own backing memory is laid out contiguously (row-major) for its
+declared shape. **Core ML does not guarantee that for an output
+`MLMultiArray`.** Outputs computed on the Neural Engine in particular are
+commonly padded per dimension for alignment, meaning `array.strides` can
+legitimately differ from the shape's default contiguous strides. Before
+this fix existed, the encoder's raw output object was handed directly
+into the decoder's `MLDictionaryFeatureProvider` input — Core ML reads
+its own `MLMultiArray` via its declared strides internally, so a
+non-contiguous buffer was never a problem. The deep copy introduced a
+second place reading that same buffer, this time by hand, and did so
+without consulting `strides` at all: on a device where the encoder's
+`image_embeddings` output is not contiguous, this reads (and therefore
+copies) the wrong bytes for every row after the first, corrupting the
+cached embedding before the very first decode ever runs. This is a
+distinct failure from the one-garment-only bug the deep copy was written
+to fix — it is entirely plausible both were real: the original reference-
+caching bug on encode #2+, and this stride-blind copy corrupting encode
+#1's result outright once introduced.
+
+The same unchecked-contiguity assumption was already present, independent
+of the deep copy, in `EdgeSAMMaskConversion.convert`'s reads of the
+decoder's own `masks` and `scores` outputs (`scores.dataPointer... `,
+`masks.dataPointer...`) — both are Core ML *output* arrays too, and nothing
+about them is any more guaranteed to be contiguous than the encoder's
+output. This was flagged as a suspect during the repair investigation and
+fixed at the same time, on the reasoning that it is the identical bug
+pattern sitting on the exact same "decoder output → selected mask plane"
+step of the pipeline, even though `EdgeSAMMaskConversion.swift` had not
+been touched by the Slice 2.1 commit that introduced the encoder-side
+version of this bug.
+
+**The fix**: `EdgeSAMGeometry.reorderToContiguous` (pure, no Core ML
+import, exercised directly by `Tests/EdgeSAMGeometryTests.swift` with
+synthetic padded buffers) walks a possibly-strided buffer by its own
+multi-dimensional index and re-lays it out row-major; the common
+contiguous case is fast-pathed with a single copy. `EdgeSAMMultiArraySupport
+.floatElements(of:)` is the one place in the adapter that binds a Core ML
+output array's `dataPointer` and hands it to that function — both
+`EdgeSAMSegmenter.copied(_:)` and `EdgeSAMMaskConversion.convert` now read
+every output array through it, so "always honour `strides`" is a fact
+about the adapter rather than a rule each call site has to separately
+remember.
+
+**This is, again, a well-reasoned hypothesis, not a verified root
+cause** — this environment cannot execute Core ML code, and non-
+contiguous Neural Engine output strides could not be directly observed
+without running on the real device. It is the most defensible explanation
+given: (a) the exact symptom (first-garment, hard failure, appeared only
+after the deep-copy commit), (b) `EdgeSAMMaskConversion.swift` being
+provably unchanged, narrowing the cause to what that commit actually
+touched, and (c) non-contiguous Core ML output strides being a
+well-documented, real phenomenon rather than a speculative one. As
+before, this is paired with — not a replacement for — the explicit
+on-screen failure notice (Goal C): if this hypothesis is also incomplete,
+the failure still surfaces visibly rather than silently.
+
 ## Known limitation
 
 Whether this specific export was produced with `--use-stability-score`
