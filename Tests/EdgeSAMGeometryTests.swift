@@ -12,12 +12,11 @@ import XCTest
 final class EdgeSAMGeometryTests: XCTestCase {
     // MARK: - resizeMetadata
 
-    func testResizeMetadataScalesTheLongestSideToTheModelInputSize() {
-        let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 800, sourceHeight: 1600)
-        XCTAssertNotNil(metadata)
-        XCTAssertEqual(metadata?.resizedHeight, 1024, "the longer side must land exactly on the model's input size")
-        XCTAssertEqual(metadata?.resizedWidth, 512, "aspect ratio must be preserved: 800/1600 * 1024 = 512")
-        XCTAssertEqual(metadata?.scale, 1024.0 / 1600.0, accuracy: 0.0001)
+    func testResizeMetadataScalesTheLongestSideToTheModelInputSize() throws {
+        let metadata = try XCTUnwrap(EdgeSAMGeometry.resizeMetadata(sourceWidth: 800, sourceHeight: 1600))
+        XCTAssertEqual(metadata.resizedHeight, 1024, "the longer side must land exactly on the model's input size")
+        XCTAssertEqual(metadata.resizedWidth, 512, "aspect ratio must be preserved: 800/1600 * 1024 = 512")
+        XCTAssertEqual(metadata.scale, 1024.0 / 1600.0, accuracy: 0.0001)
     }
 
     func testResizeMetadataOfAnAlreadySquareSourceFillsTheFrame() {
@@ -34,30 +33,30 @@ final class EdgeSAMGeometryTests: XCTestCase {
 
     // MARK: - boxPromptCoordinates (RIG-space -> model-space)
 
-    func testBoxPromptCoordinatesOfTheFullImageCoverTheEntireResizedFrame() {
+    func testBoxPromptCoordinatesOfTheFullImageCoverTheEntireResizedFrame() throws {
         let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1600, sourceHeight: 800)!
-        let coords = EdgeSAMGeometry.boxPromptCoordinates(for: .full, resizeMetadata: metadata)
+        let coords = try XCTUnwrap(EdgeSAMGeometry.boxPromptCoordinates(for: .full, resizeMetadata: metadata))
 
-        XCTAssertEqual(coords?.x0, 0, accuracy: 0.001)
-        XCTAssertEqual(coords?.y0, 0, accuracy: 0.001)
+        XCTAssertEqual(coords.x0, 0, accuracy: 0.001)
+        XCTAssertEqual(coords.y0, 0, accuracy: 0.001)
         // 1600 wide source -> resizedWidth 1024 exactly (the longer side).
-        XCTAssertEqual(coords?.x1, 1024, accuracy: 0.5)
+        XCTAssertEqual(coords.x1, 1024, accuracy: 0.5)
         // 800 tall -> half of 1024 = 512.
-        XCTAssertEqual(coords?.y1, 512, accuracy: 0.5)
+        XCTAssertEqual(coords.y1, 512, accuracy: 0.5)
     }
 
-    func testBoxPromptCoordinatesOfACenteredRegionScaleProportionally() {
+    func testBoxPromptCoordinatesOfACenteredRegionScaleProportionally() throws {
         // A perfectly square source: scale is exactly 1024/1000 for every axis.
         let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1000, sourceHeight: 1000)!
         let region = NormalizedCropRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5)
 
-        let coords = EdgeSAMGeometry.boxPromptCoordinates(for: region, resizeMetadata: metadata)
+        let coords = try XCTUnwrap(EdgeSAMGeometry.boxPromptCoordinates(for: region, resizeMetadata: metadata))
 
         let scale = metadata.scale
-        XCTAssertEqual(coords?.x0, 250 * scale, accuracy: 0.01)
-        XCTAssertEqual(coords?.y0, 250 * scale, accuracy: 0.01)
-        XCTAssertEqual(coords?.x1, 750 * scale, accuracy: 0.01)
-        XCTAssertEqual(coords?.y1, 750 * scale, accuracy: 0.01)
+        XCTAssertEqual(coords.x0, 250 * scale, accuracy: 0.01)
+        XCTAssertEqual(coords.y0, 250 * scale, accuracy: 0.01)
+        XCTAssertEqual(coords.x1, 750 * scale, accuracy: 0.01)
+        XCTAssertEqual(coords.y1, 750 * scale, accuracy: 0.01)
     }
 
     func testBoxPromptCoordinatesOfAnUnusableRegionIsNil() {
@@ -121,7 +120,7 @@ final class EdgeSAMGeometryTests: XCTestCase {
         XCTAssertNil(EdgeSAMGeometry.thresholdAndBoundingBox(values, width: 4, height: 4))
     }
 
-    func testThresholdAndBoundingBoxFindsATightBoxAroundForegroundPixels() {
+    func testThresholdAndBoundingBoxFindsATightBoxAroundForegroundPixels() throws {
         // 4x4 field, all background except a 2x2 foreground block at (1,1)-(2,2).
         var values = [Float](repeating: -1, count: 16)
         for y in 1...2 {
@@ -130,16 +129,16 @@ final class EdgeSAMGeometryTests: XCTestCase {
             }
         }
 
-        let result = EdgeSAMGeometry.thresholdAndBoundingBox(values, width: 4, height: 4)
+        let result = try XCTUnwrap(EdgeSAMGeometry.thresholdAndBoundingBox(values, width: 4, height: 4))
 
-        XCTAssertEqual(result?.minX, 1)
-        XCTAssertEqual(result?.maxX, 2)
-        XCTAssertEqual(result?.minY, 1)
-        XCTAssertEqual(result?.maxY, 2)
-        XCTAssertEqual(result?.boundingRegion.x, 0.25, accuracy: 0.0001)
-        XCTAssertEqual(result?.boundingRegion.y, 0.25, accuracy: 0.0001)
-        XCTAssertEqual(result?.boundingRegion.width, 0.5, accuracy: 0.0001)
-        XCTAssertEqual(result?.boundingRegion.height, 0.5, accuracy: 0.0001)
+        XCTAssertEqual(result.minX, 1)
+        XCTAssertEqual(result.maxX, 2)
+        XCTAssertEqual(result.minY, 1)
+        XCTAssertEqual(result.maxY, 2)
+        XCTAssertEqual(result.boundingRegion.x, 0.25, accuracy: 0.0001)
+        XCTAssertEqual(result.boundingRegion.y, 0.25, accuracy: 0.0001)
+        XCTAssertEqual(result.boundingRegion.width, 0.5, accuracy: 0.0001)
+        XCTAssertEqual(result.boundingRegion.height, 0.5, accuracy: 0.0001)
     }
 
     func testThresholdAndBoundingBoxOfAFullyForegroundFieldCoversTheWholeFrame() {
