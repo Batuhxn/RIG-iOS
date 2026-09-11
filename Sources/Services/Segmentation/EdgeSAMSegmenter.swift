@@ -49,6 +49,9 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
     private var cachedEmbedding: MLMultiArray?
     private var cachedResizeMetadata: EdgeSAMResizeMetadata?
     private var cachedSourceImage: CGImage?
+    #if DEBUG
+    private var isFirstPrompt = true
+    #endif
 
     init(bundle: Bundle = .main, encoderResourceName: String = "edge_sam_3x_encoder", decoderResourceName: String = "edge_sam_3x_decoder") {
         self.bundle = bundle
@@ -66,6 +69,9 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
 
         guard let decoded = UIImage(data: imageData) else { throw SegmentationError.encodingFailed }
         let upright = GarmentImageProcessing.normalizedOrientation(decoded)
+        let diagnostics = EdgeSAMDiagnostics()
+        diagnostics.source("decodedSource", decoded)
+        diagnostics.source("uprightSource", upright)
         guard let cgImage = upright.cgImage,
               let prepared = EdgeSAMImageTensor.preprocessed(upright) else {
             throw SegmentationError.encodingFailed
@@ -81,8 +87,11 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
 
         let output: MLFeatureProvider
         do {
+            diagnostics.event("encoderPrediction", ["state": "begin"])
             output = try await Self.runPrediction(encoder, input: input)
+            diagnostics.event("encoderPrediction", ["state": "complete"])
         } catch {
+            diagnostics.event("encoderPrediction", ["state": "failed"])
             throw SegmentationError.encodingFailed
         }
         try Task.checkCancellation()
@@ -90,6 +99,8 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
         guard let rawEmbedding = output.featureValue(for: "image_embeddings")?.multiArrayValue else {
             throw SegmentationError.encodingFailed
         }
+        diagnostics.tensor("rawEncoderEmbedding", rawEmbedding)
+        diagnostics.metadata(prepared.resizeMetadata)
         // Deep-copy the encoder's *output* array before caching it, rather
         // than holding onto the instance Core ML handed back. This is the
         // fix for the real-device finding that EdgeSAM only ever worked for
@@ -111,12 +122,17 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
         guard let embedding = Self.copied(rawEmbedding) else {
             throw SegmentationError.encodingFailed
         }
+        diagnostics.tensor("cachedEncoderEmbedding", embedding)
 
         let token = SegmentationSourceToken(id: UUID())
+        diagnostics.event("encodedSource", ["sourceToken": "\(token.id)"])
         cachedToken = token
         cachedEmbedding = embedding
         cachedResizeMetadata = prepared.resizeMetadata
         cachedSourceImage = cgImage
+        #if DEBUG
+        isFirstPrompt = true
+        #endif
         return token
     }
 
@@ -137,9 +153,29 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
         }
         let (_, decoder) = try await loadedModels()
 
-        guard let prompt = EdgeSAMPromptTensor.prompt(for: region, points: points, resizeMetadata: resizeMetadata) else {
+        let diagnostics = EdgeSAMDiagnostics()
+        var prompt = EdgeSAMPromptTensor.prompt(for: region, points: points, resizeMetadata: resizeMetadata)
+        diagnostics.event("prompt", ["mode": "current", "crop": "\(region)", "points": "\(points)",
+                                     "center": "\(String(describing: EdgeSAMGeometry.centerPoint(of: region)))",
+                                     "sourceToken": "\(token.id)"])
+        #if DEBUG
+        // Explicit experiment only. Restart the source session for each arm.
+        // No automatic fallback: conversion and the cached embedding stay unchanged.
+        if isFirstPrompt && (EdgeSAMDiagnosticBuffer.shared.knownGoodFirstPrompt ||
+            ProcessInfo.processInfo.arguments.contains("-EdgeSAMKnownGoodFirstPrompt")) {
+            prompt = EdgeSAMPromptTensor.knownGoodBoxPrompt(for: region, resizeMetadata: resizeMetadata)
+            diagnostics.event("promptOverride", ["mode": "2564a3d-box-only"])
+        }
+        isFirstPrompt = false
+        #endif
+        guard let prompt else {
             throw SegmentationError.decodingFailed
         }
+        diagnostics.tensor("decoderEmbedding", embedding)
+        diagnostics.tensor("promptCoordinates", prompt.coordinates)
+        diagnostics.tensor("promptLabels", prompt.labels)
+        diagnostics.event("promptValues", ["coordinates": "\(String(describing: EdgeSAMMultiArraySupport.floatElements(of: prompt.coordinates)))",
+                                          "labels": "\(String(describing: EdgeSAMMultiArraySupport.floatElements(of: prompt.labels)))"])
         try Task.checkCancellation()
 
         let input: MLFeatureProvider
@@ -155,8 +191,11 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
 
         let output: MLFeatureProvider
         do {
+            diagnostics.event("decoderPrediction", ["state": "begin"])
             output = try await Self.runPrediction(decoder, input: input)
+            diagnostics.event("decoderPrediction", ["state": "complete"])
         } catch {
+            diagnostics.event("decoderPrediction", ["state": "failed"])
             throw SegmentationError.decodingFailed
         }
         try Task.checkCancellation()
@@ -167,7 +206,8 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
         }
 
         guard let converted = EdgeSAMMaskConversion.convert(
-            masks: masks, scores: scores, resizeMetadata: resizeMetadata, sourceImage: sourceImage
+            masks: masks, scores: scores, resizeMetadata: resizeMetadata, sourceImage: sourceImage,
+            diagnostics: diagnostics
         ) else {
             throw SegmentationError.maskConversionFailed
         }

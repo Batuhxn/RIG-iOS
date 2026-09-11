@@ -15,6 +15,27 @@ import Foundation
 /// the order of entries within the array does not change the decoder's
 /// output.
 enum EdgeSAMPromptTensor {
+    #if DEBUG
+    /// Exact 2564a3d packing and coordinates, isolated from promptEntries.
+    /// Opt-in first-prompt experiment only, never a production fallback.
+    static func knownGoodBoxPrompt(for region: NormalizedCropRect, resizeMetadata: EdgeSAMResizeMetadata) -> Prompt? {
+        guard let coords = EdgeSAMGeometry.boxPromptCoordinates(for: region, resizeMetadata: resizeMetadata) else {
+            return nil
+        }
+        guard let coordinates = try? MLMultiArray(shape: [1, 2, 2], dataType: .float32),
+              let labels = try? MLMultiArray(shape: [1, 2], dataType: .float32) else { return nil }
+        let coordPointer = coordinates.dataPointer.bindMemory(to: Float32.self, capacity: coordinates.count)
+        coordPointer[0] = Float(coords.x0)
+        coordPointer[1] = Float(coords.y0)
+        coordPointer[2] = Float(coords.x1)
+        coordPointer[3] = Float(coords.y1)
+        let labelPointer = labels.dataPointer.bindMemory(to: Float32.self, capacity: labels.count)
+        labelPointer[0] = 2
+        labelPointer[1] = 3
+        return Prompt(coordinates: coordinates, labels: labels)
+    }
+    #endif
+
     struct Prompt {
         /// `Float32[1, N, 2]`, `N` = 2 (box only) up to 16 (box + up to 14
         /// refinement points) — see `EdgeSAMGeometry.promptEntries`.

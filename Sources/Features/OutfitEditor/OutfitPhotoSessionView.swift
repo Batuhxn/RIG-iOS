@@ -86,6 +86,9 @@ struct OutfitPhotoSessionView: View {
     /// (the real-device finding this exists to address) — see Goal C in the
     /// v0.4 Slice 2.1 report.
     @State var segmentationFailureMessage: String?
+    #if DEBUG
+    @State var showingEdgeSAMDiagnostics = false
+    #endif
 
     @State var isCheckingForDuplicates = false
     @State var duplicateReview: DuplicateReviewState?
@@ -108,6 +111,11 @@ struct OutfitPhotoSessionView: View {
             .navigationTitle("Outfit photo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
+            #if DEBUG
+            .sheet(isPresented: $showingEdgeSAMDiagnostics) {
+                EdgeSAMDiagnosticsView()
+            }
+            #endif
             .task { await loadSource() }
             .sheet(isPresented: duplicateSheetBinding) {
                 duplicateSheet
@@ -218,6 +226,9 @@ struct OutfitPhotoSessionView: View {
     /// additive: `rawCropData` alone is already everything the manual flow
     /// needs.
     func previewDraft() {
+        #if DEBUG
+        EdgeSAMDiagnostics().event("cropConfirmation", ["crop": "\(draftRegion)", "sourcePixelSize": "\(sourcePixelSize)"])
+        #endif
         guard let sourceData, session.active != nil else { return }
         session.updateRegion(draftRegion)
         guard let cropped = GarmentImageCropping.croppedData(from: sourceData, region: draftRegion) else {

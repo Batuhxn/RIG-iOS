@@ -148,6 +148,11 @@ extension OutfitPhotoSessionView {
 
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
+        #if DEBUG
+        ToolbarItem(placement: .topBarTrailing) {
+            Button("Diagnostics") { showingEdgeSAMDiagnostics = true }
+        }
+        #endif
         ToolbarItem(placement: .cancellationAction) {
             Button(session.resolvedCount > 0 ? "Done" : "Cancel", action: finish)
         }

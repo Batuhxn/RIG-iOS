@@ -105,11 +105,17 @@ extension OutfitPhotoSessionView {
             guard !Task.isCancelled else { return }
             maskProposal = result
             maskReviewRegion = region
+            #if DEBUG
+            EdgeSAMDiagnostics().event("reviewReady", ["region": "\(result.boundingRegion)"])
+            #endif
         } catch is CancellationError {
         } catch SegmentationError.cancelled, SegmentationError.stalePrompt, SegmentationError.modelUnavailable {
         } catch {
             segmentationFailureMessage = (error as? LocalizedError)?.errorDescription
                 ?? "RIG could not propose a garment mask for that area."
+            #if DEBUG
+            EdgeSAMDiagnostics().event("proposalFailed", ["message": segmentationFailureMessage ?? "unknown"])
+            #endif
         }
     }
 

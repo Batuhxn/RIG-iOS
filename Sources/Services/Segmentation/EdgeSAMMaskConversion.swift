@@ -33,20 +33,19 @@ enum EdgeSAMMaskConversion {
         masks: MLMultiArray,
         scores: MLMultiArray,
         resizeMetadata: EdgeSAMResizeMetadata,
-        sourceImage: CGImage
+        sourceImage: CGImage,
+        diagnostics: EdgeSAMDiagnostics = EdgeSAMDiagnostics()
     ) -> Converted? {
-        guard masks.count == candidateCount * decoderMaskSize * decoderMaskSize,
-              scores.count == candidateCount,
-              // v0.4 Slice 2.1 repair: read through `strides`, not a flat
-              // linear index — `masks`/`scores` are Core ML *output*
-              // arrays, and Core ML does not guarantee their memory is
-              // contiguous for their declared shape. See
-              // `EdgeSAMMultiArraySupport`'s doc comment and
-              // `docs/EDGESAM_PROVENANCE.md`, "Regression: the deep-copy
-              // strides bug".
-              let scoreValues = EdgeSAMMultiArraySupport.floatElements(of: scores),
-              let maskValues = EdgeSAMMultiArraySupport.floatElements(of: masks)
-        else { return nil }
+        diagnostics.tensor("masks", masks)
+        diagnostics.tensor("scores", scores)
+        diagnostics.metadata(resizeMetadata)
+        diagnostics.event("sourceCGImage", ["width": "\(sourceImage.width)", "height": "\(sourceImage.height)"])
+        guard masks.count == candidateCount * decoderMaskSize * decoderMaskSize else { return diagnostics.fail(.maskCount) }
+        guard scores.count == candidateCount else { return diagnostics.fail(.scoreCount) }
+        guard let scoreValues = EdgeSAMMultiArraySupport.floatElements(of: scores, diagnostics: diagnostics, name: "scores")
+        else { return diagnostics.fail(.scoreRead) }
+        guard let maskValues = EdgeSAMMultiArraySupport.floatElements(of: masks, diagnostics: diagnostics, name: "masks")
+        else { return diagnostics.fail(.maskRead) }
 
         var bestIndex = 0
         var bestScore = scoreValues[0]
@@ -56,8 +55,16 @@ enum EdgeSAMMaskConversion {
         }
 
         let plane = decoderMaskSize * decoderMaskSize
+        #if DEBUG
+        for index in 0..<candidateCount {
+            diagnostics.plane("candidate\(index)", Array(maskValues[(index * plane)..<((index + 1) * plane)]),
+                              width: decoderMaskSize, height: decoderMaskSize)
+        }
+        #endif
         let base = bestIndex * plane
         let logits = Array(maskValues[base..<(base + plane)])
+        diagnostics.event("selection", ["scores": "\(scoreValues)", "index": "\(bestIndex)", "base": "\(base)"])
+        diagnostics.plane("decoderPlane", logits, width: decoderMaskSize, height: decoderMaskSize)
 
         // 1) 256x256 -> the encoder's own 1024x1024 frame.
         let upscaled = EdgeSAMGeometry.bilinearResize(
@@ -69,7 +76,8 @@ enum EdgeSAMMaskConversion {
         //    resized-but-unpadded size the source actually occupied.
         let resizedW = resizeMetadata.resizedWidth
         let resizedH = resizeMetadata.resizedHeight
-        guard resizedW > 0, resizedH > 0 else { return nil }
+        diagnostics.plane("modelSpace", upscaled, width: 1024, height: 1024)
+        guard resizedW > 0, resizedH > 0 else { return diagnostics.fail(.resizedDimensions) }
         var cropped = [Float](repeating: 0, count: resizedW * resizedH)
         for y in 0..<resizedH {
             let srcRow = y * EdgeSAMGeometry.modelInputSize
@@ -82,22 +90,27 @@ enum EdgeSAMMaskConversion {
         // 3) Back up to the bounded source's own pixel size.
         let sourceW = resizeMetadata.sourceWidth
         let sourceH = resizeMetadata.sourceHeight
-        guard sourceW > 0, sourceH > 0, sourceImage.width == sourceW, sourceImage.height == sourceH else { return nil }
+        diagnostics.plane("unpadded", cropped, width: resizedW, height: resizedH)
+        guard sourceW > 0, sourceH > 0 else { return diagnostics.fail(.sourceDimensions) }
+        guard sourceImage.width == sourceW, sourceImage.height == sourceH else { return diagnostics.fail(.sourceImageDimensions) }
         let full = EdgeSAMGeometry.bilinearResize(cropped, width: resizedW, height: resizedH, toWidth: sourceW, toHeight: sourceH)
+        diagnostics.plane("sourceSpace", full, width: sourceW, height: sourceH)
 
         // 4) Threshold (`Sam.mask_threshold == 0.0`) and find the mask's
         //    bounding box. An empty mask is an honest "nothing proposed",
         //    not a crash.
         guard let thresholded = EdgeSAMGeometry.thresholdAndBoundingBox(full, width: sourceW, height: sourceH) else {
-            return nil
+            return diagnostics.fail(full.count == sourceW * sourceH ? .emptyForeground : .thresholdDimensions)
         }
 
         guard let cutout = compositeCutout(
             sourceImage: sourceImage, values: full,
             sourceWidth: sourceW, sourceHeight: sourceH,
-            minX: thresholded.minX, minY: thresholded.minY, maxX: thresholded.maxX, maxY: thresholded.maxY
+            minX: thresholded.minX, minY: thresholded.minY, maxX: thresholded.maxX, maxY: thresholded.maxY,
+            diagnostics: diagnostics
         ) else { return nil }
 
+        diagnostics.event("success", ["sourceRegion": "\(thresholded.boundingRegion)"])
         return Converted(cutoutData: cutout, boundingRegion: thresholded.boundingRegion, qualityScore: Double(bestScore))
     }
 
@@ -107,16 +120,17 @@ enum EdgeSAMMaskConversion {
     private static func compositeCutout(
         sourceImage: CGImage, values: [Float],
         sourceWidth: Int, sourceHeight: Int,
-        minX: Int, minY: Int, maxX: Int, maxY: Int
+        minX: Int, minY: Int, maxX: Int, maxY: Int,
+        diagnostics: EdgeSAMDiagnostics
     ) -> Data? {
         guard let context = CGContext(
             data: nil, width: sourceWidth, height: sourceHeight,
             bitsPerComponent: 8, bytesPerRow: sourceWidth * 4,
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else { return nil }
+        ) else { return diagnostics.fail(.contextCreation) }
         context.draw(sourceImage, in: CGRect(x: 0, y: 0, width: sourceWidth, height: sourceHeight))
-        guard let data = context.data else { return nil }
+        guard let data = context.data else { return diagnostics.fail(.contextData) }
         let pointer = data.bindMemory(to: UInt8.self, capacity: sourceWidth * sourceHeight * 4)
         for y in 0..<sourceHeight {
             let row = y * sourceWidth
@@ -128,9 +142,11 @@ enum EdgeSAMMaskConversion {
                 pointer[i + 3] = 0
             }
         }
-        guard let masked = context.makeImage() else { return nil }
+        guard let masked = context.makeImage() else { return diagnostics.fail(.maskedImageCreation) }
         let cropRect = CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
-        guard let croppedImage = masked.cropping(to: cropRect) else { return nil }
-        return UIImage(cgImage: croppedImage, scale: 1, orientation: .up).pngData()
+        guard let croppedImage = masked.cropping(to: cropRect) else { return diagnostics.fail(.imageCrop) }
+        guard let png = UIImage(cgImage: croppedImage, scale: 1, orientation: .up).pngData()
+        else { return diagnostics.fail(.pngEncoding) }
+        return png
     }
 }
