@@ -307,8 +307,9 @@ struct RIGFadingRule: View {
 
 /// The verdict label for an outfit. Deliberately words, never a percentage:
 /// there is no calibrated probability behind outfit ranking and the interface
-/// must not imply one. (The duplicate comparison is a separate case — see
-/// `SimilarityBadge`.)
+/// must not imply one. (The duplicate comparison is a separate case: it shows
+/// a similarity score derived from a feature-print distance — see
+/// `SimilarityScore`.)
 struct MatchBadge: View {
     let band: MatchBand
 

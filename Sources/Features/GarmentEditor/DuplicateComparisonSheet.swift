@@ -5,10 +5,10 @@ import UIKit
 /// whenever RIG believes the wardrobe might already have it.
 ///
 /// The user is never asked a blind "existing or new?" — they see both
-/// photographs, the shared category, and a plain-language similarity label,
-/// and only then choose. Nothing here merges or discards a garment on its
-/// own; every path out of this screen is a decision the user made, and
-/// "not a match" or "skip" leave the wardrobe exactly as it was.
+/// photographs, the shared category, and how close the two are, and only then
+/// choose. Nothing here merges or discards a garment on its own; every path
+/// out of this screen is a decision the user made, and "not a match" or
+/// "discard" leave the wardrobe exactly as it was.
 struct DuplicateComparisonSheet: View {
     /// The freshly imported candidate's own bytes — not yet any garment's
     /// row, so this is drawn from `Data` directly rather than through
@@ -28,86 +28,166 @@ struct DuplicateComparisonSheet: View {
     let onSkip: () -> Void
 
     var body: some View {
-        VStack(spacing: RIGTheme.Spacing.m) {
-            Text("RIG found something similar")
-                .font(.headline)
-                .padding(.top, RIGTheme.Spacing.m)
+        VStack(spacing: 0) {
+            RIGSheetGrabber()
 
             if let match = state.current {
-                comparison(for: match)
-                    .padding(.horizontal, RIGTheme.Spacing.m)
-
-                HStack(spacing: RIGTheme.Spacing.s) {
-                    Text(candidateCategory.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    SimilarityBadge(band: match.band)
-                }
-
-                Text("Comparing your own photos, on this device. RIG does not know these are the same garment — you do.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, RIGTheme.Spacing.l)
-
-                VStack(spacing: RIGTheme.Spacing.s) {
-                    Button("Use this existing item") { onUseExisting(match.garmentID) }
-                        .buttonStyle(RIGPrimaryButtonStyle())
-                    Button("Add as new item", action: onAddAsNew)
-                        .buttonStyle(RIGSecondaryButtonStyle())
-                    if state.hasAnother {
-                        Button("Not a match — show another", action: onShowAnother)
-                            .font(.footnote)
-                    }
-                    Button("Discard this photo", role: .destructive, action: onSkip)
-                        .font(.footnote)
-                        .padding(.top, RIGTheme.Spacing.xs)
-                }
-                .padding(.horizontal, RIGTheme.Spacing.m)
-                .padding(.bottom, RIGTheme.Spacing.l)
+                content(for: match)
             } else {
                 // Reached only if a caller presents this sheet with an
                 // already-exhausted state; the intended path is that the
                 // caller checks `state.isExhausted` first and skips straight
                 // to the ordinary add-as-new flow instead.
-                Text("Nothing left to compare.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Button("Add as new item", action: onAddAsNew)
-                    .buttonStyle(RIGPrimaryButtonStyle())
-                    .padding(.horizontal, RIGTheme.Spacing.m)
-                    .padding(.bottom, RIGTheme.Spacing.l)
+                exhausted
             }
+        }
+        .frame(maxWidth: .infinity)
+        .background(RIGTheme.cardBackground)
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: RIGTheme.Radius.sheet,
+                topTrailingRadius: RIGTheme.Radius.sheet,
+                style: .continuous
+            )
+        )
+        .presentationDetents([.large])
+        .presentationDragIndicator(.hidden)
+        .presentationBackground(RIGTheme.cardBackground)
+    }
+
+    @ViewBuilder
+    private func content(for match: WardrobeSimilarityMatch) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: "square.on.square")
+                    .font(.system(size: 11))
+                RIGTheme.kicker("Benzer parça", size: 11, tracking: 1.1)
+            }
+            .foregroundStyle(RIGTheme.accent)
+            .padding(.top, 16)
+
+            Text("Dolabında buna çok benzeyen bir parça var")
+                .font(.system(size: 22, weight: .medium))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+
+            Text("%\(SimilarityScore.percent(for: match.distance)) benzerlik · \(candidateCategory.displayName)")
+                .font(.system(size: 13))
+                .foregroundStyle(RIGTheme.text(58))
+                .padding(.top, 6)
+
+            comparison(for: match)
+                .padding(.top, 18)
+
+            Text("Karşılaştırma tamamen bu cihazda, kendi fotoğraflarınla yapılır. Bu oran bir benzerlik puanıdır — aynı parça olduğunun kanıtı değil. Buna sen karar verirsin.")
+                .font(.system(size: 11))
+                .foregroundStyle(RIGTheme.text(50))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 14)
+
+            Spacer(minLength: RIGTheme.Spacing.l)
+
+            actions(for: match)
+        }
+        .padding(.horizontal, RIGTheme.Spacing.xl)
+        .padding(.bottom, RIGTheme.Spacing.xl)
+    }
+
+    private func actions(for match: WardrobeSimilarityMatch) -> some View {
+        VStack(spacing: RIGTheme.Spacing.s) {
+            Button("Yine de ekle", action: onAddAsNew)
+                .buttonStyle(RIGPrimaryButtonStyle())
+
+            // The design labels this "update the existing item". RIG does not
+            // update anything here — it keeps the existing garment untouched
+            // and discards this candidate's files — so the label says that.
+            Button("Mevcut parçayı kullan") { onUseExisting(match.garmentID) }
+                .buttonStyle(RIGQuietButtonStyle())
+
+            if state.hasAnother {
+                Button("Eşleşmiyor — başkasını göster", action: onShowAnother)
+                    .buttonStyle(RIGQuietButtonStyle())
+            }
+
+            Button("Bu fotoğrafı at", role: .destructive, action: onSkip)
+                .font(.system(size: 13))
+                .foregroundStyle(RIGTheme.Neutral.n400)
+                .frame(minHeight: 44)
         }
     }
 
     private func comparison(for match: WardrobeSimilarityMatch) -> some View {
-        HStack(spacing: RIGTheme.Spacing.m) {
-            VStack(spacing: RIGTheme.Spacing.xs) {
-                Text("New photo")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                candidateImage
-                    .frame(height: 200)
+        ZStack {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 0) {
+                    candidateImage
+                        .padding(RIGTheme.Spacing.s)
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                        .background(RIGTheme.pageBackground, in: RoundedRectangle(cornerRadius: RIGTheme.Radius.medium, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: RIGTheme.Radius.medium, style: .continuous)
+                                .strokeBorder(RIGTheme.accent, lineWidth: 1)
+                        )
+                    Text("Yeni parça")
+                        .font(.system(size: 12))
+                        .padding(.top, 7)
+                    Text("Bugün eklendi")
+                        .font(.system(size: 11))
+                        .foregroundStyle(RIGTheme.text(48))
+                }
+
+                VStack(alignment: .leading, spacing: 0) {
+                    GarmentImageView(
+                        relativePath: existingItemImagePath(match.garmentID),
+                        symbolName: candidateCategory.symbolName
+                    )
+                    .padding(RIGTheme.Spacing.s)
                     .frame(maxWidth: .infinity)
-                    .background(RIGTheme.tileBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.tile, style: .continuous))
+                    .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                    .background(RIGTheme.pageBackground, in: RoundedRectangle(cornerRadius: RIGTheme.Radius.medium, style: .continuous))
+                    .nocturneElevationSmall(radius: RIGTheme.Radius.medium)
+
+                    Text(existingItemName(match.garmentID) ?? "Dolabında")
+                        .font(.system(size: 12))
+                        .lineLimit(1)
+                        .padding(.top, 7)
+                    Text(match.band.displayLabel)
+                        .font(.system(size: 11))
+                        .foregroundStyle(RIGTheme.text(48))
+                }
             }
-            VStack(spacing: RIGTheme.Spacing.xs) {
-                Text(existingItemName(match.garmentID) ?? "In your wardrobe")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                GarmentImageView(
-                    relativePath: existingItemImagePath(match.garmentID),
-                    symbolName: candidateCategory.symbolName
-                )
-                .frame(height: 200)
-                .frame(maxWidth: .infinity)
-                .background(RIGTheme.tileBackground)
-                .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.tile, style: .continuous))
-            }
+
+            scoreRing(for: match)
+                .offset(y: -22)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "Benzerlik puanı yüzde \(SimilarityScore.percent(for: match.distance)). "
+            + "Yeni parça ile \(existingItemName(match.garmentID) ?? "dolabındaki parça") karşılaştırılıyor."
+        )
+    }
+
+    private func scoreRing(for match: WardrobeSimilarityMatch) -> some View {
+        Text("\(SimilarityScore.percent(for: match.distance))")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(RIGTheme.accent)
+            .frame(width: 34, height: 34)
+            .background(RIGTheme.pageBackground, in: Circle())
+            .overlay(Circle().strokeBorder(RIGTheme.Accent.a700, lineWidth: 1))
+            .accessibilityHidden(true)
+    }
+
+    private var exhausted: some View {
+        VStack(spacing: RIGTheme.Spacing.l) {
+            Text("Karşılaştırılacak bir şey kalmadı.")
+                .font(.system(size: 15))
+                .foregroundStyle(RIGTheme.text(55))
+            Button("Yine de ekle", action: onAddAsNew)
+                .buttonStyle(RIGPrimaryButtonStyle())
+        }
+        .padding(.horizontal, RIGTheme.Spacing.xl)
+        .padding(.vertical, RIGTheme.Spacing.xl)
     }
 
     @ViewBuilder
@@ -120,25 +200,25 @@ struct DuplicateComparisonSheet: View {
         } else {
             Image(systemName: candidateCategory.symbolName)
                 .font(.system(size: 24, weight: .light))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(RIGTheme.text(35))
         }
     }
 }
 
-/// The similarity verdict label. Words only, exactly like `MatchBadge` —
-/// there is no calibrated probability behind this ranking either, so a
-/// percentage here would be exactly the lie `docs/DECISIONS.md` already
-/// rules out for outfit suggestions.
-struct SimilarityBadge: View {
-    let band: SimilarityBand
-
-    var body: some View {
-        Text(band.displayLabel)
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, RIGTheme.Spacing.s)
-            .padding(.vertical, RIGTheme.Spacing.xs)
-            .background(RIGTheme.tileBackground)
-            .clipShape(Capsule())
-            .accessibilityLabel("Rated \(band.displayLabel)")
+/// Turns a feature-print distance into the percentage the comparison shows.
+///
+/// This is a **similarity score**, not a confidence and not a probability.
+/// Vision's feature-print distance is an uncalibrated metric: 0 means the two
+/// images produced identical descriptors, and larger means further apart. The
+/// percentage is simply `1 - distance`, so it is monotonic in the thing it
+/// reports and honest about being a distance readout — which is why the sheet
+/// says "benzerlik puanı" next to it and why nothing in the app treats it as
+/// odds that two garments are the same.
+///
+/// Outfit ranking is a separate case and still shows words, never numbers.
+enum SimilarityScore {
+    static func percent(for distance: Float) -> Int {
+        let clamped = min(max(distance, 0), 1)
+        return Int(((1 - clamped) * 100).rounded())
     }
 }

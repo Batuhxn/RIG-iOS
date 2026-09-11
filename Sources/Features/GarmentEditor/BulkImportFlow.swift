@@ -44,22 +44,26 @@ struct BulkImportFlow: View {
     }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            RIGSheetHeader(
+                title: "Toplu aktarım",
+                leadingTitle: stage == .summary ? "Bitti" : "Kapat",
+                leadingAction: stage == .summary ? finish : cancel
+            )
+
             Group {
                 switch stage {
-                case .review:
-                    reviewStep
-                case .summary:
-                    summaryStep
+                case .review: reviewStep
+                case .summary: summaryStep
                 }
             }
-            .background(RIGTheme.pageBackground)
-            .navigationTitle("Import photos")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbarContent }
-            .task(id: processingKey) {
-                await processCurrentItem()
-            }
+            .transition(.opacity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(RIGTheme.pageBackground)
+        .animation(NocturneMotion.screen, value: stage)
+        .task(id: processingKey) {
+            await processCurrentItem()
         }
     }
 
@@ -68,114 +72,181 @@ struct BulkImportFlow: View {
     @ViewBuilder
     private var reviewStep: some View {
         if let item = queue.current {
-            Form {
-                Section {
-                    Text(queue.progressLabel)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .listRowBackground(Color.clear)
-                        .accessibilityLabel("Garment \(queue.progressLabel)")
+            VStack(spacing: 0) {
+                queueProgressHeader
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: RIGTheme.Spacing.l) {
+                        switch item.status {
+                        case .pending:
+                            processingCard
+                        case .failed(let message):
+                            failureCard(message)
+                        case .ready(let result):
+                            previewCard(result)
+                            NocturneMetadataFields(fields: fieldsBinding(for: item.id))
+                        case .saved, .skipped:
+                            EmptyView()
+                        }
+                    }
+                    .padding(.horizontal, RIGTheme.Spacing.xl)
+                    .padding(.top, RIGTheme.Spacing.m)
+                    .padding(.bottom, RIGTheme.Spacing.xl)
                 }
 
-                switch item.status {
-                case .pending:
-                    processingSection
-                case .failed(let message):
-                    failureSection(message)
-                case .ready(let result):
-                    previewSection(result)
-                    GarmentMetadataForm(fields: fieldsBinding(for: item.id))
-                case .saved, .skipped:
-                    EmptyView()
-                }
-
-                navigationSection
+                actions(for: item)
             }
         } else {
             summaryStep
         }
     }
 
-    private var processingSection: some View {
-        Section {
-            HStack(spacing: RIGTheme.Spacing.s) {
-                ProgressView()
-                Text("Separating the garment…")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+    /// The batch's own progress, above whichever photograph is in hand.
+    private var queueProgressHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(queue.progressLabel)
+                    .font(.system(size: 26, weight: .medium))
+                    .tracking(-0.5)
+                Spacer(minLength: 8)
+                Text(queueStatusLine)
+                    .font(.system(size: 12))
+                    .foregroundStyle(RIGTheme.text(55))
             }
-            .frame(maxWidth: .infinity, minHeight: 120)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Processing the photo")
+            RIGProgressBar(fraction: queueFraction)
         }
+        .padding(.horizontal, RIGTheme.Spacing.xl)
+        .padding(.top, RIGTheme.Spacing.m)
+        .accessibilityElement(children: .combine)
     }
 
-    private func failureSection(_ message: String) -> some View {
-        Section {
+    private var processingCard: some View {
+        VStack(spacing: RIGTheme.Spacing.l) {
+            RIGSpinner(diameter: 26)
+            Text("Arka plan kaldırılıyor…")
+                .font(.system(size: 13))
+                .foregroundStyle(RIGTheme.text(55))
+        }
+        .frame(maxWidth: .infinity, minHeight: 220)
+        .background(RIGTheme.cardBackground, in: RoundedRectangle(cornerRadius: RIGTheme.Radius.large, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Fotoğraf işleniyor")
+    }
+
+    private func failureCard(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: RIGTheme.Spacing.m) {
             RIGErrorBanner(message: message)
-            Button("Try this photo again") {
+            Button("Bu fotoğrafı tekrar dene") {
                 queue.retry()
                 attempt += 1
             }
+            .buttonStyle(RIGSecondaryButtonStyle())
         }
     }
 
-    private func previewSection(_ result: GarmentImportResult) -> some View {
-        Section {
-            GarmentImageView(
-                relativePath: result.cutoutRelativePath ?? result.originalRelativePath,
-                symbolName: currentFields.category.symbolName
-            )
-            .frame(height: 200)
-            .frame(maxWidth: .infinity)
-            .listRowBackground(Color.clear)
+    private func previewCard(_ result: GarmentImportResult) -> some View {
+        VStack(spacing: RIGTheme.Spacing.s) {
+            ZStack {
+                RIGCheckerboard()
+                GarmentImageView(
+                    relativePath: result.cutoutRelativePath ?? result.originalRelativePath,
+                    symbolName: currentFields.category.symbolName
+                )
+                .padding(RIGTheme.Spacing.l)
+
+                VStack {
+                    HStack {
+                        RIGTag(
+                            text: result.isBackgroundRemoved ? "Arka plan kaldırıldı" : "Orijinal fotoğraf",
+                            kind: .accent
+                        )
+                        Spacer(minLength: 0)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(12)
+            }
+            .frame(height: 240)
+            .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.large, style: .continuous))
+            .nocturneElevationSmall(radius: RIGTheme.Radius.large)
 
             if let message = result.backgroundRemovalMessage {
-                Text("\(message) The original photo will be used instead.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                Text("\(message) Orijinal fotoğraf kullanılacak.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(RIGTheme.text(55))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
 
-    private var navigationSection: some View {
-        Section {
-            Button("Skip this photo", action: skip)
-            if queue.canGoBack {
-                Button("Back", action: goBack)
+    private func actions(for item: BulkImportQueueItem) -> some View {
+        VStack(spacing: RIGTheme.Spacing.s) {
+            if item.importResult != nil {
+                Button("Kaydet ve devam et", action: saveAndAdvance)
+                    .buttonStyle(RIGPrimaryButtonStyle())
+                    .disabled(!(drafts[item.id]?.isValid ?? false))
+                    .opacity((drafts[item.id]?.isValid ?? false) ? 1 : 0.45)
             }
-        } footer: {
-            Text("Skipped photos are discarded. Garments you have already saved stay in your wardrobe even if you leave now.")
+
+            Button("Bu fotoğrafı atla", action: skip)
+                .buttonStyle(RIGQuietButtonStyle())
+
+            if queue.canGoBack {
+                Button("Geri", action: goBack)
+                    .buttonStyle(RIGQuietButtonStyle())
+            }
+
+            Text("Atlanan fotoğraflar saklanmaz. Kaydettiğin parçalar, şimdi çıksan bile dolabında kalır.")
+                .font(.system(size: 11))
+                .foregroundStyle(RIGTheme.text(48))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, RIGTheme.Spacing.xl)
+        .padding(.top, RIGTheme.Spacing.m)
+        .padding(.bottom, RIGTheme.Spacing.l)
     }
 
     private var summaryStep: some View {
-        RIGEmptyState(
-            symbol: "checkmark.circle",
-            title: summaryTitle,
-            message: summaryMessage,
-            actionTitle: "Done",
-            action: finish
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 4) {
+                RIGTheme.kicker("Toplu aktarım bitti")
+                Text(summaryTitle)
+                    .font(.system(size: 24, weight: .medium))
+                Text(summaryMessage)
+                    .font(.system(size: 13))
+                    .foregroundStyle(RIGTheme.text(55))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, RIGTheme.Spacing.xl)
+            .padding(.bottom, RIGTheme.Spacing.l)
+
+            BulkImportQueueList(queue: queue)
+
+            Button("Dolabı gör", action: finish)
+                .buttonStyle(RIGPrimaryButtonStyle())
+                .padding(.horizontal, RIGTheme.Spacing.xl)
+                .padding(.top, RIGTheme.Spacing.m)
+                .padding(.bottom, RIGTheme.Spacing.l)
+        }
+        .padding(.top, RIGTheme.Spacing.m)
     }
 
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            if stage == .summary {
-                Button("Done", action: finish)
-            } else {
-                Button("Cancel", action: cancel)
-            }
-        }
-        if stage == .review, let item = queue.current, item.importResult != nil {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save & Next", action: saveAndAdvance)
-                    .disabled(!(drafts[item.id]?.isValid ?? false))
-            }
-        }
+    private var queueStatusLine: String {
+        var parts: [String] = []
+        if queue.savedCount > 0 { parts.append("\(queue.savedCount) hazır") }
+        if queue.skippedCount > 0 { parts.append("\(queue.skippedCount) atlandı") }
+        if queue.failedCount > 0 { parts.append("\(queue.failedCount) hata") }
+        return parts.joined(separator: " · ")
+    }
+
+    private var queueFraction: Double {
+        guard queue.count > 0 else { return 0 }
+        let settled = queue.savedCount + queue.skippedCount + queue.failedCount
+        return Double(settled) / Double(queue.count)
     }
 
     // MARK: - Derived state
@@ -199,15 +270,15 @@ struct BulkImportFlow: View {
     }
 
     private var summaryTitle: String {
-        queue.savedCount == 1 ? "1 garment added" : "\(queue.savedCount) garments added"
+        queue.savedCount == 1 ? "1 parça eklendi" : "\(queue.savedCount) parça eklendi"
     }
 
     private var summaryMessage: String {
         var parts: [String] = []
-        if queue.skippedCount > 0 { parts.append("\(queue.skippedCount) skipped") }
-        if queue.failedCount > 0 { parts.append("\(queue.failedCount) could not be processed") }
-        guard !parts.isEmpty else { return "Everything you reviewed is in your wardrobe." }
-        return parts.joined(separator: ", ") + ". Nothing else was kept."
+        if queue.skippedCount > 0 { parts.append("\(queue.skippedCount) atlandı") }
+        if queue.failedCount > 0 { parts.append("\(queue.failedCount) işlenemedi") }
+        guard !parts.isEmpty else { return "İncelediğin her şey dolabında." }
+        return parts.joined(separator: ", ") + ". Başka bir şey saklanmadı."
     }
 
     // MARK: - Work
@@ -218,13 +289,13 @@ struct BulkImportFlow: View {
     private func processCurrentItem() async {
         guard stage == .review, let item = queue.current, item.status == .pending else { return }
         guard items.indices.contains(item.position) else {
-            queue.markFailed("That photo is no longer available.")
+            queue.markFailed("Bu fotoğraf artık kullanılamıyor.")
             return
         }
 
         do {
             guard let data = try await items[item.position].loadTransferable(type: Data.self) else {
-                queue.markFailed("That photo could not be loaded. Skip it or try again.")
+                queue.markFailed("Bu fotoğraf yüklenemedi. Atla ya da tekrar dene.")
                 return
             }
             let result = try await services.importService.importImage(data, garmentID: item.id)
@@ -236,7 +307,7 @@ struct BulkImportFlow: View {
             queue.markReady(result)
         } catch {
             let described = (error as? LocalizedError)?.errorDescription
-            queue.markFailed(described ?? "That photo could not be processed. Skip it or try again.")
+            queue.markFailed(described ?? "Bu fotoğraf işlenemedi. Atla ya da tekrar dene.")
         }
     }
 
@@ -269,7 +340,7 @@ struct BulkImportFlow: View {
             // taking the rest of the batch down with it.
             modelContext.delete(garment)
             try? services.imageStore.removeAll(for: result.garmentID)
-            queue.markFailed("That garment could not be saved to this device.")
+            queue.markFailed("Bu parça cihaza kaydedilemedi.")
             return
         }
 

@@ -2,16 +2,31 @@ import PhotosUI
 import SwiftData
 import SwiftUI
 
-/// Photograph or pick, process locally, review, describe, save.
+/// Photograph or pick, crop if you want to, process locally, review, describe,
+/// save.
 ///
-/// The one rule that shapes this whole flow: **a failed cutout never blocks a
-/// save.** If Vision cannot isolate the garment the user is told plainly and
-/// carries on with the original photograph.
+/// Two rules shape this flow, and they pull in opposite directions:
+///
+/// **A failed cutout never blocks a save.** If Vision cannot isolate the
+/// garment the user is told plainly and carries on with the original
+/// photograph. The design's failure screen honours this — "continue with the
+/// original" is always one of the two ways out of it.
+///
+/// **Crop is optional and non-destructive.** The source bytes are held
+/// untouched for the life of the flow. Cropping produces *new* bytes; skipping
+/// passes the source through. Everything downstream — `GarmentImportService`
+/// included — receives one `Data` and cannot tell which it got, which is
+/// precisely why background removal operates on the crop without knowing that
+/// cropping exists.
 struct AddGarmentFlow: View {
     enum Step: Equatable {
         case chooseSource
+        case crop
         case processing
         case review
+        case removalFailure
+        case details
+        case done
     }
 
     /// A photograph the unified import flow already collected. When present the
@@ -35,7 +50,15 @@ struct AddGarmentFlow: View {
     @State var step: Step = .chooseSource
     @State private var photoSelection: PhotosPickerItem?
     @State private var isPresentingCamera = false
+
+    /// The photograph as it arrived. Never mutated, so "crop again" always
+    /// starts from the whole frame rather than from a previous crop.
+    @State private var sourceImageData: Data?
+    /// The bytes the user chose to process: the crop, or the source.
+    @State private var didCrop = false
+
     @State var importResult: GarmentImportResult?
+    @State private var isProcessingFinished = false
     @State var fields = GarmentMetadataFields()
     @State var errorMessage: String?
     @State private var didBootstrap = false
@@ -45,92 +68,87 @@ struct AddGarmentFlow: View {
     @State var isCheckingForDuplicates = false
 
     var body: some View {
-        NavigationStack {
+        ZStack {
+            RIGTheme.pageBackground.ignoresSafeArea()
+
             Group {
                 switch step {
-                case .chooseSource:
-                    sourceStep
-                case .processing:
-                    processingStep
-                case .review:
-                    reviewStep
+                case .chooseSource: sourceStep
+                case .crop: cropStep
+                case .processing: processingStep
+                case .review: reviewStep
+                case .removalFailure: removalFailureStep
+                case .details: detailsStep
+                case .done: doneStep
                 }
             }
-            .background(RIGTheme.pageBackground)
-            .navigationTitle("Add a garment")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: cancel)
-                }
-                if step == .review {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save", action: beginSave)
-                            .disabled(!fields.isValid || isCheckingForDuplicates)
+            .transition(.opacity)
+        }
+        .animation(NocturneMotion.screen, value: step)
+        .sheet(isPresented: $isPresentingCamera) {
+            CameraPicker(
+                onCapture: { data in
+                    // The hop is explicit rather than inherited: these
+                    // callbacks arrive from a UIKit delegate, and everything
+                    // they touch here is main-actor state.
+                    Task { @MainActor in
+                        isPresentingCamera = false
+                        accept(data)
                     }
+                },
+                onCancel: {
+                    Task { @MainActor in isPresentingCamera = false }
                 }
-            }
-            .sheet(isPresented: $isPresentingCamera) {
-                CameraPicker(
-                    onCapture: { data in
-                        // The hop is explicit rather than inherited: these
-                        // callbacks arrive from a UIKit delegate, and everything
-                        // they touch here is main-actor state.
-                        Task { @MainActor in
-                            isPresentingCamera = false
-                            await process(data)
-                        }
-                    },
-                    onCancel: {
-                        Task { @MainActor in isPresentingCamera = false }
-                    }
-                )
-                .ignoresSafeArea()
-            }
-            .onChange(of: photoSelection) { _, newValue in
-                guard let newValue else { return }
-                Task { @MainActor in await loadFromPhotos(newValue) }
-            }
-            .task {
-                guard !didBootstrap else { return }
-                didBootstrap = true
-                if let initialSelection {
-                    await loadFromPhotos(initialSelection)
-                } else if startsWithCamera, CameraPicker.isAvailable {
-                    isPresentingCamera = true
-                }
+            )
+            .ignoresSafeArea()
+        }
+        .onChange(of: photoSelection) { _, newValue in
+            guard let newValue else { return }
+            Task { @MainActor in await loadFromPhotos(newValue) }
+        }
+        .task {
+            guard !didBootstrap else { return }
+            didBootstrap = true
+            if let initialSelection {
+                await loadFromPhotos(initialSelection)
+            } else if startsWithCamera, CameraPicker.isAvailable {
+                isPresentingCamera = true
             }
         }
-        // Attached outside the navigation stack, and deliberately not stacked
-        // on the same view as the camera sheet: two sheet modifiers on one
-        // view is a well-known way to lose one of them.
+        // Attached outside the step switch, and deliberately not stacked on the
+        // same view as the camera sheet: two sheet modifiers on one view is a
+        // well-known way to lose one of them.
         .sheet(isPresented: duplicateSheetBinding) { duplicateSheet }
     }
 
     // MARK: - Steps
 
     private var sourceStep: some View {
-        VStack(spacing: RIGTheme.Spacing.m) {
+        VStack(spacing: 0) {
+            RIGSheetHeader(title: "Parça ekle", leadingTitle: "İptal", leadingAction: cancel)
+
             Spacer(minLength: 0)
 
-            Image(systemName: "tshirt")
-                .font(.system(size: 40, weight: .light))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
+            VStack(spacing: RIGTheme.Spacing.l) {
+                Image(systemName: "tshirt")
+                    .font(.system(size: 40, weight: .light))
+                    .foregroundStyle(RIGTheme.text(45))
+                    .accessibilityHidden(true)
 
-            Text("Photograph something you own")
-                .font(.headline)
-            Text("A plain background works best. Everything happens on this device — nothing is uploaded.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, RIGTheme.Spacing.l)
+                Text("Sahip olduğun bir parçayı çek")
+                    .font(.system(size: 20, weight: .medium))
+                Text("Sade bir arka plan en iyi sonucu verir. Her şey bu cihazda olur — hiçbir şey yüklenmez.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(RIGTheme.text(55))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, RIGTheme.Spacing.xl)
 
-            if let errorMessage {
-                RIGErrorBanner(message: errorMessage) {
-                    self.errorMessage = nil
+                if let errorMessage {
+                    RIGErrorBanner(message: errorMessage) {
+                        self.errorMessage = nil
+                    }
+                    .padding(.horizontal, RIGTheme.Spacing.xl)
                 }
-                .padding(.horizontal, RIGTheme.Spacing.m)
             }
 
             Spacer(minLength: 0)
@@ -142,100 +160,176 @@ struct AddGarmentFlow: View {
                 // RIG only ever asks for the chosen image's bytes, so the
                 // out-of-process picker is both sufficient and permission-free.
                 PhotosPicker(selection: $photoSelection, matching: .images) {
-                    Text("Choose from Photos")
-                        .font(.body.weight(.semibold))
+                    Text("Fotoğraflardan seç")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(RIGTheme.accent)
                         .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(Color.accentColor)
-                        .foregroundStyle(Color(uiColor: .systemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: RIGTheme.Radius.large, style: .continuous)
+                                .strokeBorder(RIGTheme.accent, lineWidth: 1)
+                        )
                 }
 
                 if CameraPicker.isAvailable {
-                    Button("Take a photo") {
+                    Button("Fotoğraf çek") {
                         isPresentingCamera = true
                     }
                     .buttonStyle(RIGSecondaryButtonStyle())
                 } else {
-                    Text("No camera is available on this device.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    Text("Bu cihazda kamera yok.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(RIGTheme.text(55))
                 }
             }
-            .padding(.horizontal, RIGTheme.Spacing.m)
+            .padding(.horizontal, RIGTheme.Spacing.xl)
             .padding(.bottom, RIGTheme.Spacing.l)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var processingStep: some View {
-        VStack(spacing: RIGTheme.Spacing.m) {
-            ProgressView()
-            Text("Separating the garment…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+    @ViewBuilder
+    private var cropStep: some View {
+        if let sourceImageData {
+            CropStep(
+                imageData: sourceImageData,
+                onBack: { step = .chooseSource },
+                onContinue: { cropped in
+                    Task { @MainActor in
+                        await process(cropped ?? sourceImageData, didCrop: cropped != nil)
+                    }
+                }
+            )
+        } else {
+            // Unreachable in practice; a blank step is still better than a
+            // crash if it ever is reached.
+            Color.clear.onAppear { step = .chooseSource }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Processing the photo")
+    }
+
+    private var processingStep: some View {
+        ProcessingStep(
+            didCrop: didCrop,
+            onCancel: cancel,
+            isFinishing: isProcessingFinished
+        )
     }
 
     @ViewBuilder
     private var reviewStep: some View {
-        Form {
-            Section {
-                GarmentImageView(
-                    relativePath: importResult.flatMap { $0.cutoutRelativePath ?? $0.originalRelativePath },
-                    symbolName: fields.category.symbolName
-                )
-                .frame(height: 220)
-                .frame(maxWidth: .infinity)
-                .listRowBackground(Color.clear)
-
-                if let message = importResult?.backgroundRemovalMessage {
-                    Text("\(message) The original photo will be used instead.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if let errorMessage {
-                Section {
-                    RIGErrorBanner(message: errorMessage) {
-                        self.errorMessage = nil
-                    }
-                }
-            }
-
-            GarmentMetadataForm(fields: $fields)
+        if let importResult {
+            ReviewStep(
+                result: importResult,
+                didCrop: didCrop,
+                onBack: { step = .crop },
+                onRetry: retryProcessing,
+                onContinue: { step = .details }
+            )
         }
+    }
+
+    @ViewBuilder
+    private var removalFailureStep: some View {
+        RemovalFailureStep(
+            message: importResult?.backgroundRemovalMessage
+                ?? "Fotoğrafın arka planı çok karmaşık olabilir. Kırparak tekrar deneyebilir veya fotoğrafı olduğu gibi ekleyebilirsin.",
+            onCropAndRetry: { step = .crop },
+            onContinueWithOriginal: { step = .details }
+        )
+    }
+
+    @ViewBuilder
+    private var detailsStep: some View {
+        if let importResult {
+            GarmentDetailsStep(
+                fields: $fields,
+                previewPath: importResult.cutoutRelativePath ?? importResult.originalRelativePath,
+                isBackgroundRemoved: importResult.isBackgroundRemoved,
+                isSaving: isCheckingForDuplicates,
+                errorMessage: errorMessage,
+                onDismissError: { errorMessage = nil },
+                onBack: { step = importResult.isBackgroundRemoved ? .review : .removalFailure },
+                onSave: beginSave
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var doneStep: some View {
+        SuccessStep(
+            garmentName: fields.trimmedName,
+            categoryName: fields.category.displayName,
+            thumbnailPath: importResult?.thumbnailRelativePath ?? importResult?.cutoutRelativePath,
+            onDone: { dismiss() },
+            onAddAnother: startAnother
+        )
     }
 
     // MARK: - Actions
 
     @MainActor
     private func loadFromPhotos(_ selection: PhotosPickerItem) async {
-        step = .processing
         do {
             guard let data = try await selection.loadTransferable(type: Data.self) else {
-                fail("That photo could not be loaded. Try another one.")
+                fail("Bu fotoğraf yüklenemedi. Başka bir tane dene.")
                 return
             }
-            await process(data)
+            accept(data)
         } catch {
-            fail("That photo could not be loaded. Try another one.")
+            fail("Bu fotoğraf yüklenemedi. Başka bir tane dene.")
         }
     }
 
+    /// A photograph has arrived. The crop step comes next — it is offered, not
+    /// imposed, and it is the only place the source bytes are read.
     @MainActor
-    private func process(_ data: Data) async {
+    private func accept(_ data: Data) {
+        sourceImageData = data
+        errorMessage = nil
+        step = .crop
+    }
+
+    @MainActor
+    private func process(_ data: Data, didCrop: Bool) async {
+        // A retry writes a fresh set of files, so the previous attempt's files
+        // are removed first rather than left behind as orphans.
+        discardCandidateFiles()
+        importResult = nil
+
+        self.didCrop = didCrop
+        isProcessingFinished = false
         step = .processing
+
         do {
             let result = try await services.importService.importImage(data)
             importResult = result
-            step = .review
+            isProcessingFinished = true
+            // Lets the ring finish its travel to 100 before the step changes.
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            step = result.isBackgroundRemoved ? .review : .removalFailure
         } catch {
-            fail((error as? LocalizedError)?.errorDescription ?? "That photo could not be processed.")
+            isProcessingFinished = true
+            fail((error as? LocalizedError)?.errorDescription ?? "Bu fotoğraf işlenemedi.")
         }
+    }
+
+    private func retryProcessing() {
+        guard let sourceImageData else { return }
+        Task { @MainActor in
+            await process(sourceImageData, didCrop: false)
+        }
+    }
+
+    /// "Add another": the saved garment's files belong to the wardrobe now, so
+    /// this must not discard them — it only clears the flow's own state.
+    @MainActor
+    private func startAnother() {
+        importResult = nil
+        sourceImageData = nil
+        didCrop = false
+        fields = GarmentMetadataFields()
+        errorMessage = nil
+        photoSelection = nil
+        step = .chooseSource
     }
 
     private func fail(_ message: String) {

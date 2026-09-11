@@ -55,7 +55,7 @@ extension AddGarmentFlow {
     /// nothing had been asked.
     func beginSave() {
         guard let importResult, fields.isValid else {
-            errorMessage = "There is no processed photo to save."
+            errorMessage = "Kaydedilecek işlenmiş bir fotoğraf yok."
             return
         }
 
@@ -107,7 +107,7 @@ extension AddGarmentFlow {
 
     func commitSave() {
         guard let importResult, fields.isValid else {
-            errorMessage = "There is no processed photo to save."
+            errorMessage = "Kaydedilecek işlenmiş bir fotoğraf yok."
             return
         }
 
@@ -136,13 +136,15 @@ extension AddGarmentFlow {
             try? services.imageStore.removeAll(for: importResult.garmentID)
             duplicateReview = nil
             duplicateCandidateImageData = nil
-            errorMessage = "That garment could not be saved to this device."
+            errorMessage = "Bu parça cihaza kaydedilemedi."
             return
         }
 
         duplicateReview = nil
         duplicateCandidateImageData = nil
-        dismiss()
+        // The garment is in the wardrobe now; the flow confirms it rather than
+        // vanishing, which is what the design's success screen is for.
+        step = .done
     }
 
     /// "Use this existing item": no new `ClothingItem`, and the existing
@@ -154,6 +156,8 @@ extension AddGarmentFlow {
         discardCandidateFiles()
         duplicateReview = nil
         duplicateCandidateImageData = nil
-        dismiss()
+        // The garment is in the wardrobe now; the flow confirms it rather than
+        // vanishing, which is what the design's success screen is for.
+        step = .done
     }
 }

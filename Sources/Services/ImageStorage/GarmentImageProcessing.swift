@@ -63,4 +63,47 @@ enum GarmentImageProcessing {
         guard let image = UIImage(data: imageData) else { return nil }
         return resized(image, maxDimension: maxDimension).pngData()
     }
+
+    /// Crops to a rectangle expressed in unit coordinates of the source image,
+    /// returning freshly encoded JPEG bytes.
+    ///
+    /// This is deliberately non-destructive and deliberately upstream: it takes
+    /// source bytes and returns new bytes, touching nothing on disk. The import
+    /// pipeline below it is unchanged and unaware — it receives whichever bytes
+    /// the user chose, and background removal therefore operates on the crop
+    /// for free, because the crop *is* the original as far as the pipeline is
+    /// concerned.
+    ///
+    /// Returns nil when the image cannot be read or the rectangle does not
+    /// describe at least one pixel; callers fall back to the uncropped data,
+    /// because a crop that cannot be computed must never lose the photograph.
+    static func croppedJPEGData(from imageData: Data, unitRect: CGRect) -> Data? {
+        guard let source = UIImage(data: imageData) else { return nil }
+        let image = normalizedOrientation(source)
+
+        let clamped = CGRect(
+            x: max(0, min(1, unitRect.minX)),
+            y: max(0, min(1, unitRect.minY)),
+            width: max(0, min(1, unitRect.width)),
+            height: max(0, min(1, unitRect.height))
+        )
+        guard clamped.width > 0, clamped.height > 0 else { return nil }
+
+        let pixels = CGRect(
+            x: (clamped.minX * image.size.width).rounded(.down),
+            y: (clamped.minY * image.size.height).rounded(.down),
+            width: (clamped.width * image.size.width).rounded(),
+            height: (clamped.height * image.size.height).rounded()
+        )
+        guard pixels.width >= 1, pixels.height >= 1 else { return nil }
+
+        let format = UIGraphicsImageRendererFormat.preferred()
+        format.scale = 1
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: pixels.size, format: format)
+        let cropped = renderer.image { _ in
+            image.draw(at: CGPoint(x: -pixels.minX, y: -pixels.minY))
+        }
+        return cropped.jpegData(compressionQuality: jpegCompressionQuality)
+    }
 }
