@@ -147,16 +147,6 @@ enum RIGTheme {
         Text(value).font(.system(size: 30, weight: .medium)).tracking(-0.6)
     }
 
-    /// The wordmark. Retained for the pre-Nocturne home screen while its
-    /// responsibilities are relocated; the Nocturne tabs open with
-    /// `RIGScreenHeading` instead.
-    static func wordmark(_ value: String) -> some View {
-        Text(value)
-            .font(.system(size: 30, weight: .medium))
-            .tracking(2)
-            .foregroundStyle(textPrimary)
-    }
-
     /// The uppercase, letter-spaced accent label that opens most screens
     /// ("DOLABIM", "KOMBİNLER", "ÜST GİYİM").
     static func kicker(_ value: String, size: CGFloat = 10, tracking: CGFloat = 1.4) -> some View {

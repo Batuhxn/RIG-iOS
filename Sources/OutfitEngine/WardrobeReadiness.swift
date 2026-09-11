@@ -27,14 +27,14 @@ struct WardrobeReadiness: Hashable, Sendable {
 
     var explanation: String {
         guard !canSuggest else { return "" }
-        let names = missing.map { $0.displayName.lowercased() }
+        let names = missing.map { $0.displayName.lowercased(with: Locale(identifier: "tr_TR")) }
         switch names.count {
         case 0:
-            return "Add a few more garments to start building looks."
+            return "Kombin oluşturmaya başlamak için birkaç parça daha ekle."
         case 1:
-            return "Add a \(names[0]) — or a dress — and RIG can start building looks."
+            return "Bir \(names[0]) — ya da bir elbise — ekle, RIG kombin kurmaya başlasın."
         default:
-            return "Add a \(names.joined(separator: " and a ")) — or a dress — and RIG can start building looks."
+            return "Bir \(names.joined(separator: " ve bir ")) — ya da bir elbise — ekle, RIG kombin kurmaya başlasın."
         }
     }
 }

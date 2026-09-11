@@ -17,13 +17,13 @@ enum GarmentCategory: String, CaseIterable, Codable, Hashable, Sendable, Identif
 
     var displayName: String {
         switch self {
-        case .top: return "Top"
-        case .bottom: return "Bottom"
-        case .dress: return "Dress"
-        case .outerwear: return "Outerwear"
-        case .shoes: return "Shoes"
-        case .bag: return "Bag"
-        case .accessory: return "Accessory"
+        case .top: return "Üst"
+        case .bottom: return "Alt"
+        case .dress: return "Elbise"
+        case .outerwear: return "Dış giyim"
+        case .shoes: return "Ayakkabı"
+        case .bag: return "Çanta"
+        case .accessory: return "Aksesuar"
         }
     }
 

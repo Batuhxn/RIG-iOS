@@ -41,13 +41,13 @@ struct SuggestionsView: View {
                 }
 
                 if model.isLoading && model.suggestions.isEmpty {
-                    ProgressView("Building looks…")
+                    ProgressView("Kombinler kuruluyor…")
                         .frame(maxWidth: .infinity)
                         .padding(.top, RIGTheme.Spacing.xl)
                 } else if !model.readiness.canSuggest {
                     RIGEmptyState(
                         symbol: "square.grid.2x2",
-                        title: "Not enough to work with yet",
+                        title: "Henüz yeterli parça yok",
                         message: model.readiness.explanation
                     )
                     .frame(maxWidth: .infinity)
@@ -55,14 +55,14 @@ struct SuggestionsView: View {
                 } else if model.suggestions.isEmpty {
                     RIGEmptyState(
                         symbol: "sparkles",
-                        title: "No looks to show",
+                        title: "Gösterilecek kombin yok",
                         message: "RIG could not assemble a valid look from this wardrobe. Adding shoes or a second bottom usually helps."
                     )
                     .frame(maxWidth: .infinity)
                     .padding(.top, RIGTheme.Spacing.xl)
                 } else {
                     if model.hasWrappedAround {
-                        Text("You have seen everything this wardrobe can make. Starting again from the top.")
+                        Text("Bu dolabın kurabileceği her şeyi gördün. Baştan başlıyoruz.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -78,7 +78,7 @@ struct SuggestionsView: View {
                         )
                     }
 
-                    Button("Show another set") {
+                    Button("Başka bir set göster") {
                         Task { await generate(startOver: false) }
                     }
                     .buttonStyle(RIGSecondaryButtonStyle())
@@ -89,7 +89,7 @@ struct SuggestionsView: View {
             .padding(.bottom, RIGTheme.Spacing.xl)
         }
         .background(RIGTheme.pageBackground)
-        .navigationTitle("Suggestions")
+        .navigationTitle("Öneriler")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await generate(startOver: true)
@@ -108,7 +108,7 @@ struct SuggestionsView: View {
     private func save(_ suggestion: OutfitSuggestion) {
         let garments = suggestion.items.compactMap { garmentsByID[$0.id] }
         guard garments.count == suggestion.items.count else {
-            model.errorMessage = "One of those garments is no longer in your wardrobe."
+            model.errorMessage = "O parçalardan biri artık dolabında değil."
             return
         }
 
@@ -122,7 +122,7 @@ struct SuggestionsView: View {
             try modelContext.save()
         } catch {
             modelContext.delete(outfit)
-            model.errorMessage = "That look could not be saved to this device."
+            model.errorMessage = "Bu kombin cihaza kaydedilemedi."
         }
     }
 
@@ -137,7 +137,7 @@ struct SuggestionsView: View {
         do {
             try modelContext.save()
         } catch {
-            model.errorMessage = "That reaction could not be saved."
+            model.errorMessage = "Bu tepki kaydedilemedi."
         }
     }
 }

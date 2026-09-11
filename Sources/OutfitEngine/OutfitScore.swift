@@ -10,10 +10,10 @@ enum MatchBand: String, Hashable, Sendable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .strong: return "Strong match"
-        case .good: return "Good match"
-        case .worthTrying: return "Try this"
-        case .different: return "Something different"
+        case .strong: return "Güçlü uyum"
+        case .good: return "İyi uyum"
+        case .worthTrying: return "Denemeye değer"
+        case .different: return "Farklı bir şey"
         }
     }
 
@@ -48,27 +48,27 @@ struct OutfitScoreBreakdown: Hashable, Sendable {
         var fragments: [String] = []
 
         if color >= 0.85 {
-            fragments.append("Colours agree")
+            fragments.append("Renkler uyuşuyor")
         } else if color >= 0.65 {
-            fragments.append("Colours work together")
+            fragments.append("Renkler birlikte çalışıyor")
         } else if color >= 0.50 {
-            fragments.append("Mixed palette")
+            fragments.append("Karışık palet")
         } else {
-            fragments.append("Bold colour contrast")
+            fragments.append("Güçlü renk kontrastı")
         }
 
         if season >= 1.0 {
-            fragments.append("shared season")
+            fragments.append("ortak sezon")
         } else if season >= 0.50 {
-            fragments.append("partial seasonal overlap")
+            fragments.append("kısmi sezon örtüşmesi")
         } else {
-            fragments.append("seasons pull apart")
+            fragments.append("sezonlar ayrışıyor")
         }
 
         if completeness >= 0.80 {
-            fragments.append("fully assembled")
+            fragments.append("tamamlanmış")
         } else if completeness <= 0.60 {
-            fragments.append("no shoes yet")
+            fragments.append("henüz ayakkabı yok")
         }
 
         return fragments.joined(separator: " · ")

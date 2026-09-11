@@ -14,9 +14,9 @@ enum SimilarityBand: String, CaseIterable, Sendable, Equatable {
 
     var displayLabel: String {
         switch self {
-        case .possibleMatch: return "Possible match"
-        case .similar: return "Similar"
-        case .verySimilar: return "Very similar"
+        case .possibleMatch: return "Olası eşleşme"
+        case .similar: return "Benzer"
+        case .verySimilar: return "Çok benzer"
         }
     }
 }

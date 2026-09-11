@@ -6,10 +6,6 @@ enum RIGTab: Hashable {
     case wardrobe
     case looks
     case profile
-    /// No longer a tab. Retained only so `HomeView` keeps compiling while the
-    /// last of its responsibilities are relocated; both go together in the
-    /// final cleanup.
-    case home
 }
 
 /// The three tabs the design specifies: Dolap, Kombin, Profil.

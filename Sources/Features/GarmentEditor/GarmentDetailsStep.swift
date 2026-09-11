@@ -160,6 +160,10 @@ struct FlowLayout: Layout {
 struct NocturneMetadataFields: View {
     @Binding var fields: GarmentMetadataFields
 
+    /// Import asks for as little as possible; editing an existing garment can
+    /// afford the longer form.
+    var showsNotes: Bool = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: RIGTheme.Spacing.l) {
             RIGField(label: "Ad") {
@@ -198,6 +202,12 @@ struct NocturneMetadataFields: View {
 
             RIGField(label: "Alt tür") {
                 RIGTextField(placeholder: "İsteğe bağlı", text: $fields.subtype)
+            }
+
+            if showsNotes {
+                RIGField(label: "Not") {
+                    RIGTextField(placeholder: "İsteğe bağlı", text: $fields.notes)
+                }
             }
 
             Toggle("Favori", isOn: $fields.isFavorite)

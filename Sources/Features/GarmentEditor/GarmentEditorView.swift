@@ -1,8 +1,11 @@
 import SwiftData
 import SwiftUI
 
-/// Editing an existing garment. Changes are applied to a scratch copy of the
-/// fields and only written on Save, so cancelling really cancels.
+/// Editing a garment that is already in the wardrobe.
+///
+/// Same fields as the import flow's details step, from the same shared view —
+/// two forms asking for the same things in different shapes is how they drift
+/// apart.
 struct GarmentEditorView: View {
     let item: ClothingItem
 
@@ -18,38 +21,47 @@ struct GarmentEditorView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                if let errorMessage {
-                    Section {
+        VStack(spacing: 0) {
+            RIGSheetGrabber()
+
+            RIGSheetHeader(
+                title: "Parçayı düzenle",
+                leadingTitle: "İptal",
+                leadingAction: { dismiss() },
+                trailingTitle: "Kaydet",
+                trailingAction: save,
+                isTrailingEnabled: fields.isValid
+            )
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: RIGTheme.Spacing.l) {
+                    if let errorMessage {
                         RIGErrorBanner(message: errorMessage) {
                             self.errorMessage = nil
                         }
                     }
+
+                    NocturneMetadataFields(fields: $fields, showsNotes: true)
                 }
-                GarmentMetadataForm(fields: $fields)
-            }
-            .navigationTitle("Edit garment")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", action: save)
-                        .disabled(!fields.isValid)
-                }
+                .padding(.horizontal, RIGTheme.Spacing.xl)
+                .padding(.top, RIGTheme.Spacing.l)
+                .padding(.bottom, RIGTheme.Spacing.xl)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(RIGTheme.pageBackground)
+        .presentationBackground(RIGTheme.pageBackground)
+        .presentationDragIndicator(.hidden)
     }
 
     private func save() {
+        guard fields.isValid else { return }
         fields.apply(to: item)
         do {
             try modelContext.save()
             dismiss()
         } catch {
-            errorMessage = "That change could not be saved. Your garment is unchanged."
+            errorMessage = "Bu değişiklik kaydedilemedi. Parçan değişmedi."
         }
     }
 }

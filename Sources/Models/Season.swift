@@ -12,10 +12,10 @@ enum Season: String, CaseIterable, Codable, Hashable, Sendable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .spring: return "Spring"
-        case .summer: return "Summer"
-        case .autumn: return "Autumn"
-        case .winter: return "Winter"
+        case .spring: return "İlkbahar"
+        case .summer: return "Yaz"
+        case .autumn: return "Sonbahar"
+        case .winter: return "Kış"
         }
     }
 
@@ -66,7 +66,7 @@ struct SeasonSet: OptionSet, Hashable, Sendable {
 
     var displayName: String {
         let normalizedSet = normalized
-        if normalizedSet.isAllSeason { return "All year" }
+        if normalizedSet.isAllSeason { return "Tüm yıl" }
         return normalizedSet.seasons.map(\.displayName).joined(separator: ", ")
     }
 }

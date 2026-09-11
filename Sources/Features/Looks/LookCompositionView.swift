@@ -37,35 +37,11 @@ struct LookCompositionView: View {
                 }
             }
             if overflowCount > 0 {
-                Text("+\(overflowCount) more")
+                Text("+\(overflowCount) parça daha")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
-    }
-}
-
-struct LookCard: View {
-    let look: SavedOutfit
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: RIGTheme.Spacing.s) {
-            LookCompositionView(items: look.itemsInDisplayOrder, maximumTiles: 4)
-                .padding(RIGTheme.Spacing.s)
-                .background(RIGTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.card, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(look.name)
-                    .font(.subheadline.weight(.medium))
-                    .lineLimit(1)
-                Text(look.source.displayName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(look.name), \(look.items.count) garments")
     }
 }

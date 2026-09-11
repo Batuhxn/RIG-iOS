@@ -38,8 +38,8 @@ struct OutfitBuilderView: View {
             if items.isEmpty {
                 RIGEmptyState(
                     symbol: "square.grid.2x2",
-                    title: "Nothing to build with",
-                    message: "Add a few garments to your wardrobe first."
+                    title: "Kuracak bir şey yok",
+                    message: "Önce dolabına birkaç parça ekle."
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -49,18 +49,18 @@ struct OutfitBuilderView: View {
                             slotRow(for: category)
                         }
                     } header: {
-                        Text("Garments")
+                        Text("Parçalar")
                     } footer: {
                         Text("A look needs a top and a bottom, or a dress. Everything else is optional.")
                     }
 
-                    Section("Name") {
-                        TextField("Name this look", text: $name)
+                    Section("Ad") {
+                        TextField("Bu kombine bir ad ver", text: $name)
                             .textInputAutocapitalization(.sentences)
                     }
 
                     if !selectedIDs.isEmpty {
-                        Section("Validation") {
+                        Section("Doğrulama") {
                             if validation.isValid {
                                 Label("This is a valid look.", systemImage: "checkmark.circle")
                                     .font(.subheadline)
@@ -85,16 +85,16 @@ struct OutfitBuilderView: View {
                 }
             }
         }
-        .navigationTitle("Build a look")
+        .navigationTitle("Kombin oluştur")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if presentedAsSheet {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("İptal") { dismiss() }
                 }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save", action: save)
+                Button("Kaydet", action: save)
                     .disabled(!validation.isValid || items.isEmpty)
             }
         }
@@ -120,11 +120,11 @@ struct OutfitBuilderView: View {
                     .font(.subheadline)
                 Spacer()
                 if chosen.count < category.maximumPerOutfit {
-                    Button("Choose") {
+                    Button("Seç") {
                         pickerCategory = category
                     }
                     .font(.subheadline)
-                    .accessibilityLabel("Choose a \(category.displayName.lowercased())")
+                    .accessibilityLabel("\(category.displayName) seç")
                 }
             }
             .frame(minHeight: 44)
@@ -146,7 +146,7 @@ struct OutfitBuilderView: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel("Remove \(item.displayName)")
+                    .accessibilityLabel("\(item.displayName) parçasını çıkar")
                 }
                 .frame(minHeight: 44)
             }
@@ -169,7 +169,7 @@ struct OutfitBuilderView: View {
     private func save() {
         let garments = selectedItems
         guard OutfitValidator.validate(garments.map(\.snapshot)).isValid else {
-            errorMessage = "That combination is not a complete look yet."
+            errorMessage = "Bu birleşim henüz tamamlanmış bir kombin değil."
             return
         }
 
@@ -185,7 +185,7 @@ struct OutfitBuilderView: View {
             dismiss()
         } catch {
             modelContext.delete(outfit)
-            errorMessage = "That look could not be saved to this device."
+            errorMessage = "Bu kombin cihaza kaydedilemedi."
         }
     }
 }
@@ -203,8 +203,8 @@ struct GarmentPickerSheet: View {
                 if candidates.isEmpty {
                     RIGEmptyState(
                         symbol: category.symbolName,
-                        title: "No \(category.displayName.lowercased()) available",
-                        message: "Every garment in this category is already in the look, or there are none in your wardrobe yet."
+                        title: "Uygun \(category.displayName) yok",
+                        message: "Bu kategorideki her parça zaten kombinde ya da dolabında hiç yok."
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -238,7 +238,7 @@ struct GarmentPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
+                    Button("İptal", action: onCancel)
                 }
             }
         }

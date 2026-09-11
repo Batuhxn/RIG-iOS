@@ -64,7 +64,7 @@ struct OutfitCardView: View {
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
                 .disabled(isSaved)
-                .accessibilityLabel(isSaved ? "Already saved" : "Save this look")
+                .accessibilityLabel(isSaved ? "Zaten kaydedildi" : "Bu kombini kaydet")
 
                 Button {
                     onRate(.liked)
@@ -75,7 +75,7 @@ struct OutfitCardView: View {
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
-                .accessibilityLabel("Like this look")
+                .accessibilityLabel("Bu kombini beğen")
 
                 Button {
                     onRate(.disliked)
@@ -86,7 +86,7 @@ struct OutfitCardView: View {
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
-                .accessibilityLabel("Dislike this look")
+                .accessibilityLabel("Bu kombini beğenme")
             }
         }
         .padding(RIGTheme.Spacing.m)

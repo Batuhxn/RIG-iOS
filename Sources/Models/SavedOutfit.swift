@@ -8,8 +8,8 @@ enum OutfitSource: String, Codable, Hashable, Sendable {
 
     var displayName: String {
         switch self {
-        case .manual: return "Built by you"
-        case .suggestion: return "Saved suggestion"
+        case .manual: return "Senin kurduğun"
+        case .suggestion: return "Kaydedilen öneri"
         }
     }
 }
