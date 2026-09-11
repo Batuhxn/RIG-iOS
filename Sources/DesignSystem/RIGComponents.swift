@@ -7,10 +7,6 @@ struct RIGEmptyState: View {
     let message: String
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
-    /// A second way out of an empty state, when there genuinely is one. Left
-    /// nil everywhere it does not apply, so no caller has to opt out.
-    var secondaryActionTitle: String? = nil
-    var secondaryAction: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: RIGTheme.Spacing.m) {
@@ -29,10 +25,6 @@ struct RIGEmptyState: View {
                 Button(actionTitle, action: action)
                     .buttonStyle(RIGPrimaryButtonStyle())
                     .padding(.top, RIGTheme.Spacing.xs)
-            }
-            if let secondaryActionTitle, let secondaryAction {
-                Button(secondaryActionTitle, action: secondaryAction)
-                    .buttonStyle(RIGSecondaryButtonStyle())
             }
         }
         .frame(maxWidth: 420)

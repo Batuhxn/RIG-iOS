@@ -2,10 +2,13 @@ import PhotosUI
 import SwiftData
 import SwiftUI
 
-/// Bring an existing wardrobe in: select many photographs once, then review
-/// them one at a time through the ordinary single-garment controls.
+/// Review photographs of individual garments, one at a time.
 ///
-/// Two rules shape this flow.
+/// Selection happens upstream, in the unified import flow — this screen is
+/// reached only when the user picked more than one photograph, and they are
+/// never told that a different code path handled the single-photo case.
+///
+/// Two rules shape it.
 ///
 /// **Nothing is saved without confirmation.** RIG cannot yet tell a shirt from
 /// a shoe, so every garment still passes under the user's eye.
@@ -15,28 +18,35 @@ import SwiftUI
 /// pipeline, and released before the next one is touched.
 struct BulkImportFlow: View {
     private enum Stage: Equatable {
-        case selection
         case review
         case summary
     }
+
+    /// The photographs the user chose, in the order they chose them.
+    let items: [PhotosPickerItem]
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.rigServices) private var services
     @Environment(\.dismiss) private var dismiss
 
-    @State private var stage: Stage = .selection
-    @State private var selections: [PhotosPickerItem] = []
-    @State private var queue = BulkImportQueue()
+    @State private var stage: Stage
+    @State private var queue: BulkImportQueue
     @State private var drafts: [UUID: GarmentMetadataFields] = [:]
     @State private var attempt = 0
-    @State private var errorMessage: String?
+
+    init(items: [PhotosPickerItem]) {
+        // Capped here as well as at the picker: a queue must never be longer
+        // than the selection it indexes into.
+        let bounded = Array(items.prefix(BulkImportQueue.maximumSelectionCount))
+        self.items = bounded
+        _queue = State(initialValue: BulkImportQueue.reserving(bounded.count))
+        _stage = State(initialValue: bounded.isEmpty ? Stage.summary : Stage.review)
+    }
 
     var body: some View {
         NavigationStack {
             Group {
                 switch stage {
-                case .selection:
-                    selectionStep
                 case .review:
                     reviewStep
                 case .summary:
@@ -47,11 +57,6 @@ struct BulkImportFlow: View {
             .navigationTitle("Import photos")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
-            .onChange(of: selections) { _, newValue in
-                guard stage == .selection, !newValue.isEmpty else { return }
-                queue = BulkImportQueue.reserving(newValue.count)
-                stage = queue.isEmpty ? .summary : .review
-            }
             .task(id: processingKey) {
                 await processCurrentItem()
             }
@@ -59,54 +64,6 @@ struct BulkImportFlow: View {
     }
 
     // MARK: - Steps
-
-    private var selectionStep: some View {
-        VStack(spacing: RIGTheme.Spacing.m) {
-            Spacer(minLength: 0)
-
-            Image(systemName: "square.stack")
-                .font(.system(size: 40, weight: .light))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-
-            Text("Bring in several at once")
-                .font(.headline)
-            Text("Pick up to \(BulkImportQueue.maximumSelectionCount) photos. RIG processes them one by one and asks you to describe each garment before it is saved. Everything happens on this device.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, RIGTheme.Spacing.l)
-
-            if let errorMessage {
-                RIGErrorBanner(message: errorMessage) {
-                    self.errorMessage = nil
-                }
-                .padding(.horizontal, RIGTheme.Spacing.m)
-            }
-
-            Spacer(minLength: 0)
-
-            // As in the single-garment flow, no `photoLibrary:` argument: the
-            // out-of-process picker hands over the chosen bytes and needs no
-            // photo library authorisation.
-            PhotosPicker(
-                selection: $selections,
-                maxSelectionCount: BulkImportQueue.maximumSelectionCount,
-                selectionBehavior: .ordered,
-                matching: .images
-            ) {
-                Text("Choose photos")
-                    .font(.body.weight(.semibold))
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Color.accentColor)
-                    .foregroundStyle(Color(uiColor: .systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
-            }
-            .padding(.horizontal, RIGTheme.Spacing.m)
-            .padding(.bottom, RIGTheme.Spacing.l)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
 
     @ViewBuilder
     private var reviewStep: some View {
@@ -260,13 +217,13 @@ struct BulkImportFlow: View {
     @MainActor
     private func processCurrentItem() async {
         guard stage == .review, let item = queue.current, item.status == .pending else { return }
-        guard selections.indices.contains(item.position) else {
+        guard items.indices.contains(item.position) else {
             queue.markFailed("That photo is no longer available.")
             return
         }
 
         do {
-            guard let data = try await selections[item.position].loadTransferable(type: Data.self) else {
+            guard let data = try await items[item.position].loadTransferable(type: Data.self) else {
                 queue.markFailed("That photo could not be loaded. Skip it or try again.")
                 return
             }
@@ -359,7 +316,7 @@ struct BulkImportFlow: View {
 }
 
 #Preview {
-    BulkImportFlow()
+    BulkImportFlow(items: [])
         .modelContainer(PreviewData.container(populated: false))
         .environment(\.rigServices, .preview())
 }

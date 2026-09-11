@@ -14,6 +14,14 @@ struct AddGarmentFlow: View {
         case review
     }
 
+    /// A photograph the unified import flow already collected. When present the
+    /// source step is skipped entirely — the user has answered that question
+    /// once already and must not be asked it twice.
+    var initialSelection: PhotosPickerItem? = nil
+    /// Opens the camera straight away. Cancelling falls back to the ordinary
+    /// source step rather than to a dead end.
+    var startsWithCamera: Bool = false
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.rigServices) private var services
     @Environment(\.dismiss) private var dismiss
@@ -24,6 +32,7 @@ struct AddGarmentFlow: View {
     @State private var importResult: GarmentImportResult?
     @State private var fields = GarmentMetadataFields()
     @State private var errorMessage: String?
+    @State private var didBootstrap = false
 
     var body: some View {
         NavigationStack {
@@ -71,6 +80,15 @@ struct AddGarmentFlow: View {
             .onChange(of: photoSelection) { _, newValue in
                 guard let newValue else { return }
                 Task { @MainActor in await loadFromPhotos(newValue) }
+            }
+            .task {
+                guard !didBootstrap else { return }
+                didBootstrap = true
+                if let initialSelection {
+                    await loadFromPhotos(initialSelection)
+                } else if startsWithCamera, CameraPicker.isAvailable {
+                    isPresentingCamera = true
+                }
             }
         }
     }

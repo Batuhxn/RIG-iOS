@@ -9,8 +9,7 @@ struct WardrobeView: View {
     @State private var categoryFilter: GarmentCategory?
     @State private var seasonFilter: Season?
     @State private var favoritesOnly = false
-    @State private var isPresentingAdd = false
-    @State private var isPresentingBulkImport = false
+    @State private var isPresentingImport = false
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: RIGTheme.Spacing.m)]
 
@@ -33,11 +32,9 @@ struct WardrobeView: View {
                     RIGEmptyState(
                         symbol: "square.grid.2x2",
                         title: "Your wardrobe is empty",
-                        message: "Add a garment you own. RIG will try to cut it out from its background and keep it here on this device.",
-                        actionTitle: "Add a garment",
-                        action: { isPresentingAdd = true },
-                        secondaryActionTitle: "Import multiple photos",
-                        secondaryAction: { isPresentingBulkImport = true }
+                        message: "Add photos of clothes you own. RIG will try to cut each garment out from its background and keep it here on this device.",
+                        actionTitle: "Add photos",
+                        action: { isPresentingImport = true }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -80,31 +77,19 @@ struct WardrobeView: View {
             .navigationTitle("Wardrobe")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    // A menu rather than a second toolbar button: the two ways
-                    // in are the same action at different scales, and the
-                    // single-garment flow stays exactly where it was.
-                    Menu {
-                        Button {
-                            isPresentingAdd = true
-                        } label: {
-                            Label("Add one garment", systemImage: "camera")
-                        }
-                        Button {
-                            isPresentingBulkImport = true
-                        } label: {
-                            Label("Import multiple photos", systemImage: "square.stack")
-                        }
+                    // One entry point. Single, several and whole-outfit photos
+                    // are all the same intention to the user; which pipeline
+                    // runs is decided after they have answered one question.
+                    Button {
+                        isPresentingImport = true
                     } label: {
-                        Label("Add garments", systemImage: "plus")
+                        Label("Add photos", systemImage: "plus")
                     }
-                    .accessibilityLabel("Add garments")
+                    .accessibilityLabel("Add photos")
                 }
             }
-            .sheet(isPresented: $isPresentingAdd) {
-                AddGarmentFlow()
-            }
-            .sheet(isPresented: $isPresentingBulkImport) {
-                BulkImportFlow()
+            .sheet(isPresented: $isPresentingImport) {
+                PhotoImportFlow()
             }
         }
     }
