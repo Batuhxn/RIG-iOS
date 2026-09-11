@@ -56,7 +56,7 @@ struct SuggestionsView: View {
                     RIGEmptyState(
                         symbol: "sparkles",
                         title: "Gösterilecek kombin yok",
-                        message: "RIG could not assemble a valid look from this wardrobe. Adding shoes or a second bottom usually helps."
+                        message: "RIG bu dolaptan geçerli bir kombin kuramadı. Ayakkabı ya da ikinci bir alt eklemek genelde işe yarar."
                     )
                     .frame(maxWidth: .infinity)
                     .padding(.top, RIGTheme.Spacing.xl)
@@ -64,7 +64,7 @@ struct SuggestionsView: View {
                     if model.hasWrappedAround {
                         Text("Bu dolabın kurabileceği her şeyi gördün. Baştan başlıyoruz.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(RIGTheme.text(55))
                     }
 
                     ForEach(model.suggestions) { suggestion in
@@ -85,7 +85,7 @@ struct SuggestionsView: View {
                     .disabled(model.isLoading)
                 }
             }
-            .padding(.horizontal, RIGTheme.Spacing.m)
+            .padding(.horizontal, RIGTheme.Spacing.xl)
             .padding(.bottom, RIGTheme.Spacing.xl)
         }
         .background(RIGTheme.pageBackground)

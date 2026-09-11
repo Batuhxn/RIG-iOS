@@ -48,12 +48,15 @@ struct GarmentImageView: View {
                     .aspectRatio(contentMode: contentMode)
                     .accessibilityHidden(true)
             } else if isLoading {
-                ProgressView()
-                    .controlSize(.small)
+                // The design's loading state, applied where RIG actually has
+                // one. SwiftData queries are synchronous, so there is no
+                // full-screen load to skeleton; reading an image off disk is
+                // the only wait the user can see.
+                RIGSkeleton(cornerRadius: RIGTheme.Radius.medium)
             } else {
                 Image(systemName: symbolName)
                     .font(.system(size: 24, weight: .light))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(RIGTheme.text(30))
                     .accessibilityHidden(true)
             }
         }

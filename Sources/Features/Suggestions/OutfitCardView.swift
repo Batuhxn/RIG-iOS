@@ -20,9 +20,9 @@ struct OutfitCardView: View {
                 MatchBadge(band: suggestion.breakdown.band)
                 Spacer()
                 if isSaved {
-                    Label("Saved", systemImage: "checkmark")
+                    Label("Kaydedildi", systemImage: "checkmark")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(RIGTheme.text(55))
                         .labelStyle(.titleAndIcon)
                 }
             }
@@ -37,11 +37,11 @@ struct OutfitCardView: View {
                         .padding(RIGTheme.Spacing.xs)
                         .frame(height: 86)
                         .background(RIGTheme.tileBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.tile, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.medium, style: .continuous))
 
                         Text(snapshot.displayName)
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(RIGTheme.text(55))
                             .lineLimit(1)
                     }
                 }
@@ -49,14 +49,14 @@ struct OutfitCardView: View {
 
             Text(suggestion.breakdown.summary)
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(RIGTheme.text(55))
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: RIGTheme.Spacing.s) {
                 Button {
                     onSave()
                 } label: {
-                    Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "checkmark" : "square.and.arrow.down")
+                    Label(isSaved ? "Kaydedildi" : "Kaydet", systemImage: isSaved ? "checkmark" : "square.and.arrow.down")
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }

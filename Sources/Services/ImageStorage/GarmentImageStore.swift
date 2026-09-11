@@ -10,9 +10,9 @@ enum GarmentImageStoreError: LocalizedError, Equatable {
         case .baseDirectoryUnavailable:
             return "RIG could not open its local storage folder."
         case .writeFailed:
-            return "That image could not be saved to this device."
+            return "Bu görsel cihaza kaydedilemedi."
         case .readFailed:
-            return "That image could not be read from this device."
+            return "Bu görsel cihazdan okunamadı."
         }
     }
 }

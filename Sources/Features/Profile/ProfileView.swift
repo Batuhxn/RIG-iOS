@@ -17,8 +17,6 @@ struct ProfileView: View {
     @Query private var items: [ClothingItem]
     @Query private var looks: [SavedOutfit]
 
-    @Environment(\.rigServices) private var services
-
     private var favouriteCount: Int { items.filter(\.isFavorite).count }
 
     private var cutoutCount: Int { items.filter(\.isBackgroundRemoved).count }

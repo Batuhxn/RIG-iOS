@@ -123,7 +123,6 @@ struct ReviewStep: View {
     let onRetry: () -> Void
     let onContinue: () -> Void
 
-    @Environment(\.rigServices) private var services
     @State private var showingAfter = true
 
     private var hasCutout: Bool { result.cutoutRelativePath != nil }

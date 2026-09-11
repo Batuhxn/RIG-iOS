@@ -115,7 +115,7 @@ struct BulkQueueRow: View {
     @ViewBuilder
     private var thumbnail: some View {
         Group {
-            if let result = item.importResult ?? savedResult {
+            if let result = item.importResult {
                 GarmentImageView(relativePath: result.thumbnailRelativePath ?? result.cutoutRelativePath)
                     .padding(4)
             } else {
@@ -127,11 +127,6 @@ struct BulkQueueRow: View {
         .background(RIGTheme.pageBackground, in: RoundedRectangle(cornerRadius: RIGTheme.Radius.small, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.small, style: .continuous))
     }
-
-    /// A saved item keeps its result only while the queue holds it; once saved
-    /// the row falls back to the placeholder, which is correct — the garment
-    /// is in the wardrobe and this row is history.
-    private var savedResult: GarmentImportResult? { nil }
 
     private var stateLabel: String {
         switch item.status {

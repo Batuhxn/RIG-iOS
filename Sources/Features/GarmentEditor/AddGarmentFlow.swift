@@ -83,25 +83,28 @@ struct AddGarmentFlow: View {
                 }
             }
             .transition(.opacity)
+            // The camera sheet hangs off the step switch, and the duplicate
+            // sheet off the ZStack below it. Two `.sheet` modifiers on one
+            // view is a well-known way to lose one of them.
+            .sheet(isPresented: $isPresentingCamera) {
+                CameraPicker(
+                    onCapture: { data in
+                        // The hop is explicit rather than inherited: these
+                        // callbacks arrive from a UIKit delegate, and
+                        // everything they touch here is main-actor state.
+                        Task { @MainActor in
+                            isPresentingCamera = false
+                            accept(data)
+                        }
+                    },
+                    onCancel: {
+                        Task { @MainActor in isPresentingCamera = false }
+                    }
+                )
+                .ignoresSafeArea()
+            }
         }
         .animation(NocturneMotion.screen, value: step)
-        .sheet(isPresented: $isPresentingCamera) {
-            CameraPicker(
-                onCapture: { data in
-                    // The hop is explicit rather than inherited: these
-                    // callbacks arrive from a UIKit delegate, and everything
-                    // they touch here is main-actor state.
-                    Task { @MainActor in
-                        isPresentingCamera = false
-                        accept(data)
-                    }
-                },
-                onCancel: {
-                    Task { @MainActor in isPresentingCamera = false }
-                }
-            )
-            .ignoresSafeArea()
-        }
         .onChange(of: photoSelection) { _, newValue in
             guard let newValue else { return }
             Task { @MainActor in await loadFromPhotos(newValue) }
@@ -115,9 +118,6 @@ struct AddGarmentFlow: View {
                 isPresentingCamera = true
             }
         }
-        // Attached outside the step switch, and deliberately not stacked on the
-        // same view as the camera sheet: two sheet modifiers on one view is a
-        // well-known way to lose one of them.
         .sheet(isPresented: duplicateSheetBinding) { duplicateSheet }
     }
 

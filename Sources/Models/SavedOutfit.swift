@@ -58,7 +58,7 @@ extension SavedOutfit {
     static func defaultName(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM"
-        return "Look · \(formatter.string(from: date))"
+        return "Kombin · \(formatter.string(from: date))"
     }
 
     var source: OutfitSource {

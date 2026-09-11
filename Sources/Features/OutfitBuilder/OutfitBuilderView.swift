@@ -51,7 +51,7 @@ struct OutfitBuilderView: View {
                     } header: {
                         Text("Parçalar")
                     } footer: {
-                        Text("A look needs a top and a bottom, or a dress. Everything else is optional.")
+                        Text("Bir kombinde üst ve alt ya da bir elbise olmalı. Gerisi isteğe bağlı.")
                     }
 
                     Section("Ad") {

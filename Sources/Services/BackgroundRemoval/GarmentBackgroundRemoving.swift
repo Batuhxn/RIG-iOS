@@ -22,9 +22,9 @@ enum BackgroundRemovalError: LocalizedError, Equatable {
         case .unreadableImage:
             return "That image could not be read."
         case .noForegroundFound:
-            return "RIG could not find a garment in that photo."
+            return "RIG bu fotoğrafta bir parça bulamadı."
         case .maskGenerationFailed, .renderingFailed:
-            return "RIG could not separate the garment from its background."
+            return "RIG parçayı arka planından ayıramadı."
         }
     }
 }

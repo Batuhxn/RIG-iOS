@@ -11,18 +11,18 @@ enum OutfitValidationIssue: Hashable, Sendable {
     var message: String {
         switch self {
         case .empty:
-            return "Add at least one garment."
+            return "En az bir parça ekle."
         case .duplicateGarment:
-            return "The same garment is used more than once."
+            return "Aynı parça birden fazla kez kullanılmış."
         case .missingBase:
-            return "A look needs a top and a bottom, or a dress."
+            return "Bir kombinde üst ve alt ya da bir elbise olmalı."
         case .conflictingBase:
-            return "A dress already covers the top and bottom."
+            return "Elbise zaten üstü ve altı karşılıyor."
         case .tooMany(let category, let limit):
             if limit == 1 {
-                return "Only one \(category.displayName.lowercased()) per look."
+                return "Kombin başına yalnızca bir \(category.displayName.lowercased(with: Locale(identifier: "tr_TR")))."
             }
-            return "At most \(limit) \(category.displayName.lowercased()) items per look."
+            return "Kombin başına en fazla \(limit) \(category.displayName.lowercased(with: Locale(identifier: "tr_TR")))."
         }
     }
 }

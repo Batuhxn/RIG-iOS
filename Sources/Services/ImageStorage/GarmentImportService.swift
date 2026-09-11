@@ -18,7 +18,7 @@ enum GarmentImportError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .unreadableImage:
-            return "That photo could not be read. Try another image."
+            return "Bu fotoğraf okunamadı. Başka bir görsel dene."
         }
     }
 }
