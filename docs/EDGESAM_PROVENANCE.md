@@ -172,6 +172,81 @@ the same `1024 / max(h, w)` factor used for the image, with no offset**.
   confidence — it is EdgeSAM's own quality/IoU-style estimate for that
   mask candidate, nothing else.
 
+## Point prompts and refinement (v0.4 Slice 2.1)
+
+Real-device testing found two problems with v0.4 Slice 2's box-only prompt:
+EdgeSAM's mask could bleed into unrelated regions (skin, background) around
+a loosely drawn box, and — more seriously — EdgeSAM appeared to work only
+for the *first* garment cropped out of an outfit photo, silently falling
+back to the legacy background remover for every garment after it.
+
+### Order-independence: verified against the real upstream source
+
+Slice 2.1 needed to know whether appending refinement points *after* the
+box's two corners in `point_coords`/`point_labels` — rather than, say,
+interleaving them, or requiring a fixed position per point — would change
+the decoder's output. Rather than guess, the actual `SamCoreMLModel`
+class was fetched from
+`https://raw.githubusercontent.com/chongzhou96/EdgeSAM/master/edge_sam/utils/coreml.py`
+(the project's default branch is `master`, not `main`). Its
+`_embed_points` method computes each row of `point_coords`/`point_labels`
+independently:
+
+```python
+for i in range(self.num_point_embeddings):
+    point_embedding = point_embedding + point_embeddings[i].weight * (point_labels == i).float()
+```
+
+There is no positional or sequence encoding layered on top of this — each
+row contributes to the prompt embedding purely by its own coordinate and
+label, summed, regardless of where it sits in the array. **The order of
+entries within `point_coords`/`point_labels` does not affect the decoder's
+output.** This is what let Slice 2.1 fix a stable, simple convention —
+`EdgeSAMGeometry.promptEntries`: the box's two corners first (labels `2`,
+`3`), then every refinement point in the order the user added them (label
+`1` positive / `0` negative) — without that convention being load-bearing
+for correctness. It also means the box-only case (`N = 2`, no refinement
+points) is byte-identical to what v0.4 Slice 2 already shipped.
+
+### The 16-entry cap
+
+The decoder's declared `point_coords`/`point_labels` range is **1–16**
+(see above). The box's two corners are always present in this slice, so
+at most **14** refinement points can ever be sent alongside one —
+enforced defensively by `EdgeSAMGeometry.promptEntries` (`points.count + 2
+<= maxPromptEntryCount`), which returns `nil` rather than building an
+out-of-spec tensor if that is ever exceeded. `MaskReviewSheet`'s UI does
+not otherwise limit how many points a user can tap, so this guard is the
+backstop, not the primary constraint.
+
+### Root-cause hypothesis: why only the first garment worked
+
+The most defensible explanation for "EdgeSAM worked once per session,
+then silently degraded" is that `EdgeSAMSegmenter.encodeSource` was
+caching the encoder's *output* `MLMultiArray` (`image_embeddings`) by
+reference, rather than copying it. `MLModel.prediction(from:)` does not
+guarantee an output `MLMultiArray`'s backing memory stays valid, or
+unmodified, once the model runs any further prediction — including every
+subsequent decoder call that same cached embedding is fed into, once per
+garment, for the rest of the sitting. A cached reference to Core ML's own
+output buffer is exactly the shape of bug that "works once" and then
+fails quietly: the first garment's decode ran before any other prediction
+had touched that memory; the second garment's decode read from a buffer
+Core ML may already have reused underneath it, and the resulting failure
+(or corrupted mask) fell back to the manual crop path silently, matching
+the reported symptom exactly.
+
+The fix is a defensive deep copy — `EdgeSAMSegmenter.copied(_:)` — made
+at the moment the embedding is cached, so the adapter owns memory Core ML
+never touches again. **This is a well-reasoned hypothesis, not a verified
+root cause**: this environment cannot execute Core ML code, so the fix
+could not be confirmed against the real failure. It is paired,
+deliberately, with an explicit on-screen failure notice (v0.4 Slice 2.1
+Goal C — see `OutfitPhotoSessionView+Segmentation.swift`) as defense in
+depth: even if this hypothesis turns out to be wrong or incomplete, a
+future segmentation failure will surface as a visible message rather than
+silently reading as "the AI feature isn't there."
+
 ## Known limitation
 
 Whether this specific export was produced with `--use-stability-score`

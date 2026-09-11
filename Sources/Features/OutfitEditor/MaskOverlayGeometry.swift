@@ -30,4 +30,39 @@ enum MaskOverlayGeometry {
         )
         return local.isUsable ? local : nil
     }
+
+    /// The exact inverse of `localRegion`, for one point rather than a
+    /// rectangle: converts a tap the user made on `MaskReviewSheet`'s
+    /// overlay — normalized to the *crop's own* frame, `(0,0)` its
+    /// top-left — back into RIG source-space, the frame every
+    /// `EdgeSAMGeometry.PromptPoint` is expressed in. v0.4 Slice 2.1's
+    /// interactive refinement is what needs this direction; mask overlay
+    /// placement only ever needed the region-to-local direction above.
+    /// `nil` for a degenerate crop region, mirroring `localRegion`.
+    static func sourcePoint(
+        forLocalX localX: Double, localY: Double, within cropRegion: NormalizedCropRect
+    ) -> (x: Double, y: Double)? {
+        guard cropRegion.isUsable, cropRegion.width > 0, cropRegion.height > 0,
+              localX.isFinite, localY.isFinite else { return nil }
+        return (
+            x: cropRegion.x + localX * cropRegion.width,
+            y: cropRegion.y + localY * cropRegion.height
+        )
+    }
+
+    /// The forward direction of `sourcePoint`: where an already-placed
+    /// RIG-source-space point (an accepted `EdgeSAMGeometry.PromptPoint`)
+    /// falls within the crop's own frame, so `MaskReviewSheet` can draw a
+    /// marker for it. `nil` for a degenerate crop region, or a source point
+    /// that landed outside this particular crop.
+    static func localPoint(
+        forSourceX sourceX: Double, sourceY: Double, within cropRegion: NormalizedCropRect
+    ) -> (x: Double, y: Double)? {
+        guard cropRegion.isUsable, cropRegion.width > 0, cropRegion.height > 0,
+              sourceX.isFinite, sourceY.isFinite else { return nil }
+        return (
+            x: (sourceX - cropRegion.x) / cropRegion.width,
+            y: (sourceY - cropRegion.y) / cropRegion.height
+        )
+    }
 }

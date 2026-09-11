@@ -52,6 +52,16 @@ actor OutfitEmbeddingSession {
     /// Runs one prompt against the cached embedding, encoding first if
     /// nothing is cached yet or `imageData` differs from what is cached.
     ///
+    /// `points` carries any positive/negative refinement points to send
+    /// alongside the box, in addition to it — empty for a fresh, unrefined
+    /// proposal. Passing the same `imageData` across many calls (one per
+    /// garment in a sitting, or one per refinement of the same garment) is
+    /// exactly the "encode once, decode many" reuse this actor exists for:
+    /// `prepare(source:)` above only re-encodes when the bytes actually
+    /// change, so a second, third, or Nth garment cut from the same outfit
+    /// photo reuses the first garment's embedding rather than paying the
+    /// encoder's cost again.
+    ///
     /// A prompt becomes "the latest" the instant it is issued, before its
     /// (possibly slow) decode even starts. If a newer prompt is issued before
     /// this one's decode finishes, this call throws `.stalePrompt` instead of
@@ -60,7 +70,9 @@ actor OutfitEmbeddingSession {
     /// wanted. Cooperative `Task` cancellation is honoured at each await
     /// boundary for the same reason: a view that has gone away should not
     /// pay for, or receive, a result it can no longer show.
-    func proposeMask(for region: NormalizedCropRect, source imageData: Data) async throws -> SegmentationMaskResult {
+    func proposeMask(
+        for region: NormalizedCropRect, source imageData: Data, points: [EdgeSAMGeometry.PromptPoint] = []
+    ) async throws -> SegmentationMaskResult {
         try Task.checkCancellation()
         let token = try await prepare(source: imageData)
         try Task.checkCancellation()
@@ -68,7 +80,7 @@ actor OutfitEmbeddingSession {
         let promptID = UUID()
         latestPromptID = promptID
 
-        let result = try await segmenter.segment(region: region, in: token)
+        let result = try await segmenter.segment(region: region, points: points, in: token)
         try Task.checkCancellation()
 
         guard latestPromptID == promptID else {

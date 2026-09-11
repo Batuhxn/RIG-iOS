@@ -31,6 +31,11 @@ final class OutfitEmbeddingSessionTests: XCTestCase {
     private actor FakeSegmenter: GarmentSegmenting {
         private(set) var encodeCallCount = 0
         private(set) var segmentCallCount = 0
+        /// Every `points` array `segment` was actually called with, in call
+        /// order — v0.4 Slice 2.1 tests use this to confirm a re-decode
+        /// carries the accumulated refinement points, and that a fresh
+        /// candidate's first decode carries only its own.
+        private(set) var receivedPoints: [[EdgeSAMGeometry.PromptPoint]] = []
         var isAvailable: Bool { get async { true } }
 
         func encodeSource(_ imageData: Data) async throws -> SegmentationSourceToken {
@@ -40,9 +45,11 @@ final class OutfitEmbeddingSessionTests: XCTestCase {
 
         func segment(
             region: NormalizedCropRect,
+            points: [EdgeSAMGeometry.PromptPoint],
             in token: SegmentationSourceToken
         ) async throws -> SegmentationMaskResult {
             segmentCallCount += 1
+            receivedPoints.append(points)
             return SegmentationMaskResult(cutoutData: Data([0xAA]), boundingRegion: region, qualityScore: 0.9)
         }
     }
@@ -63,6 +70,7 @@ final class OutfitEmbeddingSessionTests: XCTestCase {
 
         func segment(
             region: NormalizedCropRect,
+            points: [EdgeSAMGeometry.PromptPoint],
             in token: SegmentationSourceToken
         ) async throws -> SegmentationMaskResult {
             await waitUntilReleased(region)
@@ -204,6 +212,104 @@ final class OutfitEmbeddingSessionTests: XCTestCase {
         let session = OutfitEmbeddingSession(segmenter: UnavailableSegmenter())
         let available = await session.isAvailable
         XCTAssertFalse(available)
+    }
+
+    // MARK: - v0.4 Slice 2.1: repeated segmentation and refinement
+
+    /// The real-device finding this exists to guard against: EdgeSAM
+    /// appeared to work only for the first garment cropped from an outfit
+    /// photo. This exercises the exact shape of that bug — three garments,
+    /// one shared source, sequential decodes — and pins both halves of the
+    /// fix: the encoder must run exactly once, and each garment's own
+    /// points must reach its own decode without leaking into the next.
+    func testThreeSequentialGarmentSegmentationsFromOneSourceEncodeOnceAndDecodeSeparately() async throws {
+        let segmenter = FakeSegmenter()
+        let session = OutfitEmbeddingSession(segmenter: segmenter)
+        let data = sourceData()
+        let secondGarmentPoint = EdgeSAMGeometry.PromptPoint(x: 0.5, y: 0.5, isPositive: true)
+
+        let first = try await session.proposeMask(for: region(0.1), source: data, points: [])
+        let second = try await session.proposeMask(for: region(0.2), source: data, points: [secondGarmentPoint])
+        let third = try await session.proposeMask(for: region(0.3), source: data, points: [])
+
+        XCTAssertEqual(first.boundingRegion, region(0.1))
+        XCTAssertEqual(second.boundingRegion, region(0.2))
+        XCTAssertEqual(third.boundingRegion, region(0.3))
+
+        let encodeCount = await segmenter.encodeCallCount
+        let segmentCount = await segmenter.segmentCallCount
+        XCTAssertEqual(encodeCount, 1, "the shared source must only ever be encoded once across three garments")
+        XCTAssertEqual(segmentCount, 3, "every garment gets its own decoder call")
+
+        let receivedPoints = await segmenter.receivedPoints
+        XCTAssertEqual(receivedPoints.count, 3)
+        XCTAssertEqual(receivedPoints[0], [], "the first garment's decode carries no leftover points")
+        XCTAssertEqual(receivedPoints[1], [secondGarmentPoint])
+        XCTAssertEqual(
+            receivedPoints[2], [],
+            "the third garment's decode must not inherit the second garment's refinement point"
+        )
+    }
+
+    /// A single garment refined three times over (an initial anchor, then
+    /// two user taps) must still only pay the encoder's cost once — the
+    /// same "encode once, decode many" reuse `prepare(source:)` already
+    /// guarantees for separate garments, exercised here for repeated
+    /// refinement of the *same* one.
+    func testRepeatedRefinementOfTheSameGarmentReusesTheExistingEmbedding() async throws {
+        let segmenter = FakeSegmenter()
+        let session = OutfitEmbeddingSession(segmenter: segmenter)
+        let data = sourceData()
+        let target = region(0.15)
+        let firstPoint = EdgeSAMGeometry.PromptPoint(x: 0.2, y: 0.2, isPositive: true)
+        let secondPoint = EdgeSAMGeometry.PromptPoint(x: 0.6, y: 0.6, isPositive: false)
+
+        _ = try await session.proposeMask(for: target, source: data, points: [])
+        _ = try await session.proposeMask(for: target, source: data, points: [firstPoint])
+        _ = try await session.proposeMask(for: target, source: data, points: [firstPoint, secondPoint])
+
+        let encodeCount = await segmenter.encodeCallCount
+        let segmentCount = await segmenter.segmentCallCount
+        XCTAssertEqual(encodeCount, 1, "every refinement re-decode must reuse the cached embedding, not re-encode")
+        XCTAssertEqual(segmentCount, 3)
+
+        let receivedPoints = await segmenter.receivedPoints
+        XCTAssertEqual(receivedPoints, [[], [firstPoint], [firstPoint, secondPoint]])
+    }
+
+    /// A segmenter that is available but whose decode genuinely fails must
+    /// throw the real reason back to the caller rather than returning a
+    /// result that could be mistaken for success. `OutfitPhotoSessionView`
+    /// is what turns this into an explicit on-screen notice instead of a
+    /// silent fall-back to the legacy background remover (Goal C) — this
+    /// pins the seam-level half of that contract: the session itself never
+    /// swallows or substitutes for a real failure.
+    private actor FailingSegmenter: GarmentSegmenting {
+        var isAvailable: Bool { get async { true } }
+
+        func encodeSource(_ imageData: Data) async throws -> SegmentationSourceToken {
+            SegmentationSourceToken(id: UUID())
+        }
+
+        func segment(
+            region: NormalizedCropRect,
+            points: [EdgeSAMGeometry.PromptPoint],
+            in token: SegmentationSourceToken
+        ) async throws -> SegmentationMaskResult {
+            throw SegmentationError.decodingFailed
+        }
+    }
+
+    func testASegmenterFailureThrowsRatherThanReturningAResultToSilentlyFallBackTo() async {
+        let session = OutfitEmbeddingSession(segmenter: FailingSegmenter())
+        do {
+            _ = try await session.proposeMask(for: region(0.1), source: sourceData())
+            XCTFail("a failed decode must not produce a mask result the caller could mistake for success")
+        } catch let error as SegmentationError {
+            XCTAssertEqual(error, .decodingFailed, "the real failure reason must reach the caller, not be swallowed")
+        } catch {
+            XCTFail("expected SegmentationError.decodingFailed, got \(error)")
+        }
     }
 
     func testACancelledTaskThrowsCancellationErrorRatherThanReturningAResult() async throws {

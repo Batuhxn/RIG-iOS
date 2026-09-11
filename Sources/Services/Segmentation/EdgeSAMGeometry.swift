@@ -85,6 +85,109 @@ enum EdgeSAMGeometry {
         )
     }
 
+    // MARK: - Point prompts (v0.4 Slice 2.1)
+
+    /// One refinement (or anchor) point, in RIG's normalized source-space —
+    /// the same convention `NormalizedCropRect` uses. `isPositive` is SAM's
+    /// own point_label convention: true = "include this area", false =
+    /// "exclude this area". Pure and Sendable on purpose: this is the type
+    /// `MaskReviewSheet` hands back up to the view layer when the user taps
+    /// to refine, with no Core ML import anywhere near it.
+    struct PromptPoint: Sendable, Equatable {
+        let x: Double
+        let y: Double
+        let isPositive: Bool
+
+        init(x: Double, y: Double, isPositive: Bool) {
+            self.x = x
+            self.y = y
+            self.isPositive = isPositive
+        }
+    }
+
+    /// A point prompt's pixel coordinate in the same padded 1024x1024 frame
+    /// `boxPromptCoordinates` maps into. Clamps into [0,1] first rather than
+    /// rejecting an out-of-frame point outright — a refinement tap is always
+    /// inside the crop that was drawn, but this keeps a rounding-error
+    /// point at the very edge from being thrown away. `nil` only for a
+    /// non-finite point.
+    static func promptPointCoordinates(
+        for point: PromptPoint, resizeMetadata: EdgeSAMResizeMetadata
+    ) -> (x: Double, y: Double)? {
+        guard point.x.isFinite, point.y.isFinite else { return nil }
+        let clampedX = min(max(point.x, 0), 1)
+        let clampedY = min(max(point.y, 0), 1)
+        let sourceWidth = Double(resizeMetadata.sourceWidth)
+        let sourceHeight = Double(resizeMetadata.sourceHeight)
+        return (
+            x: clampedX * sourceWidth * resizeMetadata.scale,
+            y: clampedY * sourceHeight * resizeMetadata.scale
+        )
+    }
+
+    /// The center of a box, as a positive point — SAM's own well-documented
+    /// technique for anchoring a box prompt on the object actually meant,
+    /// rather than whatever else a loosely drawn box happens to overlap
+    /// (the real-device finding this exists to address: a box around a
+    /// sweater whose mask bled into leg/chest skin). Used as the default
+    /// initial prompt alongside every hand-drawn box; see
+    /// `docs/EDGESAM_PROVENANCE.md`. `nil` when `region` is not usable.
+    static func centerPoint(of region: NormalizedCropRect) -> PromptPoint? {
+        let clamped = region.clamped()
+        guard clamped.isUsable else { return nil }
+        return PromptPoint(x: clamped.x + clamped.width / 2, y: clamped.y + clamped.height / 2, isPositive: true)
+    }
+
+    /// One flattened `point_coords`/`point_labels` row: a model-space pixel
+    /// coordinate plus SAM's reserved label value (`0` negative, `1`
+    /// positive, `2` box top-left, `3` box bottom-right — see
+    /// `docs/EDGESAM_PROVENANCE.md`, "Box and point prompts share one
+    /// array").
+    struct PromptEntry: Equatable {
+        let x: Double
+        let y: Double
+        let label: Float
+    }
+
+    static let negativePointLabel: Float = 0
+    static let positivePointLabel: Float = 1
+    static let boxTopLeftLabel: Float = 2
+    static let boxBottomRightLabel: Float = 3
+    /// The exported decoder's own declared `point_coords`/`point_labels`
+    /// flexible-shape range tops out at 16 entries (see
+    /// `docs/EDGESAM_PROVENANCE.md`, "Decoder interface") — the box's two
+    /// corners are always among them, so at most 14 refinement points can
+    /// ever be sent alongside one.
+    static let maxPromptEntryCount = 16
+
+    /// Assembles the full, ordered prompt EdgeSAMPromptTensor packs into
+    /// `MLMultiArray`s: the box's two corners first (always present — this
+    /// slice never proposes a mask without a hand-drawn box), then every
+    /// refinement point in the order given. Kept here, with no Core ML
+    /// import anywhere in this file, purely so
+    /// `Tests/EdgeSAMGeometryTests.swift` can exercise the exact
+    /// construction and ordering deterministically — see
+    /// `docs/EDGESAM_PROVENANCE.md` for why the order among these entries
+    /// does not change the decoder's output, and why "box first" was still
+    /// chosen as this slice's fixed, documented convention. `nil` when the
+    /// box itself is unusable, any point is non-finite, or the total would
+    /// exceed the decoder's declared entry limit.
+    static func promptEntries(
+        for region: NormalizedCropRect, points: [PromptPoint], resizeMetadata: EdgeSAMResizeMetadata
+    ) -> [PromptEntry]? {
+        guard points.count + 2 <= maxPromptEntryCount else { return nil }
+        guard let box = boxPromptCoordinates(for: region, resizeMetadata: resizeMetadata) else { return nil }
+        var entries = [
+            PromptEntry(x: box.x0, y: box.y0, label: boxTopLeftLabel),
+            PromptEntry(x: box.x1, y: box.y1, label: boxBottomRightLabel),
+        ]
+        for point in points {
+            guard let coords = promptPointCoordinates(for: point, resizeMetadata: resizeMetadata) else { return nil }
+            entries.append(PromptEntry(x: coords.x, y: coords.y, label: point.isPositive ? positivePointLabel : negativePointLabel))
+        }
+        return entries
+    }
+
     /// A minimal `align_corners=False`-style bilinear resample — see
     /// `EdgeSAMMaskConversion`'s doc comment for why this exists instead of
     /// a tensor library call.

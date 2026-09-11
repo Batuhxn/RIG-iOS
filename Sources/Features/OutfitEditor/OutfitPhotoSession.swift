@@ -51,6 +51,15 @@ struct OutfitGarmentCandidate: Identifiable, Equatable {
     /// segmentation quality only — see `SegmentationMaskResult` — and must
     /// never be presented as garment confidence.
     var proposedMask: SegmentationMaskResult?
+    /// Positive/negative points accumulated for this candidate's *current*
+    /// box, sent alongside it on every re-decode (v0.4 Slice 2.1). Reset
+    /// with `proposedMask` wherever the box itself changes — a new region
+    /// makes a prior refinement point's placement meaningless. Living on
+    /// the candidate rather than on the view means a fresh
+    /// `OutfitGarmentCandidate` (every `beginCandidate` call) starts with an
+    /// empty array by construction: nothing here can leak from one garment
+    /// into the next.
+    var refinementPoints: [EdgeSAMGeometry.PromptPoint] = []
     var stage: OutfitCandidateStage
 
     init(
@@ -60,6 +69,7 @@ struct OutfitGarmentCandidate: Identifiable, Equatable {
         suggestedCategory: GarmentCategory? = nil,
         confidence: Double? = nil,
         proposedMask: SegmentationMaskResult? = nil,
+        refinementPoints: [EdgeSAMGeometry.PromptPoint] = [],
         stage: OutfitCandidateStage = .drafting
     ) {
         self.id = id
@@ -68,6 +78,7 @@ struct OutfitGarmentCandidate: Identifiable, Equatable {
         self.suggestedCategory = suggestedCategory
         self.confidence = confidence
         self.proposedMask = proposedMask
+        self.refinementPoints = refinementPoints
         self.stage = stage
     }
 
@@ -174,10 +185,13 @@ struct OutfitPhotoSession: Equatable {
     mutating func updateRegion(_ region: NormalizedCropRect) {
         guard let activeIndex, candidates.indices.contains(activeIndex) else { return }
         candidates[activeIndex].region = region.clamped()
-        // A mask proposed for the previous rectangle no longer describes this
-        // one. Clearing it here, rather than trusting every call site to
-        // remember to, is what keeps a stale overlay from ever being shown.
+        // A mask (and any refinement points) proposed for the previous
+        // rectangle no longer describes this one. Clearing them here,
+        // rather than trusting every call site to remember to, is what
+        // keeps a stale overlay — or a stale point sitting outside the new
+        // box — from ever being shown.
         candidates[activeIndex].proposedMask = nil
+        candidates[activeIndex].refinementPoints = []
         candidates[activeIndex].origin = .manualCrop
     }
 
@@ -190,6 +204,17 @@ struct OutfitPhotoSession: Equatable {
         guard let activeIndex, candidates.indices.contains(activeIndex) else { return }
         candidates[activeIndex].proposedMask = mask
         candidates[activeIndex].origin = mask != nil ? .aiAssistedCrop : .manualCrop
+    }
+
+    /// Replaces the open candidate's accumulated refinement points —
+    /// every positive/negative point sent alongside its box on the next
+    /// decode. Separate from `proposeMask` because a refinement re-decode
+    /// updates points and mask together but from two independent pieces of
+    /// state, and because seeding the very first prompt's default center
+    /// point (v0.4 Slice 2.1) needs to set points before any mask exists.
+    mutating func setRefinementPoints(_ points: [EdgeSAMGeometry.PromptPoint]) {
+        guard let activeIndex, candidates.indices.contains(activeIndex) else { return }
+        candidates[activeIndex].refinementPoints = points
     }
 
     mutating func markReady(_ result: GarmentImportResult) {
@@ -241,13 +266,15 @@ struct OutfitPhotoSession: Equatable {
     /// Sends a reviewed or failed candidate back to its rectangle. Any files it
     /// already wrote are the caller's to remove; the identifier is reused, so a
     /// second attempt overwrites rather than orphans. Any previously proposed
-    /// mask is cleared along with it — a fresh crop starts fresh.
+    /// mask, and any refinement points accumulated against it, are cleared
+    /// along with it — a fresh crop starts fresh.
     mutating func recrop() {
         guard let activeIndex, candidates.indices.contains(activeIndex),
               !candidates[activeIndex].isSaved,
               candidates[activeIndex].linkedGarmentID == nil else { return }
         candidates[activeIndex].stage = .drafting
         candidates[activeIndex].proposedMask = nil
+        candidates[activeIndex].refinementPoints = []
         candidates[activeIndex].origin = .manualCrop
     }
 }

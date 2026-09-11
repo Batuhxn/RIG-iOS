@@ -346,4 +346,73 @@ final class OutfitPhotoSessionTests: XCTestCase {
         XCTAssertEqual(session.linkedCount, 1)
         XCTAssertEqual(session.resolvedCount, 2)
     }
+
+    // MARK: - v0.4 Slice 2.1: refinement points
+
+    private func point(_ x: Double, isPositive: Bool = true) -> EdgeSAMGeometry.PromptPoint {
+        EdgeSAMGeometry.PromptPoint(x: x, y: 0.5, isPositive: isPositive)
+    }
+
+    func testANewCandidateStartsWithNoRefinementPoints() {
+        var session = OutfitPhotoSession()
+        session.beginCandidate(id: Fixture.id(1))
+
+        XCTAssertTrue(session.active?.refinementPoints.isEmpty ?? false)
+    }
+
+    func testSetRefinementPointsAppliesToTheActiveCandidate() {
+        var session = OutfitPhotoSession()
+        session.beginCandidate(id: Fixture.id(1))
+        session.setRefinementPoints([point(0.2), point(0.3, isPositive: false)])
+
+        XCTAssertEqual(session.active?.refinementPoints, [point(0.2), point(0.3, isPositive: false)])
+    }
+
+    func testUpdatingRegionClearsRefinementPoints() {
+        var session = OutfitPhotoSession()
+        session.beginCandidate(id: Fixture.id(1))
+        session.setRefinementPoints([point(0.2)])
+        session.updateRegion(NormalizedCropRect(x: 0.1, y: 0.1, width: 0.3, height: 0.3))
+
+        XCTAssertTrue(
+            session.active?.refinementPoints.isEmpty ?? false,
+            "a point placed against the old rectangle must not survive a redrawn one"
+        )
+    }
+
+    func testRecropClearsRefinementPoints() {
+        var session = OutfitPhotoSession()
+        let id = Fixture.id(1)
+        session.beginCandidate(id: id)
+        session.setRefinementPoints([point(0.2)])
+        session.markReady(result(id))
+        session.recrop()
+
+        XCTAssertTrue(session.active?.refinementPoints.isEmpty ?? false)
+    }
+
+    /// The real-device finding this addresses: a second garment from the
+    /// same photo must start clean. Storing `refinementPoints` on the
+    /// candidate struct itself, not the view, makes this provable by
+    /// Swift's value semantics — `beginCandidate` always appends a fresh
+    /// `OutfitGarmentCandidate`, which can only start with its own empty
+    /// default.
+    func testARefinementPointOnOneCandidateDoesNotLeakIntoTheNextCandidate() {
+        var session = OutfitPhotoSession()
+        let firstID = Fixture.id(1)
+        session.beginCandidate(id: firstID)
+        session.setRefinementPoints([point(0.2), point(0.4, isPositive: false)])
+        session.markReady(result(firstID))
+        XCTAssertTrue(session.markSaved())
+
+        session.beginCandidate(id: Fixture.id(2))
+
+        XCTAssertTrue(
+            session.active?.refinementPoints.isEmpty ?? false,
+            "a fresh candidate must never inherit a previous candidate's refinement points"
+        )
+        // The first candidate's own accumulated points are untouched by the
+        // second candidate existing — nothing here rewrote history.
+        XCTAssertEqual(session.candidates.first?.refinementPoints, [point(0.2), point(0.4, isPositive: false)])
+    }
 }

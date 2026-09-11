@@ -87,7 +87,28 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
         }
         try Task.checkCancellation()
 
-        guard let embedding = output.featureValue(for: "image_embeddings")?.multiArrayValue else {
+        guard let rawEmbedding = output.featureValue(for: "image_embeddings")?.multiArrayValue else {
+            throw SegmentationError.encodingFailed
+        }
+        // Deep-copy the encoder's *output* array before caching it, rather
+        // than holding onto the instance Core ML handed back. This is the
+        // fix for the real-device finding that EdgeSAM only ever worked for
+        // the first garment in a session: `MLModel.prediction(from:)` does
+        // not guarantee an output `MLMultiArray`'s backing memory stays
+        // valid, or unmodified, once the model runs *any* further
+        // prediction — including the decoder calls this same embedding is
+        // about to be handed to, once per garment, for the rest of the
+        // sitting. A cached reference to Core ML's own output buffer is
+        // exactly the kind of thing that "worked once" and then silently
+        // stopped: garment #1 decoded correctly because no other prediction
+        // had run yet; garment #2 decoded from a buffer that may already
+        // have been reused underneath it, and the resulting mask (or the
+        // decode call itself) failed quietly into the manual-crop fallback.
+        // Copying into a `RIG`-owned array up front removes that
+        // dependency entirely — the cached embedding is now data this
+        // adapter is the sole owner of, immune to whatever Core ML does
+        // with its own internal buffers afterward.
+        guard let embedding = Self.copied(rawEmbedding) else {
             throw SegmentationError.encodingFailed
         }
 
@@ -99,7 +120,11 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
         return token
     }
 
-    func segment(region: NormalizedCropRect, in token: SegmentationSourceToken) async throws -> SegmentationMaskResult {
+    func segment(
+        region: NormalizedCropRect,
+        points: [EdgeSAMGeometry.PromptPoint],
+        in token: SegmentationSourceToken
+    ) async throws -> SegmentationMaskResult {
         try Task.checkCancellation()
         guard token == cachedToken,
               let embedding = cachedEmbedding,
@@ -112,7 +137,7 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
         }
         let (_, decoder) = try await loadedModels()
 
-        guard let prompt = EdgeSAMPromptTensor.boxPrompt(for: region, resizeMetadata: resizeMetadata) else {
+        guard let prompt = EdgeSAMPromptTensor.prompt(for: region, points: points, resizeMetadata: resizeMetadata) else {
             throw SegmentationError.decodingFailed
         }
         try Task.checkCancellation()
@@ -152,6 +177,22 @@ actor EdgeSAMSegmenter: GarmentSegmenting {
             boundingRegion: converted.boundingRegion,
             qualityScore: converted.qualityScore
         )
+    }
+
+    /// A byte-for-byte copy of a Core ML output `MLMultiArray`, backed by
+    /// freshly allocated memory this adapter owns outright — see the
+    /// deep-copy comment in `encodeSource` for why the encoder's own output
+    /// buffer must never be cached directly. `nil` if allocation fails, or
+    /// if `array` is not the float32 buffer EdgeSAM's encoder always
+    /// produces (`docs/EDGESAM_PROVENANCE.md`) — safer to reject than guess
+    /// at another data type's element size.
+    private static func copied(_ array: MLMultiArray) -> MLMultiArray? {
+        guard array.dataType == .float32,
+              let copy = try? MLMultiArray(shape: array.shape, dataType: .float32) else { return nil }
+        let source = array.dataPointer.bindMemory(to: Float32.self, capacity: array.count)
+        let destination = copy.dataPointer.bindMemory(to: Float32.self, capacity: copy.count)
+        destination.update(from: source, count: array.count)
+        return copy
     }
 
     // MARK: - Model loading

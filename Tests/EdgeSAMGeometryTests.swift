@@ -160,4 +160,101 @@ final class EdgeSAMGeometryTests: XCTestCase {
     func testThresholdAndBoundingBoxRejectsAMismatchedBufferSize() {
         XCTAssertNil(EdgeSAMGeometry.thresholdAndBoundingBox([1, 2, 3], width: 4, height: 4))
     }
+
+    // MARK: - promptPointCoordinates / centerPoint (v0.4 Slice 2.1)
+
+    func testPromptPointCoordinatesMapsTheSameWayAsABoxCorner() throws {
+        // A point sitting exactly on a region's top-left corner must land at
+        // the same model-space pixel `boxPromptCoordinates` would give that
+        // corner — both are the same RIG-space-to-model-space scale, with no
+        // offset.
+        let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1000, sourceHeight: 1000)!
+        let region = NormalizedCropRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5)
+        let box = try XCTUnwrap(EdgeSAMGeometry.boxPromptCoordinates(for: region, resizeMetadata: metadata))
+
+        let point = EdgeSAMGeometry.PromptPoint(x: 0.25, y: 0.25, isPositive: true)
+        let coords = try XCTUnwrap(EdgeSAMGeometry.promptPointCoordinates(for: point, resizeMetadata: metadata))
+
+        XCTAssertEqual(coords.x, box.x0, accuracy: 0.001)
+        XCTAssertEqual(coords.y, box.y0, accuracy: 0.001)
+    }
+
+    func testPromptPointCoordinatesClampsAnOutOfRangePointRatherThanExtrapolating() throws {
+        let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1000, sourceHeight: 1000)!
+        let point = EdgeSAMGeometry.PromptPoint(x: 1.5, y: -0.5, isPositive: false)
+
+        let coords = try XCTUnwrap(EdgeSAMGeometry.promptPointCoordinates(for: point, resizeMetadata: metadata))
+
+        XCTAssertEqual(coords.x, metadata.scale * 1000, accuracy: 0.001, "clamped to 1.0, not extrapolated past it")
+        XCTAssertEqual(coords.y, 0, accuracy: 0.001, "clamped to 0.0, not extrapolated below it")
+    }
+
+    func testPromptPointCoordinatesOfANonFinitePointIsNil() {
+        let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1000, sourceHeight: 1000)!
+        let point = EdgeSAMGeometry.PromptPoint(x: .nan, y: 0.5, isPositive: true)
+        XCTAssertNil(EdgeSAMGeometry.promptPointCoordinates(for: point, resizeMetadata: metadata))
+    }
+
+    func testCenterPointOfARegionIsItsMidpointAndPositive() throws {
+        let region = NormalizedCropRect(x: 0.2, y: 0.4, width: 0.4, height: 0.2)
+        let center = try XCTUnwrap(EdgeSAMGeometry.centerPoint(of: region))
+
+        XCTAssertEqual(center.x, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(center.y, 0.5, accuracy: 0.0001)
+        XCTAssertTrue(center.isPositive, "the automatic box anchor is always an include point")
+    }
+
+    func testCenterPointOfAnUnusableRegionIsNil() {
+        let degenerate = NormalizedCropRect(x: 0.2, y: 0.2, width: 0, height: 0.4)
+        XCTAssertNil(EdgeSAMGeometry.centerPoint(of: degenerate))
+    }
+
+    // MARK: - promptEntries (v0.4 Slice 2.1)
+
+    func testPromptEntriesPlacesTheBoxCornersFirstThenPointsInGivenOrder() throws {
+        let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1000, sourceHeight: 1000)!
+        let region = NormalizedCropRect(x: 0.2, y: 0.2, width: 0.4, height: 0.4)
+        let points = [
+            EdgeSAMGeometry.PromptPoint(x: 0.3, y: 0.3, isPositive: true),
+            EdgeSAMGeometry.PromptPoint(x: 0.5, y: 0.5, isPositive: false),
+        ]
+
+        let entries = try XCTUnwrap(EdgeSAMGeometry.promptEntries(for: region, points: points, resizeMetadata: metadata))
+
+        XCTAssertEqual(entries.count, 4)
+        XCTAssertEqual(entries[0].label, EdgeSAMGeometry.boxTopLeftLabel)
+        XCTAssertEqual(entries[1].label, EdgeSAMGeometry.boxBottomRightLabel)
+        XCTAssertEqual(entries[2].label, EdgeSAMGeometry.positivePointLabel)
+        XCTAssertEqual(entries[3].label, EdgeSAMGeometry.negativePointLabel)
+    }
+
+    func testPromptEntriesWithNoPointsIsJustTheBoxsTwoCorners() throws {
+        let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1000, sourceHeight: 1000)!
+        let entries = try XCTUnwrap(
+            EdgeSAMGeometry.promptEntries(for: .full, points: [], resizeMetadata: metadata)
+        )
+        XCTAssertEqual(entries.count, 2, "byte-identical to the box-only prompt v0.4 Slice 2 already shipped")
+        XCTAssertEqual(entries.map(\.label), [EdgeSAMGeometry.boxTopLeftLabel, EdgeSAMGeometry.boxBottomRightLabel])
+    }
+
+    func testPromptEntriesIsNilWhenTheBoxItselfIsUnusable() {
+        let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1000, sourceHeight: 1000)!
+        let degenerate = NormalizedCropRect(x: 0.2, y: 0.2, width: 0, height: 0.4)
+        XCTAssertNil(EdgeSAMGeometry.promptEntries(for: degenerate, points: [], resizeMetadata: metadata))
+    }
+
+    func testPromptEntriesRejectsMoreEntriesThanTheDecoderDeclares() {
+        let metadata = EdgeSAMGeometry.resizeMetadata(sourceWidth: 1000, sourceHeight: 1000)!
+        // 2 box corners + 15 points = 17, one past the decoder's 16-entry cap.
+        let tooManyPoints = (0..<15).map {
+            EdgeSAMGeometry.PromptPoint(x: Double($0) / 20, y: 0.5, isPositive: true)
+        }
+        XCTAssertNil(EdgeSAMGeometry.promptEntries(for: .full, points: tooManyPoints, resizeMetadata: metadata))
+
+        // 2 box corners + 14 points = 16 is exactly at the cap and must succeed.
+        let atCapacity = Array(tooManyPoints.dropLast())
+        XCTAssertEqual(
+            EdgeSAMGeometry.promptEntries(for: .full, points: atCapacity, resizeMetadata: metadata)?.count, 16
+        )
+    }
 }

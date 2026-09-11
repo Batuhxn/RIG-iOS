@@ -71,4 +71,46 @@ final class MaskOverlayGeometryTests: XCTestCase {
 
         XCTAssertNil(MaskOverlayGeometry.localRegion(for: mask, within: crop))
     }
+
+    // MARK: - sourcePoint / localPoint (v0.4 Slice 2.1 refinement taps)
+
+    func testSourcePointMapsACropLocalTapBackIntoSourceSpace() throws {
+        // Same crop as the sub-region test above: [0.2, 0.6] x [0.2, 0.6].
+        // A tap dead-center of the crop (0.5, 0.5 local) must land at the
+        // crop's own center in source-space.
+        let crop = NormalizedCropRect(x: 0.2, y: 0.2, width: 0.4, height: 0.4)
+        let source = try XCTUnwrap(MaskOverlayGeometry.sourcePoint(forLocalX: 0.5, localY: 0.5, within: crop))
+
+        XCTAssertEqual(source.x, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(source.y, 0.4, accuracy: 0.0001)
+    }
+
+    func testLocalPointIsTheExactInverseOfSourcePoint() throws {
+        let crop = NormalizedCropRect(x: 0.1, y: 0.3, width: 0.5, height: 0.2)
+        let source = try XCTUnwrap(MaskOverlayGeometry.sourcePoint(forLocalX: 0.3, localY: 0.7, within: crop))
+        let roundTripped = try XCTUnwrap(
+            MaskOverlayGeometry.localPoint(forSourceX: source.x, sourceY: source.y, within: crop)
+        )
+
+        XCTAssertEqual(roundTripped.x, 0.3, accuracy: 0.0001)
+        XCTAssertEqual(roundTripped.y, 0.7, accuracy: 0.0001)
+    }
+
+    func testSourcePointOfADegenerateCropRegionReturnsNil() {
+        let crop = NormalizedCropRect(x: 0.2, y: 0.2, width: 0, height: 0.4)
+        XCTAssertNil(MaskOverlayGeometry.sourcePoint(forLocalX: 0.5, localY: 0.5, within: crop))
+    }
+
+    func testLocalPointOfADegenerateCropRegionReturnsNil() {
+        let crop = NormalizedCropRect(x: 0.2, y: 0.2, width: 0.4, height: 0)
+        XCTAssertNil(MaskOverlayGeometry.localPoint(forSourceX: 0.3, sourceY: 0.3, within: crop))
+    }
+
+    func testLocalPointOfASourcePointOutsideThisCropFallsOutsideZeroToOne() throws {
+        // Not nil — `MaskReviewSheet` itself filters markers to [0,1]; the
+        // geometry function's job is only the arithmetic, not the clipping.
+        let crop = NormalizedCropRect(x: 0.5, y: 0.5, width: 0.2, height: 0.2)
+        let outside = try XCTUnwrap(MaskOverlayGeometry.localPoint(forSourceX: 0.1, sourceY: 0.1, within: crop))
+        XCTAssertFalse((0...1).contains(outside.x))
+    }
 }

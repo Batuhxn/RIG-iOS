@@ -91,18 +91,30 @@ protocol GarmentSegmenting: Sendable {
     /// same bytes is correct but wasteful, not incorrect.
     func encodeSource(_ imageData: Data) async throws -> SegmentationSourceToken
 
-    /// Proposes a mask for one manually drawn region against an
-    /// already-encoded source.
+    /// Proposes a mask for one manually drawn region, optionally refined by
+    /// positive/negative points, against an already-encoded source.
     ///
-    /// `region` is expressed in RIG's normalized image-space — this method
-    /// owns translating that into whatever prompt format the underlying
-    /// model expects, and translating its output mask back, so nothing about
-    /// model coordinates ever needs to leave the adapter that implements
-    /// this protocol.
+    /// `region` and `points` are expressed in RIG's normalized image-space —
+    /// this method owns translating that into whatever prompt format the
+    /// underlying model expects, and translating its output mask back, so
+    /// nothing about model coordinates ever needs to leave the adapter that
+    /// implements this protocol. `points` is empty for a fresh, unrefined
+    /// proposal; a caller re-running the decoder after the user adds a
+    /// point (v0.4 Slice 2.1) passes the full accumulated list every time —
+    /// this call is stateless with respect to prior prompts, exactly like
+    /// `region` itself.
     func segment(
         region: NormalizedCropRect,
+        points: [EdgeSAMGeometry.PromptPoint],
         in token: SegmentationSourceToken
     ) async throws -> SegmentationMaskResult
+}
+
+extension GarmentSegmenting {
+    /// Convenience for a box-only prompt — no refinement points.
+    func segment(region: NormalizedCropRect, in token: SegmentationSourceToken) async throws -> SegmentationMaskResult {
+        try await segment(region: region, points: [], in: token)
+    }
 }
 
 /// Always unavailable. The honest answer wherever EdgeSAM is not wired up:
@@ -122,6 +134,7 @@ struct UnavailableSegmenter: GarmentSegmenting {
 
     func segment(
         region: NormalizedCropRect,
+        points: [EdgeSAMGeometry.PromptPoint],
         in token: SegmentationSourceToken
     ) async throws -> SegmentationMaskResult {
         throw SegmentationError.modelUnavailable

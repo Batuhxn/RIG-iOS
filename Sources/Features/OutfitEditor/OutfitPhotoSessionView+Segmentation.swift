@@ -15,29 +15,22 @@ extension OutfitPhotoSessionView {
         return created
     }
 
-    /// Asks the segmenter for a mask over `region`. A no-op, silently, when
-    /// no segmenter is available — the plain rectangular crop from
-    /// `previewDraft()` already stands on its own, so this is purely
-    /// additive.
+    /// Asks the segmenter for an initial mask over `region`, seeded with
+    /// whatever refinement points are already on the active candidate — in
+    /// practice just the box's own center point, set by `previewDraft()`
+    /// just before this is called (Goal B: "Initial prompt may use the
+    /// current box plus a positive center point"). A silent no-op when no
+    /// segmenter is available — the plain rectangular crop already stands
+    /// on its own, so this is purely additive.
     func startMaskProposal(for region: NormalizedCropRect, source imageData: Data) {
         cancelMaskProposal()
-        let maskSession = resolvedEmbeddingSession()
+        segmentationFailureMessage = nil
+        let points = session.active?.refinementPoints ?? []
         isProposingMask = true
         maskProposalTask = Task { @MainActor in
             defer { isProposingMask = false }
-            guard await maskSession.isAvailable else { return }
-            do {
-                let result = try await maskSession.proposeMask(for: region, source: imageData)
-                guard !Task.isCancelled else { return }
-                maskProposal = result
-                maskReviewRegion = region
-            } catch {
-                // Cancelled, stale, or the model failed on this attempt: the
-                // honest fallback is exactly what v0.4 Slice 1 already did —
-                // the rectangular crop stands on its own, silently, since
-                // nothing the user asked for has failed.
-                maskProposal = nil
-            }
+            guard await resolvedEmbeddingSession().isAvailable else { return }
+            await applyDecodeResult(for: region, points: points, source: imageData)
         }
     }
 
@@ -45,6 +38,79 @@ extension OutfitPhotoSessionView {
         maskProposalTask?.cancel()
         maskProposalTask = nil
         isProposingMask = false
+        isRefiningMask = false
+    }
+
+    /// The user tapped the image in `MaskReviewSheet` to add a positive
+    /// ("include this area") or negative ("exclude this area") point (Goal
+    /// B). Appends it to the active candidate's accumulated points — so it
+    /// survives this one re-decode and every one after it, until the box
+    /// itself changes — and re-runs the decoder against the same cached
+    /// embedding `OutfitEmbeddingSession` already holds. Ignored while a
+    /// decode is already in flight, rather than queued, so taps can't pile
+    /// up behind a slow decode.
+    func refineMaskProposal(adding point: EdgeSAMGeometry.PromptPoint) {
+        guard let sourceData, session.active != nil, !isRefiningMask else { return }
+        let region = maskReviewRegion
+        let points = (session.active?.refinementPoints ?? []) + [point]
+        session.setRefinementPoints(points)
+        maskProposalTask?.cancel()
+        isRefiningMask = true
+        maskProposalTask = Task { @MainActor in
+            defer { isRefiningMask = false }
+            await applyDecodeResult(for: region, points: points, source: sourceData)
+        }
+    }
+
+    /// "Reset points" in `MaskReviewSheet`: drops every point the user
+    /// added and falls back to just the box's own automatic center-point
+    /// anchor, then re-runs the decoder once — a real reset, not merely
+    /// clearing state, so the mask on screen always matches exactly what
+    /// "Use mask" would save.
+    func resetRefinementPoints() {
+        guard let candidate = session.active, let sourceData, !isRefiningMask else { return }
+        let anchor = EdgeSAMGeometry.centerPoint(of: candidate.region).map { [$0] } ?? []
+        session.setRefinementPoints(anchor)
+        let region = maskReviewRegion
+        maskProposalTask?.cancel()
+        isRefiningMask = true
+        maskProposalTask = Task { @MainActor in
+            defer { isRefiningMask = false }
+            await applyDecodeResult(for: region, points: anchor, source: sourceData)
+        }
+    }
+
+    /// Runs one decode and applies its outcome — shared by the initial
+    /// proposal and every refinement re-decode, so all three follow exactly
+    /// the same silent-vs-explicit failure rule (Goal C).
+    ///
+    /// A cancelled or superseded attempt (this candidate's box changed, a
+    /// newer refinement was issued before this one returned) leaves
+    /// whatever is already on screen untouched, silently — nothing the user
+    /// is currently looking at was invalidated by it. `.modelUnavailable`
+    /// is silent for the same reason `startMaskProposal` never surfaces it:
+    /// "no segmenter configured" must behave exactly as if EdgeSAM did not
+    /// exist, not as a user-visible error. Every other failure — the
+    /// decoder itself rejecting this prompt, mask conversion failing — is
+    /// shown via `segmentationFailureMessage`, because the user just took
+    /// an explicit action (drew a box, tapped a point) that genuinely did
+    /// not work; per Goal C, that must never be silently swallowed into
+    /// what looks like the AI feature simply isn't there.
+    @MainActor
+    private func applyDecodeResult(
+        for region: NormalizedCropRect, points: [EdgeSAMGeometry.PromptPoint], source imageData: Data
+    ) async {
+        do {
+            let result = try await resolvedEmbeddingSession().proposeMask(for: region, source: imageData, points: points)
+            guard !Task.isCancelled else { return }
+            maskProposal = result
+            maskReviewRegion = region
+        } catch is CancellationError {
+        } catch SegmentationError.cancelled, SegmentationError.stalePrompt, SegmentationError.modelUnavailable {
+        } catch {
+            segmentationFailureMessage = (error as? LocalizedError)?.errorDescription
+                ?? "RIG could not propose a garment mask for that area."
+        }
     }
 
     /// The user tapped "Use mask" in `MaskReviewSheet`: record it against the

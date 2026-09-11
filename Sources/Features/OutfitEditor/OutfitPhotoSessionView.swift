@@ -21,15 +21,22 @@ import UIKit
 ///   looks like it owns something similar (`DuplicateComparisonSheet`), and
 ///   asks rather than guessing — see `OutfitPhotoSessionView+Duplicates.swift`.
 ///
+/// **v0.4 Slice 2.1** makes that first detour interactive — the user can add
+/// positive/negative points to refine a proposed mask before accepting it —
+/// and fixes it to actually run for every garment in a sitting, not just the
+/// first; see the doc comments in `OutfitPhotoSessionView+Segmentation.swift`.
+///
 /// Neither detour changes what already worked: with no segmenter and no
 /// similarity match, this is exactly the v0.4 Slice 1 flow.
 ///
-/// This type's implementation is split across three files purely to stay
+/// This type's implementation is split across several files purely to stay
 /// under the static audit's per-file line cap — it is one type throughout,
-/// and every stored property below is touched from all three. Swift's
-/// `private` is file-scoped even for extensions of the same type, so
+/// and every stored property below is touched from more than one of them.
+/// Swift's `private` is file-scoped even for extensions of the same type, so
 /// properties and cross-file members are left at their default (internal)
 /// access rather than exposed to the rest of the module some other way.
+/// `OutfitPhotoSessionView+Screens.swift` holds the individual screen bodies
+/// `content(_:)` dispatches between.
 struct OutfitPhotoSessionView: View {
     let source: PhotosPickerItem
 
@@ -66,6 +73,19 @@ struct OutfitPhotoSessionView: View {
     /// The region `maskProposal` was actually computed for — needed to place
     /// the overlay correctly even if `draftRegion` has since moved on.
     @State var maskReviewRegion: NormalizedCropRect = .centeredDefault
+    /// True while a refinement re-decode (an added point, not the initial
+    /// proposal) is in flight — `MaskReviewSheet` stays on screen throughout,
+    /// unlike `isProposingMask`. See "v0.4 Slice 2.1" in
+    /// `OutfitPhotoSessionView+Segmentation.swift`.
+    @State var isRefiningMask = false
+    /// Set only when EdgeSAM was available and actually attempted a
+    /// proposal that then failed — never for "no segmenter configured" or a
+    /// superseded/cancelled attempt, both of which stay silent by design.
+    /// Shown as an explicit notice on the manual-crop fallback screen so a
+    /// failure never just looks like the AI feature silently isn't there
+    /// (the real-device finding this exists to address) — see Goal C in the
+    /// v0.4 Slice 2.1 report.
+    @State var segmentationFailureMessage: String?
 
     @State var isCheckingForDuplicates = false
     @State var duplicateReview: DuplicateReviewState?
@@ -113,6 +133,8 @@ struct OutfitPhotoSessionView: View {
                     rawCropImage: preview,
                     cropRegion: maskReviewRegion,
                     mask: maskProposal,
+                    refinementPoints: session.active?.refinementPoints ?? [],
+                    isRefining: isRefiningMask,
                     onUseMask: { acceptMask(maskProposal) },
                     onAdjustSelection: {
                         self.rawCropData = nil
@@ -123,12 +145,17 @@ struct OutfitPhotoSessionView: View {
                         self.maskProposal = nil
                         cancelMaskProposal()
                     },
-                    onSkip: discard
+                    onSkip: discard,
+                    onAddPoint: { point in refineMaskProposal(adding: point) },
+                    onResetPoints: resetRefinementPoints
                 )
             } else if let rawCropData, let preview = UIImage(data: rawCropData) {
-                RawGarmentCropPreview(image: preview, onAdjust: { self.rawCropData = nil }) {
-                    Task { await processDraft() }
-                }
+                RawGarmentCropPreview(
+                    image: preview,
+                    notice: segmentationFailureMessage,
+                    onAdjust: { self.rawCropData = nil },
+                    onUse: { Task { await processDraft() } }
+                )
             } else {
                 croppingScreen(image)
             }
@@ -137,176 +164,11 @@ struct OutfitPhotoSessionView: View {
         }
     }
 
-    var loadingScreen: some View {
-        VStack(spacing: RIGTheme.Spacing.m) {
-            ProgressView()
-            Text("Opening your photo…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    var processingScreen: some View {
-        VStack(spacing: RIGTheme.Spacing.m) {
-            ProgressView()
-            Text("Separating the garment…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Processing the cropped garment")
-    }
-
-    func sourceScreen(_ image: UIImage) -> some View {
-        VStack(spacing: RIGTheme.Spacing.m) {
-            Image(uiImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.card, style: .continuous))
-                .padding(.horizontal, RIGTheme.Spacing.m)
-                .accessibilityHidden(true)
-
-            Text(savedSummary)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            VStack(spacing: RIGTheme.Spacing.s) {
-                Button("Add garment", action: beginCandidate)
-                    .buttonStyle(RIGPrimaryButtonStyle())
-                Button("Finish", action: finish)
-                    .buttonStyle(RIGSecondaryButtonStyle())
-            }
-            .padding(.horizontal, RIGTheme.Spacing.m)
-            .padding(.bottom, RIGTheme.Spacing.l)
-        }
-    }
-
-    func croppingScreen(_ image: UIImage) -> some View {
-        VStack(spacing: RIGTheme.Spacing.s) {
-            GarmentCropView(image: image, sourcePixelSize: sourcePixelSize, region: $draftRegion)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, RIGTheme.Spacing.s)
-
-            Text("Drag the box over one garment.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-
-            VStack(spacing: RIGTheme.Spacing.s) {
-                Button("Preview crop", action: previewDraft)
-                .buttonStyle(RIGPrimaryButtonStyle())
-                .disabled(!draftRegion.isUsable)
-
-                Button("Cancel", action: discard)
-                    .buttonStyle(RIGSecondaryButtonStyle())
-            }
-            .padding(.horizontal, RIGTheme.Spacing.m)
-            .padding(.bottom, RIGTheme.Spacing.l)
-        }
-    }
-
-    func reviewScreen(_ result: GarmentImportResult) -> some View {
-        Form {
-            Section {
-                GarmentImageView(
-                    relativePath: result.cutoutRelativePath ?? result.originalRelativePath,
-                    symbolName: fields.category.symbolName
-                )
-                .frame(height: 200)
-                .frame(maxWidth: .infinity)
-                .listRowBackground(Color.clear)
-
-                if let message = result.backgroundRemovalMessage {
-                    Text("\(message) The cropped photo will be used instead.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                if isCheckingForDuplicates {
-                    HStack(spacing: RIGTheme.Spacing.s) {
-                        ProgressView().controlSize(.small)
-                        Text("Checking your wardrobe for anything similar…")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            GarmentMetadataForm(fields: $fields)
-
-            Section {
-                Button("Crop again", action: recrop)
-                Button("Discard this garment", role: .destructive, action: discard)
-            } footer: {
-                Text("Garments you have already saved stay in your wardrobe.")
-            }
-        }
-    }
-
-    func candidateFailureScreen(_ message: String) -> some View {
-        VStack(spacing: RIGTheme.Spacing.m) {
-            Spacer(minLength: 0)
-            RIGErrorBanner(message: message)
-                .padding(.horizontal, RIGTheme.Spacing.m)
-            Text("The rest of this photo is untouched.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 0)
-            VStack(spacing: RIGTheme.Spacing.s) {
-                Button("Crop again", action: recrop)
-                    .buttonStyle(RIGPrimaryButtonStyle())
-                Button("Discard this garment", action: discard)
-                    .buttonStyle(RIGSecondaryButtonStyle())
-            }
-            .padding(.horizontal, RIGTheme.Spacing.m)
-            .padding(.bottom, RIGTheme.Spacing.l)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    func sourceFailureScreen(_ message: String) -> some View {
-        RIGEmptyState(
-            symbol: "exclamationmark.triangle",
-            title: "That photo could not be opened",
-            message: message,
-            actionTitle: "Close",
-            action: finish
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    @ToolbarContentBuilder
-    var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            Button(session.resolvedCount > 0 ? "Done" : "Cancel", action: finish)
-        }
-        if session.active?.importResult != nil {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save", action: beginSave)
-                    .disabled(!fields.isValid || isCheckingForDuplicates)
-            }
-        }
-    }
-
-    var savedSummary: String {
-        switch session.resolvedCount {
-        case 0:
-            return "Nothing saved from this photo yet."
-        default:
-            if session.linkedCount == 0 {
-                return session.savedCount == 1
-                    ? "1 garment saved from this photo."
-                    : "\(session.savedCount) garments saved from this photo."
-            }
-            if session.savedCount == 0 {
-                return session.linkedCount == 1
-                    ? "1 garment linked to your wardrobe from this photo."
-                    : "\(session.linkedCount) garments linked to your wardrobe from this photo."
-            }
-            return "\(session.savedCount) new, \(session.linkedCount) linked to your wardrobe, from this photo."
-        }
-    }
+    // Screen bodies (loadingScreen, processingScreen, sourceScreen,
+    // croppingScreen, reviewScreen, candidateFailureScreen,
+    // sourceFailureScreen), toolbarContent, and savedSummary all live in
+    // `OutfitPhotoSessionView+Screens.swift` — split out purely for the
+    // static audit's per-file line cap.
 
     // MARK: - Work
 
@@ -342,6 +204,7 @@ struct OutfitPhotoSessionView: View {
     func beginCandidate() {
         rawCropData = nil
         maskProposal = nil
+        segmentationFailureMessage = nil
         cancelMaskProposal()
         draftRegion = .centeredDefault
         fields = GarmentMetadataFields()
@@ -363,6 +226,14 @@ struct OutfitPhotoSessionView: View {
         }
         rawCropData = cropped
         maskProposal = nil
+        // Goal B: seed the initial prompt with the box's own center as a
+        // positive point, rather than the box alone — the real-device
+        // finding this addresses is a box-only prompt bleeding into
+        // unrelated regions (leg/chest skin around a sweater). `updateRegion`
+        // just above already cleared any refinement points left over from a
+        // previous box on this same candidate.
+        let anchor = EdgeSAMGeometry.centerPoint(of: draftRegion).map { [$0] } ?? []
+        session.setRefinementPoints(anchor)
         startMaskProposal(for: draftRegion, source: sourceData)
     }
 
@@ -371,6 +242,7 @@ struct OutfitPhotoSessionView: View {
     func recrop() {
         rawCropData = nil
         maskProposal = nil
+        segmentationFailureMessage = nil
         cancelMaskProposal()
         if let candidate = session.active {
             try? services.imageStore.removeAll(for: candidate.id)
@@ -382,6 +254,7 @@ struct OutfitPhotoSessionView: View {
     func discard() {
         rawCropData = nil
         maskProposal = nil
+        segmentationFailureMessage = nil
         cancelMaskProposal()
         if let candidate = session.active {
             try? services.imageStore.removeAll(for: candidate.id)
