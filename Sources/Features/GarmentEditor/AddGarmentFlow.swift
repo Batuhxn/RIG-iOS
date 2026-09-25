@@ -185,7 +185,7 @@ struct AddGarmentFlow: View {
             Section {
                 GarmentImageView(
                     relativePath: importResult.flatMap { $0.cutoutRelativePath ?? $0.originalRelativePath },
-                    symbolName: fields.category.symbolName
+                    symbolName: fields.category?.symbolName ?? "photo"
                 )
                 .frame(height: 220)
                 .frame(maxWidth: .infinity)

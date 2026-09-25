@@ -125,7 +125,7 @@ struct BulkImportFlow: View {
         Section {
             GarmentImageView(
                 relativePath: result.cutoutRelativePath ?? result.originalRelativePath,
-                symbolName: currentFields.category.symbolName
+                symbolName: currentFields.category?.symbolName ?? "photo"
             )
             .frame(height: 200)
             .frame(maxWidth: .infinity)
@@ -243,14 +243,15 @@ struct BulkImportFlow: View {
     private func saveAndAdvance() {
         guard let item = queue.current, let result = item.importResult else { return }
         let fields = drafts[item.id] ?? GarmentMetadataFields()
-        guard fields.isValid else { return }
+        guard fields.isValid, let category = fields.category,
+              let colorFamily = fields.colorFamily else { return }
 
         let garment = ClothingItem(
             id: result.garmentID,
             displayName: fields.trimmedName,
             subtype: fields.subtype.trimmingCharacters(in: .whitespacesAndNewlines),
-            category: fields.category,
-            primaryColor: fields.colorFamily,
+            category: category,
+            primaryColor: colorFamily,
             seasons: fields.seasons,
             isFavorite: fields.isFavorite,
             notes: fields.notes,

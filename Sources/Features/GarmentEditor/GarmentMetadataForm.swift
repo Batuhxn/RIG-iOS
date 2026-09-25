@@ -9,9 +9,9 @@ import SwiftUI
 struct GarmentMetadataFields: Equatable {
     var displayName: String = ""
     var subtype: String = ""
-    var category: GarmentCategory = .top
-    var colorFamily: ColorFamily = .black
-    var seasons: SeasonSet = .all
+    var category: GarmentCategory?
+    var colorFamily: ColorFamily?
+    var seasons: SeasonSet = []
     var isFavorite: Bool = false
     var notes: String = ""
 
@@ -20,7 +20,19 @@ struct GarmentMetadataFields: Equatable {
     }
 
     var isValid: Bool {
-        !trimmedName.isEmpty && !seasons.normalized.isEmpty
+        !trimmedName.isEmpty && category != nil && colorFamily != nil && !seasons.isEmpty
+    }
+
+    mutating func setSeason(_ season: Season, selected: Bool) {
+        if selected {
+            seasons.formUnion(season.set)
+        } else {
+            seasons.subtract(season.set)
+        }
+    }
+
+    mutating func setAllYear(_ selected: Bool) {
+        seasons = selected ? .all : []
     }
 
     init() {}
@@ -35,7 +47,9 @@ struct GarmentMetadataFields: Equatable {
         notes = item.notes
     }
 
-    func apply(to item: ClothingItem, now: Date = Date()) {
+    @discardableResult
+    func apply(to item: ClothingItem, now: Date = Date()) -> Bool {
+        guard isValid, let category, let colorFamily else { return false }
         item.displayName = trimmedName
         item.subtype = subtype.trimmingCharacters(in: .whitespacesAndNewlines)
         item.category = category
@@ -44,6 +58,7 @@ struct GarmentMetadataFields: Equatable {
         item.isFavorite = isFavorite
         item.notes = notes
         item.touch(now)
+        return true
     }
 }
 
@@ -61,9 +76,10 @@ struct GarmentMetadataForm: View {
                 TextField("Kind, for example crewneck (optional)", text: $fields.subtype)
                     .textInputAutocapitalization(.sentences)
                     .accessibilityLabel("Garment kind")
-                Picker("Category", selection: $fields.category) {
+                Picker("Category (required)", selection: $fields.category) {
+                    Text("Choose a category").tag(nil as GarmentCategory?)
                     ForEach(GarmentCategory.allCases.sorted { $0.displayOrder < $1.displayOrder }) { category in
-                        Text(category.displayName).tag(category)
+                        Text(category.displayName).tag(Optional(category))
                     }
                 }
             }
@@ -81,9 +97,9 @@ struct GarmentMetadataForm: View {
                 }
                 .padding(.vertical, RIGTheme.Spacing.xs)
             } header: {
-                Text("Primary colour")
+                Text("Primary colour (required)")
             } footer: {
-                Text("You choose the colour family. RIG does not guess it from the photo.")
+                Text("Choose one colour family. RIG does not guess it from the photo.")
             }
 
             Section {
@@ -92,9 +108,9 @@ struct GarmentMetadataForm: View {
                 }
                 Toggle("All year", isOn: allSeasonBinding)
             } header: {
-                Text("Seasons")
+                Text("Seasons (required)")
             } footer: {
-                Text("Used to keep summer-only and winter-only pieces out of the same look. This is not a weather forecast.")
+                Text("Choose at least one season. All year selects all four. This is not a weather forecast.")
             }
 
             Section("Optional") {
@@ -109,24 +125,14 @@ struct GarmentMetadataForm: View {
     private func seasonBinding(_ season: Season) -> Binding<Bool> {
         Binding(
             get: { fields.seasons.contains(season.set) },
-            set: { isOn in
-                var updated = fields.seasons
-                if isOn {
-                    updated.formUnion(season.set)
-                } else {
-                    updated.subtract(season.set)
-                }
-                fields.seasons = updated
-            }
+            set: { fields.setSeason(season, selected: $0) }
         )
     }
 
     private var allSeasonBinding: Binding<Bool> {
         Binding(
-            get: { fields.seasons.normalized == SeasonSet.all },
-            set: { isOn in
-                fields.seasons = isOn ? SeasonSet.all : SeasonSet()
-            }
+            get: { fields.seasons == SeasonSet.all },
+            set: { fields.setAllYear($0) }
         )
     }
 }

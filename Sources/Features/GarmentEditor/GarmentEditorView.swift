@@ -44,7 +44,7 @@ struct GarmentEditorView: View {
     }
 
     private func save() {
-        fields.apply(to: item)
+        guard fields.apply(to: item) else { return }
         do {
             try modelContext.save()
             dismiss()

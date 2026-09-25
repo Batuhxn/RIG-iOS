@@ -16,10 +16,10 @@ extension AddGarmentFlow {
 
     @ViewBuilder
     var duplicateSheet: some View {
-        if let duplicateReview, let duplicateCandidateImageData {
+        if let duplicateReview, let duplicateCandidateImageData, let category = fields.category {
             DuplicateComparisonSheet(
                 candidateImageData: duplicateCandidateImageData,
-                candidateCategory: fields.category,
+                candidateCategory: category,
                 state: duplicateReview,
                 existingItemImagePath: { id in wardrobeItems.first { $0.id == id }?.displayImageRelativePath },
                 existingItemName: { id in wardrobeItems.first { $0.id == id }?.displayName },
@@ -54,7 +54,7 @@ extension AddGarmentFlow {
     /// problem here falls straight through to `commitSave()`, exactly as if
     /// nothing had been asked.
     func beginSave() {
-        guard let importResult, fields.isValid else {
+        guard let importResult, fields.isValid, let category = fields.category else {
             errorMessage = "There is no processed photo to save."
             return
         }
@@ -66,7 +66,6 @@ extension AddGarmentFlow {
             return
         }
 
-        let category = fields.category
         let matcher = services.similarityMatcher
         let store = services.imageStore
         // Extracted to plain Sendable values before crossing into the Task:
@@ -106,7 +105,8 @@ extension AddGarmentFlow {
     }
 
     func commitSave() {
-        guard let importResult, fields.isValid else {
+        guard let importResult, fields.isValid,
+              let category = fields.category, let colorFamily = fields.colorFamily else {
             errorMessage = "There is no processed photo to save."
             return
         }
@@ -115,8 +115,8 @@ extension AddGarmentFlow {
             id: importResult.garmentID,
             displayName: fields.trimmedName,
             subtype: fields.subtype.trimmingCharacters(in: .whitespacesAndNewlines),
-            category: fields.category,
-            primaryColor: fields.colorFamily,
+            category: category,
+            primaryColor: colorFamily,
             seasons: fields.seasons,
             isFavorite: fields.isFavorite,
             notes: fields.notes,
