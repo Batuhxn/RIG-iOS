@@ -8,12 +8,12 @@ Nothing leaves the phone.
 
 ## Status
 
-**Implemented; never compiled.** Every source file here was written on a Windows
-host with no Apple toolchain. The logic has been reviewed and statically audited,
-and 102 unit tests are written, but **no Xcode build and no test run has
-happened**. See `reports/V0_1_IMPLEMENTATION_REPORT.md` for exactly what is
-verified and what is not, and run `scripts/validate_macos.sh` on a Mac to find
-out where it stands.
+**Apple build and unit tests verified; runtime smoke pending.** Gate A run
+`34627340043` built the simulator app and ran 154 XCTest tests with zero
+failures. Gate B1 run `34627735523` built the unsigned arm64 `iphoneos` app and
+verified an unsigned IPA. These gates do not establish that the standalone app
+launches or that Vision produces good cutouts. The historical implementation
+report in `reports/V0_1_IMPLEMENTATION_REPORT.md` predates these runs.
 
 ## v0.1 scope
 
@@ -67,7 +67,8 @@ Sizes are capped at 1600 / 1200 / 400 px on the longest side.
 
 ## Setup
 
-Requires macOS with Xcode 15 or later (iOS 17 SDK).
+Requires macOS with an iOS 17 SDK. The validated GitHub Actions toolchain uses
+Xcode 16 on macOS 15.
 
 ```sh
 brew install xcodegen
@@ -90,8 +91,8 @@ bash scripts/validate_macos.sh
 It refuses to run off macOS, checks for Xcode and XcodeGen, runs the static
 audit, generates the project, builds for the simulator with code signing
 disabled, picks an installed iPhone simulator, and runs the unit tests. Any
-failure stops it with a non-zero status, and the last line is always
-`RESULT: PASS` or `RESULT: FAIL`.
+failure stops it with a non-zero status. Expected build and test failures print
+`RESULT: FAIL`; a successful run ends with `RESULT: PASS`.
 
 That script is Gate A. `docs/APPLE_VALIDATION_CHECKLIST.md` has all three gates:
 the build, a simulator smoke pass, and the physical-iPhone pass that is the only
@@ -113,21 +114,14 @@ The host-side audit needs no toolchain and runs anywhere:
 python3 scripts/static_audit.py
 ```
 
-## Optional: running the Apple gate on GitHub Actions
+## Apple gates on GitHub Actions
 
-`.github/workflows/ios-validation.yml` is prepared but **not enabled**. It has
-never run, and this repository has no remote. To use it later:
-
-1. Create a **private** repository on GitHub. Do not make it public — it holds a
-   personal wardrobe application, and nothing here has been reviewed for
-   publication.
-2. Add it as a remote and push:
-   ```sh
-   git remote add origin git@github.com:<you>/rig-ios.git
-   git push -u origin main
-   ```
-3. Open the repository's **Actions** tab and enable workflows if prompted.
-4. Run **iOS validation** manually from that tab (`workflow_dispatch`).
+`.github/workflows/ios-validation.yml` is the manually dispatched Gate A.
+Run `34627340043` passed with 154 tests and zero failures. The separate
+`.github/workflows/ios-device-build.yml` Gate B1 run `34627735523` passed an
+unsigned arm64 device build and IPA structure check. The Gate A2 simulator
+runtime smoke is defined in `.github/workflows/ios-simulator-smoke.yml` and
+remains unverified until it runs on GitHub Actions.
 
 The workflow checks out the repository, prints the toolchain versions, installs
 and verifies XcodeGen, and then runs `scripts/validate_macos.sh` — the same
@@ -179,10 +173,8 @@ could later contribute a capped signal without any of this being rewritten.
 
 | | |
 |---|---|
-| Static audit (delimiters, imports, forbidden APIs, force unwraps) | PASS on the development host |
-| `project.yml`, workflow YAML and `Info.plist` / privacy manifest parse | PASS |
-| `scripts/validate_macos.sh` shell syntax (`bash -n`) | PASS |
-| Swift compilation | **NOT RUN** — no Apple toolchain |
-| Unit tests | **NOT RUN** — written, never executed |
-| Simulator launch | **NOT RUN** |
-| Device run, Vision cutout quality, memory behaviour | **NOT RUN** |
+| Static audit | PASS on the development host |
+| Simulator build and XCTest | **PASS** — Gate A run `34627340043`, 154 tests, 0 failures |
+| Unsigned arm64 `iphoneos` build and IPA verification | **PASS** — Gate B1 run `34627735523` |
+| Standalone simulator install, launch and screenshot | **NOT RUN** — Gate A2 pending |
+| Physical-device camera, Vision quality and memory behavior | **NOT RUN** |

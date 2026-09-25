@@ -1,5 +1,11 @@
 # RIG iOS v0.1 — implementation report
 
+> Historical checkpoint. Current validation supersedes the counts and "never
+> compiled" statements below: Gate A run `34627340043` passed a simulator
+> build and 154 XCTest tests with zero failures; Gate B1 run `34627735523`
+> passed an unsigned arm64 `iphoneos` build and IPA verification. Standalone
+> simulator launch (Gate A2) remains unverified.
+
 Date: 2026-09-10
 
 ## Executive Status

@@ -5,9 +5,9 @@
 # source compiles for a real iPhone slice — arm64, the iphoneos SDK — with code
 # signing switched off entirely.
 #
-# It stops there. No IPA is packaged, nothing is installed, nothing is signed,
-# and no Apple account, certificate, provisioning profile or secret is involved
-# or required. Gate A is not touched by this file.
+# Gate B1 passed in run 34627735523. Gate B2 packages the validated app as an
+# unsigned IPA. Nothing is installed or signed, and no Apple account,
+# certificate, provisioning profile or secret is involved. Gate A is unchanged.
 #
 # Manual trigger only, for the same reason Gate A is: GitHub-hosted macOS
 # runners are metered at a higher multiplier than Linux and are not free beyond

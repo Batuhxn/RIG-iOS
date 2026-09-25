@@ -2,14 +2,13 @@
 # RIG iOS — the first Apple gate.
 #
 # This is the canonical build/test gate for RIG. It fails closed: any required
-# step that fails stops the script with a non-zero status, and the last line of
-# output is always either "RESULT: PASS" or "RESULT: FAIL".
+# step that fails stops the script with a non-zero status. Expected build and
+# test failures print "RESULT: FAIL"; success ends with "RESULT: PASS".
 #
-# NEVER EXECUTED. This script was authored on a Windows host with no Apple
-# toolchain. A green run here is the first real evidence that RIG compiles;
-# nothing before it is.
+# Gate A passed in GitHub Actions run 34627340043: simulator build and 154
+# XCTest tests, zero failures.
 #
-# Requirements: macOS, Xcode 15 or later (iOS 17 SDK), XcodeGen.
+# Requirements: macOS, an iOS 17 SDK, and a compatible XcodeGen. CI uses Xcode 16.
 #   brew install xcodegen
 #   bash scripts/validate_macos.sh
 #

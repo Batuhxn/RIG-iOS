@@ -1,0 +1,58 @@
+# Gate A2: a bounded runtime smoke, separate from Gate A's XCTest build.
+name: iOS simulator smoke (Gate A2)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-simulator-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-a2:
+    name: Gate A2 — install and launch RIG
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Select compatible Xcode
+        run: |
+          set -euo pipefail
+          PREFERRED="/Applications/Xcode_16.4.app"
+          if [ -d "$PREFERRED" ]; then
+            SELECTED="$PREFERRED"
+          else
+            SELECTED="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1 || true)"
+          fi
+          if [ -z "${SELECTED:-}" ] || [ ! -d "$SELECTED" ]; then
+            echo "No stable Xcode 16.x on this runner." >&2
+            exit 1
+          fi
+          sudo xcode-select --switch "$SELECTED/Contents/Developer"
+          xcodebuild -version
+          swift --version
+
+      - name: Install and identify XcodeGen
+        run: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: Install and launch RIG in an iPhone simulator
+        run: bash scripts/smoke_simulator.sh
+
+      - name: Upload simulator smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RIG-simulator-smoke
+          path: build/simulator-smoke/
+          if-no-files-found: warn
+          retention-days: 7

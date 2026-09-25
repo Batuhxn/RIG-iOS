@@ -1,7 +1,13 @@
 # Apple validation checklist
 
-Three gates, in order. Nothing below has been attempted; every box is open.
-Do not mark a gate passed on inspection — only on a run.
+Gate A passed in GitHub Actions run `34627340043`: simulator build and 154
+XCTest tests, zero failures. The separate unsigned device-build Gate B1 passed
+in run `34627735523`, including IPA verification. Neither run proves standalone
+simulator launch or physical-device camera and Vision quality.
+
+Gate A2 is a separate automated runtime smoke in
+`.github/workflows/ios-simulator-smoke.yml`. Its result is pending. The manual
+simulator and physical-iPhone checks below remain open.
 
 ---
 
@@ -13,17 +19,15 @@ One command:
 bash scripts/validate_macos.sh
 ```
 
-It fails closed and ends in `RESULT: PASS` or `RESULT: FAIL`.
+It fails closed. Success ends in `RESULT: PASS`; expected build and test
+failures print `RESULT: FAIL`.
 
-- [ ] **XcodeGen** — `xcodegen generate` produces `RIG.xcodeproj` from `project.yml`
-- [ ] **Simulator compile** — `xcodebuild build` succeeds for `generic/platform=iOS Simulator`
-- [ ] **XCTest** — all tests in `RIGTests` pass on an installed iPhone simulator
+- [x] **XcodeGen** — `xcodegen generate` produced `RIG.xcodeproj` from `project.yml`
+- [x] **Simulator compile** — `xcodebuild build` succeeded for `generic/platform=iOS Simulator`
+- [x] **XCTest** — 154 tests in `RIGTests` passed on an iPhone simulator
 
-Expect compile errors on the first run. Four thousand lines of never-compiled
-Swift, SwiftData macros and SwiftUI result builders will not be clean first
-time. That is the point of the gate, not a failure of it.
-
-Record: Xcode version, XcodeGen version, simulator used, number of tests run.
+The completed Gate A run is the build and test checkpoint. Re-run it after
+changes to app source or test configuration.
 
 ---
 

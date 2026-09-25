@@ -1,8 +1,7 @@
 # RIG iOS — Gate A on a macOS runner.
 #
-# PREPARED, NOT ENABLED. This workflow has never run. It exists so that the
-# Apple build/test gate can be executed on a hosted Mac once this repository is
-# pushed to GitHub, without anyone having to reinvent the commands.
+# Gate A passed in run 34627340043: simulator build and 154 XCTest tests,
+# zero failures. It remains manually dispatched.
 #
 # The trigger is deliberately manual only. GitHub-hosted macOS runners are
 # metered at a higher multiplier than Linux runners and are NOT free beyond an
