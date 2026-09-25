@@ -197,4 +197,28 @@ final class OutfitRankingTests: XCTestCase {
         XCTAssertFalse(empty.canSuggest)
         XCTAssertEqual(empty.missing, [.top, .bottom])
     }
+
+    func testFirstLookNextStepMatchesWardrobeReadiness() {
+        func nextStep(_ categories: [GarmentCategory]) -> WardrobeReadiness.NextStep? {
+            let wardrobe = categories.enumerated().map { index, category in
+                Fixture.garment(index + 1, category)
+            }
+            return WardrobeReadiness.evaluate(wardrobe).nextStep
+        }
+
+        XCTAssertEqual(nextStep([])?.actionTitle, "Add a garment")
+        XCTAssertEqual(nextStep([.top])?.message, "Add a bottom to build your first look.")
+        XCTAssertEqual(nextStep([.top])?.actionTitle, "Add a bottom")
+        XCTAssertEqual(nextStep([.bottom])?.message, "Add a top to build your first look.")
+        XCTAssertEqual(nextStep([.bottom])?.actionTitle, "Add a top")
+        XCTAssertEqual(nextStep([.shoes])?.actionTitle, "Add a garment")
+        XCTAssertEqual(nextStep([.outerwear, .accessory])?.actionTitle, "Add a garment")
+        XCTAssertEqual(
+            nextStep([.shoes])?.message,
+            "Add a top and a bottom, or a dress, to build your first look."
+        )
+        XCTAssertNil(nextStep([.dress]))
+        XCTAssertNil(nextStep([.top, .bottom]))
+        XCTAssertNil(nextStep([.top, .bottom, .shoes]))
+    }
 }

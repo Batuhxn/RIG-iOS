@@ -5,13 +5,12 @@ import SwiftUI
 /// and recent looks. No weather card, no score, no personalisation claim —
 /// v0.1 has none of those and will not imply otherwise.
 struct HomeView: View {
-    @Binding var selectedTab: RIGTab
-
     @Environment(\.rigServices) private var services
     @Query private var items: [ClothingItem]
     @Query(sort: [SortDescriptor(\SavedOutfit.createdAt, order: .reverse)]) private var looks: [SavedOutfit]
 
     @State private var hasSweptOrphanedImages = false
+    @State private var isPresentingImport = false
 
     private var readiness: WardrobeReadiness {
         WardrobeReadiness.evaluate(items.map(\.snapshot))
@@ -39,6 +38,9 @@ struct HomeView: View {
             .task {
                 await sweepOrphanedImagesOnce()
             }
+            .sheet(isPresented: $isPresentingImport) {
+                PhotoImportFlow()
+            }
         }
     }
 
@@ -59,8 +61,8 @@ struct HomeView: View {
             symbol: "camera",
             title: "Start with one garment",
             message: "Photograph something you own. RIG keeps it on this device and starts building looks once there is enough to work with.",
-            actionTitle: "Open wardrobe",
-            action: { selectedTab = .wardrobe }
+            actionTitle: "Add first garment",
+            action: { isPresentingImport = true }
         )
         .frame(maxWidth: .infinity)
         .padding(.top, RIGTheme.Spacing.xl)
@@ -77,14 +79,16 @@ struct HomeView: View {
                 }
                 .buttonStyle(RIGPrimaryButtonStyle())
             } else {
-                Button("Suggest a Look") {
-                    selectedTab = .wardrobe
+                if let nextStep = readiness.nextStep {
+                    RIGSectionHeader(title: "Your first look")
+                    Text(nextStep.message)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Button(nextStep.actionTitle) {
+                        isPresentingImport = true
+                    }
+                    .buttonStyle(RIGPrimaryButtonStyle())
                 }
-                .buttonStyle(RIGSecondaryButtonStyle())
-                .disabled(true)
-                Text(readiness.explanation)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
 
             NavigationLink {
@@ -178,7 +182,7 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView(selectedTab: .constant(.home))
+    HomeView()
         .modelContainer(PreviewData.container())
         .environment(\.rigServices, .preview())
 }
