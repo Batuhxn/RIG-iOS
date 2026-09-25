@@ -76,11 +76,13 @@ struct GarmentImageView: View {
             return
         }
 
+        image = nil
         isLoading = true
         let store = services.imageStore
         let data = await Task.detached(priority: .userInitiated) {
             store.data(atRelativePath: relativePath)
         }.value
+        guard !Task.isCancelled else { return }
 
         guard let data, let decoded = UIImage(data: data) else {
             image = nil

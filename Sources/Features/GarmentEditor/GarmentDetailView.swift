@@ -26,7 +26,9 @@ struct GarmentDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.card, style: .continuous))
 
                 if !item.isBackgroundRemoved {
-                    Text("RIG could not isolate this garment, so the original photo is being used.")
+                    Text(item.cutoutImageRelativePath == nil
+                         ? "RIG could not isolate this garment, so the original photo is being used."
+                         : "You chose the original photo for this garment.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

@@ -186,4 +186,67 @@ final class GarmentImportServiceTests: XCTestCase {
         XCTAssertNotNil(alphaInfo)
         XCTAssertNotEqual(alphaInfo, .none, "the cutout's alpha must survive, not be flattened through JPEG")
     }
+
+    func testCutoutIsTheDefaultAndKeepsItsThumbnail() async throws {
+        let remover = FixedCutoutRemover(cutout: try transparentImageData())
+        let result = try await GarmentImportService(store: store, backgroundRemover: remover)
+            .importImage(try sampleImageData(), garmentID: Fixture.id(8))
+        let cutoutPath = try XCTUnwrap(result.cutoutRelativePath)
+        let thumbnailPath = try XCTUnwrap(result.thumbnailRelativePath)
+
+        XCTAssertEqual(GarmentImageChoice.initial(for: result), .cutout)
+        XCTAssertEqual(GarmentImageChoice.cutout.relativePath(in: result), cutoutPath)
+        let presentation = try GarmentImageChoice.cutout.presentation(for: result, in: store)
+        XCTAssertTrue(presentation.usesCutout)
+        XCTAssertEqual(presentation.thumbnailRelativePath, thumbnailPath)
+        let cutoutData = try XCTUnwrap(store.data(atRelativePath: cutoutPath))
+        XCTAssertEqual(
+            store.data(atRelativePath: thumbnailPath),
+            GarmentImageProcessing.pngData(from: cutoutData, maxDimension: GarmentImageProcessing.thumbnailMaxDimension)
+        )
+    }
+
+    func testOriginalChoiceReplacesTheCutoutThumbnail() async throws {
+        let remover = FixedCutoutRemover(cutout: try transparentImageData())
+        let result = try await GarmentImportService(store: store, backgroundRemover: remover)
+            .importImage(try sampleImageData(), garmentID: Fixture.id(9))
+        let thumbnailPath = try XCTUnwrap(result.thumbnailRelativePath)
+        let cutoutThumbnail = try XCTUnwrap(store.data(atRelativePath: thumbnailPath))
+
+        XCTAssertEqual(GarmentImageChoice.original.relativePath(in: result), result.originalRelativePath)
+        let presentation = try GarmentImageChoice.original.presentation(for: result, in: store)
+        XCTAssertFalse(presentation.usesCutout)
+        XCTAssertEqual(presentation.thumbnailRelativePath, thumbnailPath)
+        let originalData = try XCTUnwrap(store.data(atRelativePath: result.originalRelativePath))
+        let savedThumbnail = try XCTUnwrap(store.data(atRelativePath: thumbnailPath))
+        XCTAssertEqual(
+            savedThumbnail,
+            GarmentImageProcessing.pngData(from: originalData, maxDimension: GarmentImageProcessing.thumbnailMaxDimension)
+        )
+        XCTAssertNotEqual(savedThumbnail, cutoutThumbnail)
+    }
+
+    func testFailedCutoutOffersOnlyOriginalAndRemainsSaveable() async throws {
+        let result = try await GarmentImportService(store: store, backgroundRemover: FailingBackgroundRemover())
+            .importImage(try sampleImageData(), garmentID: Fixture.id(10))
+
+        XCTAssertEqual(GarmentImageChoice.initial(for: result), .original)
+        XCTAssertEqual(GarmentImageChoice.cutout.resolved(for: result), .original)
+        XCTAssertEqual(GarmentImageChoice.cutout.relativePath(in: result), result.originalRelativePath)
+        XCTAssertFalse(try GarmentImageChoice.original.presentation(for: result, in: store).usesCutout)
+    }
+
+    func testBulkImageChoicesDoNotCarryToTheNextPhoto() async throws {
+        let remover = FixedCutoutRemover(cutout: try transparentImageData())
+        let service = GarmentImportService(store: store, backgroundRemover: remover)
+        let first = try await service.importImage(try sampleImageData(), garmentID: Fixture.id(11))
+        let second = try await service.importImage(try sampleImageData(), garmentID: Fixture.id(12))
+        var choices = GarmentImageChoices()
+
+        choices.select(.original, for: first)
+        XCTAssertEqual(choices.choice(for: first), .original)
+        XCTAssertEqual(choices.choice(for: second), .cutout)
+        choices.remove(for: first.garmentID)
+        XCTAssertEqual(choices.choice(for: first), .cutout)
+    }
 }

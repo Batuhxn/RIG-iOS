@@ -85,8 +85,37 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(item.preferredImageRelativePath, "Garments/A/original.jpg")
 
         item.cutoutImageRelativePath = "Garments/A/cutout.png"
+        XCTAssertEqual(item.preferredImageRelativePath, "Garments/A/original.jpg")
+        item.isBackgroundRemoved = true
         XCTAssertEqual(item.preferredImageRelativePath, "Garments/A/cutout.png")
         XCTAssertEqual(item.relativeImagePaths.count, 2)
+    }
+
+    func testOriginalChoiceOverridesRetainedCutoutAfterRoundTrip() throws {
+        let item = makeItem(7, .top)
+        item.originalImageRelativePath = "Garments/A/original.jpg"
+        item.cutoutImageRelativePath = "Garments/A/cutout.png"
+        item.thumbnailRelativePath = "Garments/A/thumbnail.png"
+        item.isBackgroundRemoved = false
+        try context.save()
+
+        let restored = try XCTUnwrap(ModelContext(container).fetch(FetchDescriptor<ClothingItem>()).first)
+        XCTAssertEqual(restored.preferredImageRelativePath, "Garments/A/original.jpg")
+        XCTAssertEqual(restored.displayImageRelativePath, "Garments/A/thumbnail.png")
+        XCTAssertEqual(restored.cutoutImageRelativePath, "Garments/A/cutout.png")
+        XCTAssertFalse(restored.isBackgroundRemoved)
+    }
+
+    func testCutoutChoiceSurvivesRoundTrip() throws {
+        let item = makeItem(8, .top)
+        item.originalImageRelativePath = "Garments/A/original.jpg"
+        item.cutoutImageRelativePath = "Garments/A/cutout.png"
+        item.isBackgroundRemoved = true
+        try context.save()
+
+        let restored = try XCTUnwrap(ModelContext(container).fetch(FetchDescriptor<ClothingItem>()).first)
+        XCTAssertEqual(restored.preferredImageRelativePath, "Garments/A/cutout.png")
+        XCTAssertTrue(restored.isBackgroundRemoved)
     }
 
     func testSavedOutfitRecordsAnOrderIndependentSignature() throws {
@@ -182,7 +211,7 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(top.outfits.count, 1)
     }
 
-    func testDisplayImagePathPrefersThumbnailThenCutoutThenOriginal() {
+    func testDisplayImagePathPrefersThumbnailThenSelectedSource() {
         let item = makeItem(6, .top)
         XCTAssertNil(item.displayImageRelativePath)
 
@@ -190,6 +219,8 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(item.displayImageRelativePath, "Garments/A/original.jpg")
 
         item.cutoutImageRelativePath = "Garments/A/cutout.png"
+        XCTAssertEqual(item.displayImageRelativePath, "Garments/A/original.jpg")
+        item.isBackgroundRemoved = true
         XCTAssertEqual(item.displayImageRelativePath, "Garments/A/cutout.png")
 
         item.thumbnailRelativePath = "Garments/A/thumbnail.png"

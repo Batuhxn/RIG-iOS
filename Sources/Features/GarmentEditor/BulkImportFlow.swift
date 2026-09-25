@@ -32,6 +32,8 @@ struct BulkImportFlow: View {
     @State private var stage: Stage
     @State private var queue: BulkImportQueue
     @State private var drafts: [UUID: GarmentMetadataFields] = [:]
+    @State private var imageChoices = GarmentImageChoices()
+    @State private var imageErrorMessage: String?
     @State private var attempt = 0
 
     init(items: [PhotosPickerItem]) {
@@ -90,6 +92,14 @@ struct BulkImportFlow: View {
                     EmptyView()
                 }
 
+                if let imageErrorMessage {
+                    Section {
+                        RIGErrorBanner(message: imageErrorMessage) {
+                            self.imageErrorMessage = nil
+                        }
+                    }
+                }
+
                 navigationSection
             }
         } else {
@@ -123,19 +133,12 @@ struct BulkImportFlow: View {
 
     private func previewSection(_ result: GarmentImportResult) -> some View {
         Section {
-            GarmentImageView(
-                relativePath: result.cutoutRelativePath ?? result.originalRelativePath,
-                symbolName: currentFields.category?.symbolName ?? "photo"
+            GarmentImageReview(
+                result: result,
+                choice: imageChoiceBinding(for: result),
+                symbolName: currentFields.category?.symbolName ?? "photo",
+                imageHeight: 200
             )
-            .frame(height: 200)
-            .frame(maxWidth: .infinity)
-            .listRowBackground(Color.clear)
-
-            if let message = result.backgroundRemovalMessage {
-                Text("\(message) The original photo will be used instead.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
         }
     }
 
@@ -198,6 +201,13 @@ struct BulkImportFlow: View {
         )
     }
 
+    private func imageChoiceBinding(for result: GarmentImportResult) -> Binding<GarmentImageChoice> {
+        Binding(
+            get: { imageChoices.choice(for: result) },
+            set: { imageChoices.select($0, for: result) }
+        )
+    }
+
     private var summaryTitle: String {
         queue.savedCount == 1 ? "1 garment added" : "\(queue.savedCount) garments added"
     }
@@ -217,6 +227,7 @@ struct BulkImportFlow: View {
     @MainActor
     private func processCurrentItem() async {
         guard stage == .review, let item = queue.current, item.status == .pending else { return }
+        imageErrorMessage = nil
         guard items.indices.contains(item.position) else {
             queue.markFailed("That photo is no longer available.")
             return
@@ -246,6 +257,14 @@ struct BulkImportFlow: View {
         guard fields.isValid, let category = fields.category,
               let colorFamily = fields.colorFamily else { return }
 
+        let presentation: GarmentImagePresentation
+        do {
+            presentation = try imageChoices.choice(for: result).presentation(for: result, in: services.imageStore)
+        } catch {
+            imageErrorMessage = "That image could not be prepared. Try saving again."
+            return
+        }
+
         let garment = ClothingItem(
             id: result.garmentID,
             displayName: fields.trimmedName,
@@ -257,8 +276,8 @@ struct BulkImportFlow: View {
             notes: fields.notes,
             originalImageRelativePath: result.originalRelativePath,
             cutoutImageRelativePath: result.cutoutRelativePath,
-            thumbnailRelativePath: result.thumbnailRelativePath,
-            isBackgroundRemoved: result.isBackgroundRemoved
+            thumbnailRelativePath: presentation.thumbnailRelativePath,
+            isBackgroundRemoved: presentation.usesCutout
         )
         modelContext.insert(garment)
 
@@ -275,6 +294,8 @@ struct BulkImportFlow: View {
         }
 
         drafts[item.id] = nil
+        imageChoices.remove(for: item.id)
+        imageErrorMessage = nil
         queue.markSaved()
         finishIfComplete()
     }
@@ -283,12 +304,15 @@ struct BulkImportFlow: View {
         if let item = queue.current {
             try? services.imageStore.removeAll(for: item.id)
             drafts[item.id] = nil
+            imageChoices.remove(for: item.id)
         }
+        imageErrorMessage = nil
         queue.skip()
         finishIfComplete()
     }
 
     private func goBack() {
+        imageErrorMessage = nil
         queue.goBack()
         attempt += 1
     }

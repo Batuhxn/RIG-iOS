@@ -36,6 +36,7 @@ struct AddGarmentFlow: View {
     @State private var photoSelection: PhotosPickerItem?
     @State private var isPresentingCamera = false
     @State var importResult: GarmentImportResult?
+    @State var imageChoice: GarmentImageChoice = .original
     @State var fields = GarmentMetadataFields()
     @State var errorMessage: String?
     @State private var didBootstrap = false
@@ -183,18 +184,13 @@ struct AddGarmentFlow: View {
     private var reviewStep: some View {
         Form {
             Section {
-                GarmentImageView(
-                    relativePath: importResult.flatMap { $0.cutoutRelativePath ?? $0.originalRelativePath },
-                    symbolName: fields.category?.symbolName ?? "photo"
-                )
-                .frame(height: 220)
-                .frame(maxWidth: .infinity)
-                .listRowBackground(Color.clear)
-
-                if let message = importResult?.backgroundRemovalMessage {
-                    Text("\(message) The original photo will be used instead.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                if let importResult {
+                    GarmentImageReview(
+                        result: importResult,
+                        choice: $imageChoice,
+                        symbolName: fields.category?.symbolName ?? "photo",
+                        choiceEnabled: !isCheckingForDuplicates
+                    )
                 }
             }
 
@@ -232,6 +228,7 @@ struct AddGarmentFlow: View {
         do {
             let result = try await services.importService.importImage(data)
             importResult = result
+            imageChoice = .initial(for: result)
             step = .review
         } catch {
             fail((error as? LocalizedError)?.errorDescription ?? "That photo could not be processed.")

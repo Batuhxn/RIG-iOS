@@ -21,8 +21,8 @@ final class ClothingItem {
     var originalImageRelativePath: String?
     var cutoutImageRelativePath: String?
     var thumbnailRelativePath: String?
-    /// False when background removal did not isolate the garment and the
-    /// original photograph is being shown instead.
+    /// True when the user chose the cutout for display. False when they chose
+    /// the original, including when no cutout could be produced.
     var isBackgroundRemoved: Bool
 
     /// Looks that use this garment. Annotated explicitly, and with the delete
@@ -86,10 +86,12 @@ extension ClothingItem {
         set { seasonMask = newValue.normalized.rawValue }
     }
 
-    /// The image to show in the interface: the cutout when we have one,
-    /// otherwise the original photograph.
+    /// The user's chosen image. A cutout file may be retained even when the
+    /// original is selected, so the flag must decide which path wins.
     var preferredImageRelativePath: String? {
-        cutoutImageRelativePath ?? originalImageRelativePath
+        isBackgroundRemoved
+            ? (cutoutImageRelativePath ?? originalImageRelativePath)
+            : (originalImageRelativePath ?? cutoutImageRelativePath)
     }
 
     /// What a grid or a card should draw: the thumbnail when one exists, then

@@ -60,7 +60,7 @@ extension AddGarmentFlow {
         }
 
         guard let imageData = services.imageStore.data(
-            atRelativePath: importResult.cutoutRelativePath ?? importResult.originalRelativePath
+            atRelativePath: imageChoice.relativePath(in: importResult)
         ) else {
             commitSave()
             return
@@ -111,6 +111,14 @@ extension AddGarmentFlow {
             return
         }
 
+        let presentation: GarmentImagePresentation
+        do {
+            presentation = try imageChoice.presentation(for: importResult, in: services.imageStore)
+        } catch {
+            errorMessage = "That image could not be prepared. Try saving again."
+            return
+        }
+
         let item = ClothingItem(
             id: importResult.garmentID,
             displayName: fields.trimmedName,
@@ -122,8 +130,8 @@ extension AddGarmentFlow {
             notes: fields.notes,
             originalImageRelativePath: importResult.originalRelativePath,
             cutoutImageRelativePath: importResult.cutoutRelativePath,
-            thumbnailRelativePath: importResult.thumbnailRelativePath,
-            isBackgroundRemoved: importResult.isBackgroundRemoved
+            thumbnailRelativePath: presentation.thumbnailRelativePath,
+            isBackgroundRemoved: presentation.usesCutout
         )
         modelContext.insert(item)
 
