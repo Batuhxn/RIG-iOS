@@ -16,6 +16,8 @@ struct BulkImportQueueItem: Identifiable, Equatable {
         case failed(String)
         /// Persisted as a `ClothingItem`. Its files must survive.
         case saved
+        /// Resolved with a garment already in the wardrobe.
+        case usedExisting
         /// Deliberately passed over. Its files must not survive.
         case skipped
     }
@@ -37,6 +39,7 @@ struct BulkImportQueueItem: Identifiable, Equatable {
     }
 
     var isSaved: Bool { status == .saved }
+    var isUsedExisting: Bool { status == .usedExisting }
     var isSkipped: Bool { status == .skipped }
     var isFailed: Bool { failureMessage != nil }
 }
@@ -93,11 +96,13 @@ struct BulkImportQueue: Equatable {
     /// cheapest way to guarantee bulk import can never write the same garment
     /// twice is to make it unreachable.
     var canGoBack: Bool {
-        index > 0 && items.indices.contains(index - 1) && !items[index - 1].isSaved
+        index > 0 && items.indices.contains(index - 1)
+            && !items[index - 1].isSaved && !items[index - 1].isUsedExisting
     }
 
     var savedGarmentIDs: [UUID] { items.filter(\.isSaved).map(\.id) }
     var savedCount: Int { items.filter(\.isSaved).count }
+    var usedExistingCount: Int { items.filter(\.isUsedExisting).count }
     var skippedCount: Int { items.filter(\.isSkipped).count }
     var failedCount: Int { items.filter(\.isFailed).count }
 
@@ -131,6 +136,14 @@ struct BulkImportQueue: Equatable {
     mutating func markSaved() -> Bool {
         guard let item = current, item.importResult != nil else { return false }
         items[index].status = .saved
+        index += 1
+        return true
+    }
+
+    @discardableResult
+    mutating func markUsedExisting() -> Bool {
+        guard let item = current, item.importResult != nil else { return false }
+        items[index].status = .usedExisting
         index += 1
         return true
     }

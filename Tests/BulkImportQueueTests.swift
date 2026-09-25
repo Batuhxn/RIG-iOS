@@ -93,6 +93,98 @@ final class BulkImportQueueTests: XCTestCase {
         XCTAssertEqual(queue.current?.id, Fixture.id(2))
     }
 
+    func testDuplicateKeepNewUsesTheOrdinarySaveAndAdvances() {
+        var queue = self.queue(2)
+        advanceBySaving(&queue)
+        XCTAssertEqual(queue.savedCount, 1)
+        XCTAssertEqual(queue.current?.id, Fixture.id(2))
+        XCTAssertFalse(queue.garmentIDsPendingCleanup.contains(Fixture.id(1)))
+    }
+
+    func testDuplicateUseExistingAdvancesWithoutSavingAndRequiresCleanup() throws {
+        var queue = self.queue(2)
+        let id = Fixture.id(1)
+        let base = FileManager.default.temporaryDirectory
+            .appending(path: "RIGBulkExisting-\(UUID().uuidString)", directoryHint: .isDirectory)
+        let store = GarmentImageStore(baseDirectory: base)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let path = try store.write(Data([1]), for: id, kind: .original)
+        XCTAssertTrue(store.exists(atRelativePath: path))
+
+        queue.markReady(result(id))
+        try store.removeAll(for: id)
+        XCTAssertTrue(queue.markUsedExisting())
+        XCTAssertFalse(store.exists(atRelativePath: path))
+        XCTAssertEqual(queue.savedCount, 0)
+        XCTAssertEqual(queue.usedExistingCount, 1)
+        XCTAssertEqual(queue.current?.id, Fixture.id(2))
+        XCTAssertEqual(queue.garmentIDsPendingCleanup, [id, Fixture.id(2)])
+        XCTAssertFalse(queue.canGoBack)
+    }
+
+    func testDuplicateDiscardCleansFilesAndAdvances() throws {
+        var queue = self.queue(2)
+        let id = Fixture.id(1)
+        let base = FileManager.default.temporaryDirectory
+            .appending(path: "RIGBulkDiscard-\(UUID().uuidString)", directoryHint: .isDirectory)
+        let store = GarmentImageStore(baseDirectory: base)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let path = try store.write(Data([1]), for: id, kind: .original)
+
+        queue.markReady(result(id))
+        try store.removeAll(for: id)
+        queue.skip()
+        XCTAssertFalse(store.exists(atRelativePath: path))
+        XCTAssertEqual(queue.savedCount, 0)
+        XCTAssertEqual(queue.skippedCount, 1)
+        XCTAssertEqual(queue.current?.id, Fixture.id(2))
+    }
+
+    func testDuplicateReviewCancelKeepsCurrentDraftAndImageChoice() {
+        var queue = self.queue(2)
+        let current = result(Fixture.id(1), isolated: true)
+        queue.markReady(current)
+        var fields = GarmentMetadataFields()
+        fields.displayName = "Blue jacket"
+        var choices = GarmentImageChoices()
+        choices.select(.original, for: current)
+        var review: BulkDuplicateReview? = BulkDuplicateReview(
+            itemID: current.garmentID,
+            candidateImageData: Data([1]),
+            state: DuplicateReviewState(matches: [
+                WardrobeSimilarityMatch(
+                    garmentID: Fixture.id(9), band: .similar, distance: 0.4
+                ),
+            ])
+        )
+
+        review = nil // Dismiss the sheet; the queue item is still being edited.
+        XCTAssertNil(review)
+        XCTAssertEqual(queue.current?.importResult, current)
+        XCTAssertEqual(fields.displayName, "Blue jacket")
+        XCTAssertEqual(choices.choice(for: current), .original)
+    }
+
+    func testDuplicateDecisionDoesNotLeakIntoTheNextItem() {
+        var queue = self.queue(2)
+        queue.markReady(result(Fixture.id(1)))
+        var review: BulkDuplicateReview? = BulkDuplicateReview(
+            itemID: Fixture.id(1),
+            candidateImageData: Data([1]),
+            state: DuplicateReviewState(matches: [
+                WardrobeSimilarityMatch(
+                    garmentID: Fixture.id(9), band: .similar, distance: 0.4
+                ),
+            ])
+        )
+        XCTAssertTrue(queue.markUsedExisting())
+        review = nil
+        XCTAssertNil(review)
+        XCTAssertEqual(queue.current?.status, .pending)
+        XCTAssertEqual(queue.usedExistingCount, 1)
+        XCTAssertEqual(queue.savedCount, 0)
+    }
+
     func testQueueIsCompleteOnlyAfterTheLastItemIsResolved() {
         var queue = self.queue(2)
         queue.skip()

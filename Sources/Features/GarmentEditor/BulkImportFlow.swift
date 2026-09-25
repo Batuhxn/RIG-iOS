@@ -26,14 +26,18 @@ struct BulkImportFlow: View {
     let items: [PhotosPickerItem]
 
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.rigServices) private var services
+    @Environment(\.rigServices) var services
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: [SortDescriptor(\ClothingItem.createdAt, order: .reverse)])
+    var wardrobeItems: [ClothingItem]
 
     @State private var stage: Stage
-    @State private var queue: BulkImportQueue
-    @State private var drafts: [UUID: GarmentMetadataFields] = [:]
-    @State private var imageChoices = GarmentImageChoices()
-    @State private var imageErrorMessage: String?
+    @State var queue: BulkImportQueue
+    @State var drafts: [UUID: GarmentMetadataFields] = [:]
+    @State var imageChoices = GarmentImageChoices()
+    @State var imageErrorMessage: String?
+    @State var duplicateReview: BulkDuplicateReview?
+    @State var isCheckingForDuplicates = false
     @State private var attempt = 0
 
     init(items: [PhotosPickerItem]) {
@@ -63,6 +67,7 @@ struct BulkImportFlow: View {
                 await processCurrentItem()
             }
         }
+        .sheet(isPresented: duplicateSheetBinding) { duplicateSheet }
     }
 
     // MARK: - Steps
@@ -88,7 +93,8 @@ struct BulkImportFlow: View {
                 case .ready(let result):
                     previewSection(result)
                     GarmentMetadataForm(fields: fieldsBinding(for: item.id))
-                case .saved, .skipped:
+                        .disabled(isCheckingForDuplicates)
+                case .saved, .usedExisting, .skipped:
                     EmptyView()
                 }
 
@@ -137,7 +143,8 @@ struct BulkImportFlow: View {
                 result: result,
                 choice: imageChoiceBinding(for: result),
                 symbolName: currentFields.category?.symbolName ?? "photo",
-                imageHeight: 200
+                imageHeight: 200,
+                choiceEnabled: !isCheckingForDuplicates
             )
         }
     }
@@ -145,8 +152,10 @@ struct BulkImportFlow: View {
     private var navigationSection: some View {
         Section {
             Button("Skip this photo", action: skip)
+                .disabled(isCheckingForDuplicates)
             if queue.canGoBack {
                 Button("Back", action: goBack)
+                    .disabled(isCheckingForDuplicates)
             }
         } footer: {
             Text("Skipped photos are discarded. Garments you have already saved stay in your wardrobe even if you leave now.")
@@ -171,12 +180,13 @@ struct BulkImportFlow: View {
                 Button("Done", action: finish)
             } else {
                 Button("Cancel", action: cancel)
+                    .disabled(isCheckingForDuplicates)
             }
         }
         if stage == .review, let item = queue.current, item.importResult != nil {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save & Next", action: saveAndAdvance)
-                    .disabled(!(drafts[item.id]?.isValid ?? false))
+                Button("Save & Next", action: beginSaveAndAdvance)
+                    .disabled(!(drafts[item.id]?.isValid ?? false) || isCheckingForDuplicates)
             }
         }
     }
@@ -209,11 +219,13 @@ struct BulkImportFlow: View {
     }
 
     private var summaryTitle: String {
-        queue.savedCount == 1 ? "1 garment added" : "\(queue.savedCount) garments added"
+        if queue.savedCount == 0 { return "Import complete" }
+        return queue.savedCount == 1 ? "1 garment added" : "\(queue.savedCount) garments added"
     }
 
     private var summaryMessage: String {
         var parts: [String] = []
+        if queue.usedExistingCount > 0 { parts.append("\(queue.usedExistingCount) already in your wardrobe") }
         if queue.skippedCount > 0 { parts.append("\(queue.skippedCount) skipped") }
         if queue.failedCount > 0 { parts.append("\(queue.failedCount) could not be processed") }
         guard !parts.isEmpty else { return "Everything you reviewed is in your wardrobe." }
@@ -251,7 +263,7 @@ struct BulkImportFlow: View {
         }
     }
 
-    private func saveAndAdvance() {
+    func commitSaveAndAdvance() {
         guard let item = queue.current, let result = item.importResult else { return }
         let fields = drafts[item.id] ?? GarmentMetadataFields()
         guard fields.isValid, let category = fields.category,
@@ -290,23 +302,26 @@ struct BulkImportFlow: View {
             modelContext.delete(garment)
             try? services.imageStore.removeAll(for: result.garmentID)
             queue.markFailed("That garment could not be saved to this device.")
+            clearDuplicateReview()
             return
         }
 
         drafts[item.id] = nil
         imageChoices.remove(for: item.id)
         imageErrorMessage = nil
+        clearDuplicateReview()
         queue.markSaved()
         finishIfComplete()
     }
 
-    private func skip() {
+    func skip() {
         if let item = queue.current {
-            try? services.imageStore.removeAll(for: item.id)
+            guard discardFiles(for: item.id) else { return }
             drafts[item.id] = nil
             imageChoices.remove(for: item.id)
         }
         imageErrorMessage = nil
+        clearDuplicateReview()
         queue.skip()
         finishIfComplete()
     }
@@ -317,7 +332,7 @@ struct BulkImportFlow: View {
         attempt += 1
     }
 
-    private func finishIfComplete() {
+    func finishIfComplete() {
         if queue.isComplete { stage = .summary }
     }
 

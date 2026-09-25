@@ -5,13 +5,15 @@ import SwiftUI
 /// The wardrobe-duplicate half of `AddGarmentFlow`, in its own file purely
 /// for the static audit's line cap.
 ///
-/// Duplicate protection belongs to the canonical single-item import: it is
-/// the only place in RIG where a new `ClothingItem` is created from a fresh
-/// photograph one at a time, and so the only place where "you may already own
-/// this" is a question worth interrupting for.
+/// Single-item presentation and decisions for the shared duplicate check.
 extension AddGarmentFlow {
     var duplicateSheetBinding: Binding<Bool> {
-        Binding(get: { duplicateReview != nil }, set: { if !$0 { duplicateReview = nil } })
+        Binding(get: { duplicateReview != nil }, set: {
+            if !$0 {
+                duplicateReview = nil
+                duplicateCandidateImageData = nil
+            }
+        })
     }
 
     @ViewBuilder
@@ -59,45 +61,25 @@ extension AddGarmentFlow {
             return
         }
 
-        guard let imageData = services.imageStore.data(
-            atRelativePath: imageChoice.relativePath(in: importResult)
-        ) else {
-            commitSave()
-            return
+        let sources: [GarmentDuplicateSource] = wardrobeItems.compactMap { item in
+            guard let path = item.preferredImageRelativePath else { return nil }
+            return GarmentDuplicateSource(garmentID: item.id, category: item.category, imagePath: path)
         }
-
-        let matcher = services.similarityMatcher
-        let store = services.imageStore
-        // Extracted to plain Sendable values before crossing into the Task:
-        // `ClothingItem` is a SwiftData model and must not cross an actor
-        // boundary, only the handful of facts this comparison actually needs.
-        let sameCategoryItems: [(garmentID: UUID, imagePath: String)] = wardrobeItems.compactMap { item in
-            guard item.category == category, item.id != importResult.garmentID,
-                  let path = item.preferredImageRelativePath else { return nil }
-            return (item.id, path)
-        }
-
         isCheckingForDuplicates = true
         Task { @MainActor in
             defer { isCheckingForDuplicates = false }
-
-            let items: [WardrobeSimilarityCandidateItem] = sameCategoryItems.compactMap { entry in
-                guard let data = store.data(atRelativePath: entry.imagePath) else { return nil }
-                return WardrobeSimilarityCandidateItem(garmentID: entry.garmentID, category: category, imageData: data)
-            }
-
-            let matches = await matcher.rankSimilarItems(
-                to: imageData,
-                among: WardrobeSimilarityQuery.candidates(
-                    from: items,
-                    category: category,
-                    excluding: importResult.garmentID
-                )
+            let outcome = await GarmentDuplicateCheck.evaluate(
+                result: importResult,
+                choice: imageChoice,
+                category: category,
+                sources: sources,
+                store: services.imageStore,
+                matcher: services.similarityMatcher
             )
-            let review = DuplicateReviewState(matches: matches)
-            if review.isExhausted {
+            switch outcome {
+            case .save:
                 commitSave()
-            } else {
+            case .review(let imageData, let review):
                 duplicateCandidateImageData = imageData
                 duplicateReview = review
             }

@@ -63,6 +63,7 @@ struct AddGarmentFlow: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: cancel)
+                        .disabled(isCheckingForDuplicates)
                 }
                 if step == .review {
                     ToolbarItem(placement: .confirmationAction) {
@@ -203,6 +204,7 @@ struct AddGarmentFlow: View {
             }
 
             GarmentMetadataForm(fields: $fields)
+                .disabled(isCheckingForDuplicates)
         }
     }
 
