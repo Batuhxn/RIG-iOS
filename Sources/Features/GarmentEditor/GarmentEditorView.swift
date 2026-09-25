@@ -44,12 +44,13 @@ struct GarmentEditorView: View {
     }
 
     private func save() {
-        guard fields.apply(to: item) else { return }
         do {
-            try modelContext.save()
+            guard try GarmentMutations.edit(item, fields: fields, in: modelContext, save: modelContext.save) else {
+                return
+            }
             dismiss()
         } catch {
-            errorMessage = "That change could not be saved. Your garment is unchanged."
+            errorMessage = "Your changes could not be saved. The garment was left unchanged."
         }
     }
 }

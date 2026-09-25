@@ -112,33 +112,29 @@ struct GarmentDetailView: View {
     }
 
     private func toggleFavorite() {
-        item.isFavorite.toggle()
-        item.touch()
-        save()
+        do {
+            try GarmentMutations.toggleFavorite(item, in: modelContext, save: modelContext.save)
+        } catch {
+            errorMessage = "That change could not be saved. The garment was left unchanged."
+        }
     }
 
     /// Row first, then files. If the file sweep fails the orphan pass on next
     /// launch collects it; the reverse order could leave a garment pointing at
     /// images that no longer exist.
     private func delete() {
-        let id = item.id
-        modelContext.delete(item)
         do {
-            try modelContext.save()
+            try GarmentMutations.delete(
+                item,
+                in: modelContext,
+                save: modelContext.save,
+                removeImages: services.imageStore.removeAll
+            )
         } catch {
             errorMessage = "That garment could not be deleted. Nothing was changed."
             return
         }
-        try? services.imageStore.removeAll(for: id)
         dismiss()
-    }
-
-    private func save() {
-        do {
-            try modelContext.save()
-        } catch {
-            errorMessage = "That change could not be saved."
-        }
     }
 }
 
