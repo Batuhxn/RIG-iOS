@@ -275,6 +275,8 @@ def check_configuration() -> None:
     for workflow in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
         text = workflow.read_text(encoding="utf-8")
         is_release = workflow.name == "ios-release.yml"
+        is_device_test = workflow.name == "ios-device-test.yml"
+        data = None
         try:
             import yaml
         except ImportError:
@@ -304,6 +306,34 @@ def check_configuration() -> None:
                             failures.append("Release upload must be a boolean defaulting to false")
                     if jobs.get("release", {}).get("environment") != "testflight":
                         failures.append("Release workflow requires the testflight environment")
+        if is_device_test:
+            # A separate signed device export is allowed; validation gates keep
+            # their original ban on signing secrets and publishing commands.
+            if isinstance(data, dict):
+                triggers = data.get("on", data.get(True, {}))
+                if not isinstance(triggers, dict) or set(triggers) != {"workflow_dispatch"}:
+                    failures.append("Device-test workflow must be manual dispatch only")
+                job = data.get("jobs", {}).get("device-test", {})
+                if job.get("environment") != "device-test" or job.get("runs-on") != "macos-26":
+                    failures.append("Device-test requires device-test environment and macos-26")
+            if re.search(r"^  (push|pull_request|schedule|workflow_run|workflow_call):", text, re.MULTILINE):
+                failures.append("Device-test workflow contains an automatic trigger")
+            for required in ("workflow_dispatch:", "environment: device-test", "runs-on: macos-26",
+                             "/Applications/Xcode_26.3.app", "bash scripts/device_test.sh",
+                             "IOS_ADHOC_PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROFILE_BASE64 }}"):
+                if required not in text:
+                    failures.append(f"Device-test workflow is missing: {required}")
+            secret_names = set(re.findall(r"secrets\.([A-Z0-9_]+)", text))
+            expected = {"APPLE_TEAM_ID", "IOS_DISTRIBUTION_P12_BASE64",
+                        "IOS_DISTRIBUTION_P12_PASSWORD", "IOS_ADHOC_PROFILE_BASE64"}
+            if secret_names != expected:
+                failures.append("Device-test must use exactly its four environment secrets")
+            device_script = (ROOT / "scripts" / "device_test.sh").read_text(encoding="utf-8")
+            for banned in ("altool", "notarytool", "fastlane", "ASC_", "--upload-app", "IOS_APP_STORE"):
+                if banned in text or banned in device_script:
+                    failures.append(f"Device-test contains forbidden publishing reference: {banned}")
+            notes.append("Dedicated device-test workflow: manual Ad Hoc export, no publishing")
+            continue
         if is_release:
             for required in ("workflow_dispatch:", "upload_to_testflight:", "default: false",
                              "environment: testflight", "runs-on: macos-", "bash scripts/release_testflight.sh",
