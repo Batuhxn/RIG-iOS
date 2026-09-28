@@ -128,7 +128,7 @@ xcodebuild -project RIG.xcodeproj -list >> "$secret_dir/generation.log" 2>&1 \
   || fail 'Failed to open generated Xcode project'
 echo '[8/9] Archive and export'
 xcodebuild archive -project RIG.xcodeproj -scheme RIG -configuration Release \
-  -sdk iphoneos -destination 'generic/platform=iOS' -arch arm64 \
+  -sdk iphoneos -destination 'generic/platform=iOS' \
   -archivePath "$secret_dir/RIG.xcarchive" -derivedDataPath "$secret_dir/DerivedData" \
   CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES \
   DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_IDENTITY="$certificate_sha" \
