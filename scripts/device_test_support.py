@@ -137,7 +137,8 @@ def verify(root, artifact):
     with verification_stage(5, 'Validate exported signing certificate', 'Exported signing certificate validation failed'):
         # Check the actual exported signer, not just the archive signing settings.
         prefix = str(root / 'signer-')
-        subprocess.run(['codesign', '-d', '--extract-certificates', prefix, str(app)],
+        # The prefix is optional, so codesign requires the --option=value form.
+        subprocess.run(['codesign', '-d', '--extract-certificates=' + prefix, str(app)],
                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         actual_signer = hashlib.sha1((root / 'signer-0').read_bytes()).hexdigest().upper()
         require(actual_signer == (root / 'certificate-sha').read_text(), 'Exported signing identity mismatch')

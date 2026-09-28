@@ -202,19 +202,28 @@ class DeviceSigningTests(unittest.TestCase):
             (app / 'Info.plist').write_bytes(plistlib.dumps(info))
             (root / 'uuid').write_text(self.profile['UUID'])
             (root / 'certificate-sha').write_text(hashlib.sha1(self.cert).hexdigest().upper())
-            (root / 'signer-0').write_bytes(self.cert)
             (root / 'embedded-profile.plist').write_bytes(plistlib.dumps(self.profile))
             (root / 'entitlements.plist').write_bytes(plistlib.dumps(self.profile['Entitlements']))
             environment = dict(RIG_DEVICE_APP=str(app), RIG_DEVICE_IPA=str(ipa),
                                APPLE_TEAM_ID=self.team, GITHUB_SHA='synthetic-commit', GITHUB_RUN_NUMBER='1')
             profile_data = copy.deepcopy(self.profile)
             entitlement_data = copy.deepcopy(self.profile['Entitlements'])
+            signer_data = self.cert
+            extract_failure = False
+            emit_leaf = True
             def extract(command, **kwargs):
                 if command[0] == 'security':
                     (root / 'embedded-profile.plist').write_bytes(plistlib.dumps(profile_data))
                 elif '--entitlements' in command:
                     self.assertEqual(command[2:5], ['--entitlements', '-', '--xml'])
                     kwargs['stdout'].write(plistlib.dumps(entitlement_data, fmt=plistlib.FMT_XML))
+                else:
+                    self.assertEqual(command, ['codesign', '-d',
+                                              '--extract-certificates=' + str(root / 'signer-'), str(app)])
+                    if extract_failure:
+                        raise subprocess.CalledProcessError(1, command, stderr='synthetic-private-diagnostic')
+                    if emit_leaf:
+                        Path(command[2].split('=', 1)[1] + '0').write_bytes(signer_data)
 
             with patch.dict(os.environ, environment), \
                     patch.object(signing.subprocess, 'check_output', return_value='arm64\n') as archs, \
@@ -254,9 +263,16 @@ class DeviceSigningTests(unittest.TestCase):
                 entitlement_data['application-identifier'] = 'wrong.app'
                 check_failure(4, 'Signed entitlements validation failed')
                 entitlement_data = copy.deepcopy(self.profile['Entitlements'])
-                (root / 'signer-0').write_bytes(b'synthetic-wrong-certificate')
+                signer_data = b'synthetic-wrong-certificate'
                 check_failure(5, 'Exported signing certificate validation failed')
-                (root / 'signer-0').write_bytes(self.cert)
+                signer_data = self.cert
+                extract_failure = True
+                check_failure(5, 'Exported signing certificate validation failed')
+                extract_failure = False
+                (root / 'signer-0').unlink()
+                emit_leaf = False
+                check_failure(5, 'Exported signing certificate validation failed')
+                emit_leaf = True
                 bad_info = dict(info, CFBundleVersion='synthetic-invalid-build')
                 (app / 'Info.plist').write_bytes(plistlib.dumps(bad_info))
                 check_failure(6, 'Exported version/build validation failed')
