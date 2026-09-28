@@ -26,6 +26,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.rig.app
         PRODUCT_NAME: RIG
+        MARKETING_VERSION: "0.2"
+        CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Support/Info.plist
         # Xcode's application product type defaults this to AppIcon, which is

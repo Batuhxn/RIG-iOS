@@ -270,10 +270,11 @@ def check_configuration() -> None:
                 failures.append(f"{relative}: not a valid property list ({error})")
         notes.append("Info.plist and privacy manifest parse as property lists")
 
-    # Every workflow, not just Gate A: a second gate must be held to the same
-    # rules about runners, secrets and publishing.
+    # Validation gates never sign or publish. The dedicated manual release
+    # workflow has separate fail-closed dispatch and upload requirements.
     for workflow in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
         text = workflow.read_text(encoding="utf-8")
+        is_release = workflow.name == "ios-release.yml"
         try:
             import yaml
         except ImportError:
@@ -293,6 +294,26 @@ def check_configuration() -> None:
                     if not runner.startswith("macos"):
                         failures.append(f"workflow job must run on macOS, got '{runner}'")
                 notes.append(f"{workflow.name} parsed: " + ", ".join(sorted(jobs)))
+                if is_release:
+                    triggers = data.get("on", data.get(True, {}))
+                    if not isinstance(triggers, dict) or set(triggers) != {"workflow_dispatch"}:
+                        failures.append("Release workflow must be manual dispatch only")
+                    else:
+                        upload = triggers["workflow_dispatch"].get("inputs", {}).get("upload_to_testflight", {})
+                        if upload.get("type") != "boolean" or upload.get("default") is not False:
+                            failures.append("Release upload must be a boolean defaulting to false")
+                    if jobs.get("release", {}).get("environment") != "testflight":
+                        failures.append("Release workflow requires the testflight environment")
+        if is_release:
+            for required in ("workflow_dispatch:", "upload_to_testflight:", "default: false",
+                             "environment: testflight", "runs-on: macos-", "bash scripts/release_testflight.sh",
+                             "RC_UPLOAD: ${{ inputs.upload_to_testflight }}"):
+                if required not in text:
+                    failures.append(f"Release workflow is missing safety requirement: {required}")
+            if re.search(r"^  (push|pull_request|schedule|workflow_run|workflow_call):", text, re.MULTILINE):
+                failures.append("Release workflow contains an automatic trigger")
+            notes.append("Dedicated release workflow: manual dispatch, explicit upload opt-in")
+            continue
         for banned in ("secrets.", "APP_STORE", "altool", "xcrun notarytool", "fastlane"):
             if banned in text:
                 failures.append(f"{workflow.name} references '{banned}' — no gate may sign or publish")

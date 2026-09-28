@@ -55,3 +55,11 @@ __pycache__/
 *.ckpt
 *.onnx
 *.safetensors
+
+# Distribution credentials belong in secure storage.
+*.p12
+*.p8
+*.mobileprovision
+*.keychain
+*.keychain-db
+AuthKey_*

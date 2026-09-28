@@ -1,6 +1,10 @@
 # Apple validation checklist
 
-Gate A passed in GitHub Actions run `34627340043`: simulator build and 154
+For v0.2 RC1 distribution and the complete device acceptance matrix, see
+[release setup](TESTFLIGHT_RC1.md) and
+[physical iPhone verification](PHYSICAL_IPHONE_MVP_CHECKLIST.md).
+
+Gate A passed in GitHub Actions run `36393292492`: simulator build and 213
 XCTest tests, zero failures. The separate unsigned device-build Gate B1 passed
 in run `34627735523`, including IPA verification. Neither run proves standalone
 simulator launch or physical-device camera and Vision quality.
@@ -24,7 +28,7 @@ failures print `RESULT: FAIL`.
 
 - [x] **XcodeGen** — `xcodegen generate` produced `RIG.xcodeproj` from `project.yml`
 - [x] **Simulator compile** — `xcodebuild build` succeeded for `generic/platform=iOS Simulator`
-- [x] **XCTest** — 154 tests in `RIGTests` passed on an iPhone simulator
+- [x] **XCTest** — 213 tests in `RIGTests` passed on an iPhone simulator
 
 The completed Gate A run is the build and test checkpoint. Re-run it after
 changes to app source or test configuration.
@@ -45,7 +49,7 @@ not meaningfully testable here; that is Gate C.
       chosen twice, validation messages appear for an incomplete look, Save is
       disabled until the look is valid
 - [ ] **Suggest a Look** — with at least one top and one bottom (or one dress),
-      three ranked cards appear; "Show another set" returns different looks;
+      up to three ranked cards appear when enough combinations exist; "Show another set" returns different looks;
       an under-stocked wardrobe shows the explanatory empty state instead
 - [ ] **Save look** — a saved suggestion appears in Looks and on Home
 - [ ] **Like / Dislike** — the thumb fills in; tapping the other one replaces the

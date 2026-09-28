@@ -8,12 +8,16 @@ Nothing leaves the phone.
 
 ## Status
 
-**Apple build and unit tests verified; runtime smoke pending.** Gate A run
-`34627340043` built the simulator app and ran 154 XCTest tests with zero
-failures. Gate B1 run `34627735523` built the unsigned arm64 `iphoneos` app and
-verified an unsigned IPA. These gates do not establish that the standalone app
-launches or that Vision produces good cutouts. The historical implementation
-report in `reports/V0_1_IMPLEMENTATION_REPORT.md` predates these runs.
+**v0.2 product MVP feature-complete; physical iPhone verification pending.**
+Steps 1–6 are complete. Gate A run `36393292492` tested commit
+`ce8f1267b24066e841a71c9b671b49052e6b4454`: 213 XCTest tests, zero failures.
+The RC1 preparation uses `0.2 (1)` and adds a manual signed release workflow.
+Signing credentials and the Apple app record are not verified; no TestFlight
+upload or physical acceptance is claimed.
+
+See [RC1 distribution setup](docs/TESTFLIGHT_RC1.md) and the
+[physical iPhone checklist](docs/PHYSICAL_IPHONE_MVP_CHECKLIST.md).
+The historical v0.1 implementation report predates this checkpoint.
 
 ## v0.1 scope
 
@@ -39,14 +43,14 @@ diagrams, the score breakdown, and the concurrency rules.
 
 ## Privacy model
 
-RIG v0.1 contains no networking code of any kind. No `URLSession`, no analytics
+RIG v0.2 contains no networking code of any kind. No `URLSession`, no analytics
 SDK, no crash reporter, no cloud container, no advertising identifier, no
 location. `scripts/static_audit.py` fails if any of those symbols appear in the
 sources, and `Support/PrivacyInfo.xcprivacy` declares no tracking and no
 collected data types.
 
 The precise claim, and the only one RIG is entitled to make: **wardrobe data is
-stored locally and v0.1 does not upload it.** RIG implements no cryptography of
+stored locally and v0.2 does not upload it.** RIG implements no cryptography of
 its own, so it does not claim encryption beyond the protection iOS gives any
 app's container.
 
@@ -117,7 +121,7 @@ python3 scripts/static_audit.py
 ## Apple gates on GitHub Actions
 
 `.github/workflows/ios-validation.yml` is the manually dispatched Gate A.
-Run `34627340043` passed with 154 tests and zero failures. The separate
+Run `36393292492` passed with 213 tests and zero failures. The separate
 `.github/workflows/ios-device-build.yml` Gate B1 run `34627735523` passed an
 unsigned arm64 device build and IPA structure check. The Gate A2 simulator
 runtime smoke is defined in `.github/workflows/ios-simulator-smoke.yml` and
@@ -140,8 +144,7 @@ A Mac you already own runs the identical script for nothing.
 No weather. No occasion engine. No learned personal style — feedback is captured
 and nothing reads it yet, and the interface never claims otherwise. No ML
 compatibility model. No virtual try-on or body rendering; a look is your own
-garment cutouts, arranged plainly. No sharing, no accounts, no sync. No app icon
-or store assets.
+garment cutouts, arranged plainly. No sharing, no accounts, no sync. An app icon is included; production store screenshots and listing assets remain pending.
 
 Suggestions show a band — "Strong match", "Try this" — and never a percentage.
 There is no calibrated probability behind the ranking, so showing a number would
@@ -174,7 +177,7 @@ could later contribute a capped signal without any of this being rewritten.
 | | |
 |---|---|
 | Static audit | PASS on the development host |
-| Simulator build and XCTest | **PASS** — Gate A run `34627340043`, 154 tests, 0 failures |
+| Simulator build and XCTest | **PASS** — Gate A run `36393292492`, 213 tests, 0 failures |
 | Unsigned arm64 `iphoneos` build and IPA verification | **PASS** — Gate B1 run `34627735523` |
 | Standalone simulator install, launch and screenshot | **NOT RUN** — Gate A2 pending |
 | Physical-device camera, Vision quality and memory behavior | **NOT RUN** |
