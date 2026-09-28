@@ -8,12 +8,99 @@ import hashlib
 import io
 import os
 import plistlib
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 import device_test_support as signing
+
+
+class StageDiagnosticsTests(unittest.TestCase):
+    def run_script(self, overrides):
+        bash = os.environ.get('RIG_TEST_BASH') or shutil.which('bash')
+        if not bash:
+            self.skipTest('bash is unavailable')
+        environment = dict(os.environ)
+        for name in (*signing.SECRET_NAMES, 'RUNNER_OS', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT',
+                     'RUNNER_TEMP', 'GITHUB_WORKSPACE'):
+            environment.pop(name, None)
+        environment.update(overrides)
+        return subprocess.run([bash, 'scripts/device_test.sh'], cwd=Path(__file__).resolve().parents[1],
+                              env=environment, capture_output=True, text=True)
+
+    def test_invalid_runner_is_diagnosed_before_exit(self):
+        result = self.run_script({})
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('[1/9] Validate environment and secrets', result.stdout)
+        self.assertIn('ERROR: macOS runner required', result.stderr)
+
+    def test_missing_secret_is_diagnosed_without_values(self):
+        result = self.run_script(dict(RUNNER_OS='macOS', GITHUB_RUN_ID='1', GITHUB_RUN_ATTEMPT='1',
+                                     RUNNER_TEMP='/synthetic-temp', GITHUB_WORKSPACE='/synthetic-workspace'))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('[1/9] Validate environment and secrets', result.stdout)
+        self.assertIn('ERROR: Missing required secret: APPLE_TEAM_ID', result.stderr)
+
+    def test_invalid_team_is_diagnosed_without_secret_echo(self):
+        secrets = {name: 'synthetic-sensitive-value' for name in signing.SECRET_NAMES}
+        result = self.run_script(dict(secrets, RUNNER_OS='macOS', GITHUB_RUN_ID='1', GITHUB_RUN_ATTEMPT='1',
+                                     RUNNER_TEMP='/synthetic-temp', GITHUB_WORKSPACE='/synthetic-workspace'))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('ERROR: Invalid Apple team ID format', result.stderr)
+        self.assertNotIn('synthetic-sensitive-value', result.stdout + result.stderr)
+
+    def test_private_command_failures_have_safe_stage_diagnostics(self):
+        scenarios = [
+            ('decode', '[2/9] Decode signing material', 'Failed to decode signing material'),
+            ('create-keychain', '[3/9] Create temporary keychain', 'Failed to create temporary keychain'),
+            ('import', '[4/9] Import Apple Distribution certificate', 'Failed to import Apple Distribution P12'),
+            ('find-identity', '[5/9] Read and validate Ad Hoc provisioning profile', 'Failed to query signing identity'),
+            ('cms', '[5/9] Read and validate Ad Hoc provisioning profile', 'Failed to decode provisioning profile'),
+            ('prepare', '[5/9] Read and validate Ad Hoc provisioning profile', 'Provisioning profile/certificate validation failed'),
+        ]
+        for command, marker, error in scenarios:
+            with self.subTest(command=command), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / 'bin').mkdir()
+                (root / 'temp').mkdir()
+                (root / 'workspace').mkdir()
+                stubs = {
+                    'security': '''#!/bin/bash
+if [[ "$1" == "$RIG_TEST_FAIL_COMMAND" ]]; then
+  echo synthetic-raw-signing-stderr >&2
+  exit 1
+fi
+if [[ "$1" == list-keychains && "$*" != *" -s"* ]]; then
+  echo '\"synthetic-default-keychain\"'
+fi
+''',
+                    'python3': '''#!/bin/bash
+if [[ "$2" == "$RIG_TEST_FAIL_COMMAND" ]]; then
+  echo synthetic-raw-signing-stderr >&2
+  exit 1
+fi
+''',
+                    'openssl': '#!/bin/bash\necho synthetic-keychain-password\n',
+                }
+                for name, text in stubs.items():
+                    path = root / 'bin' / name
+                    path.write_text(text, encoding='utf-8')
+                    path.chmod(0o755)
+                environment = {name: 'synthetic-secret-value' for name in signing.SECRET_NAMES}
+                environment.update(APPLE_TEAM_ID='TESTTEAM01', RUNNER_OS='macOS', GITHUB_RUN_ID='1',
+                                   GITHUB_RUN_ATTEMPT='1', RUNNER_TEMP=str(root / 'temp'),
+                                   GITHUB_WORKSPACE=str(root / 'workspace'), RIG_TEST_FAIL_COMMAND=command,
+                                   PATH=str(root / 'bin') + os.pathsep + os.environ['PATH'])
+                result = self.run_script(environment)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(marker, result.stdout)
+                self.assertIn('ERROR: ' + error, result.stderr)
+                self.assertNotIn('synthetic-raw-signing-stderr', result.stdout + result.stderr)
+                self.assertNotIn('synthetic-secret-value', result.stdout + result.stderr)
+                self.assertFalse((root / 'temp/rig-device-test-1-1').exists())
 
 
 class DeviceSigningTests(unittest.TestCase):
