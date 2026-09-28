@@ -10,6 +10,7 @@ import os
 import plistlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -192,6 +193,7 @@ class DeviceSigningTests(unittest.TestCase):
             app = root / 'Payload/RIG.app'
             app.mkdir(parents=True)
             (app / 'RIG').write_bytes(b'synthetic executable')
+            (app / 'embedded.mobileprovision').write_bytes(b'synthetic CMS fixture')
             ipa = root / 'synthetic.ipa'
             ipa.write_bytes(b'synthetic zip fixture')
             info = dict(CFBundleIdentifier='dev.rig.app', CFBundleExecutable='RIG',
@@ -205,27 +207,112 @@ class DeviceSigningTests(unittest.TestCase):
             (root / 'entitlements.plist').write_bytes(plistlib.dumps(self.profile['Entitlements']))
             environment = dict(RIG_DEVICE_APP=str(app), RIG_DEVICE_IPA=str(ipa),
                                APPLE_TEAM_ID=self.team, GITHUB_SHA='synthetic-commit', GITHUB_RUN_NUMBER='1')
+            profile_data = copy.deepcopy(self.profile)
+            entitlement_data = copy.deepcopy(self.profile['Entitlements'])
+            def extract(command, **kwargs):
+                if command[0] == 'security':
+                    (root / 'embedded-profile.plist').write_bytes(plistlib.dumps(profile_data))
+                elif '--entitlements' in command:
+                    self.assertEqual(command[2:5], ['--entitlements', '-', '--xml'])
+                    kwargs['stdout'].write(plistlib.dumps(entitlement_data, fmt=plistlib.FMT_XML))
+
             with patch.dict(os.environ, environment), \
                     patch.object(signing.subprocess, 'check_output', return_value='arm64\n') as archs, \
-                    patch.object(signing.subprocess, 'run'), contextlib.redirect_stdout(io.StringIO()):
+                    patch.object(signing.subprocess, 'run', side_effect=extract), \
+                    contextlib.redirect_stdout(io.StringIO()) as console:
                 signing.verify(root, artifact)
+                expected_markers = [
+                    '[9.1] Validate exported app Info.plist', '[9.2] Validate device architecture',
+                    '[9.3] Validate embedded provisioning profile', '[9.4] Validate signed entitlements',
+                    '[9.5] Validate exported signing certificate', '[9.6] Validate version/build metadata',
+                    '[9.7] Write sanitized signing manifest',
+                ]
+                self.assertEqual(console.getvalue().splitlines()[:7], expected_markers)
+                self.assertEqual(signing.load(root / 'entitlements.plist'), entitlement_data)
                 manifest = (artifact / 'signing-manifest.json').read_text()
                 for forbidden in (self.team, self.profile['UUID'], self.profile['Name'], 'synthetic-device-id'):
                     self.assertNotIn(forbidden, manifest)
+                def check_failure(number, message):
+                    with contextlib.redirect_stdout(io.StringIO()) as failed_console:
+                        with self.assertRaises(signing.VerificationError):
+                            signing.verify(root, artifact)
+                    lines = failed_console.getvalue().splitlines()
+                    self.assertEqual(lines[:-1], expected_markers[:number])
+                    self.assertEqual(lines[-1], 'ERROR: ' + message)
+                    for forbidden in (self.team, self.profile['UUID'], self.profile['Name'], 'synthetic-device-id'):
+                        self.assertNotIn(forbidden, failed_console.getvalue())
+                bad_info = dict(info, CFBundleIdentifier='synthetic-wrong-bundle')
+                (app / 'Info.plist').write_bytes(plistlib.dumps(bad_info))
+                check_failure(1, 'Exported bundle metadata validation failed')
+                (app / 'Info.plist').write_bytes(plistlib.dumps(info))
                 archs.return_value = 'x86_64\n'
-                with self.assertRaises(ValueError):
-                    signing.verify(root, artifact)
+                check_failure(2, 'Exported architecture validation failed')
                 archs.return_value = 'arm64\n'
-                embedded = copy.deepcopy(self.profile)
-                embedded['UUID'] = '00000000-0000-4000-8000-000000000002'
-                (root / 'embedded-profile.plist').write_bytes(plistlib.dumps(embedded))
-                with self.assertRaises(ValueError):
-                    signing.verify(root, artifact)
-                (root / 'embedded-profile.plist').write_bytes(plistlib.dumps(self.profile))
-                entitlements = dict(self.profile['Entitlements'], **{'application-identifier': 'wrong.app'})
-                (root / 'entitlements.plist').write_bytes(plistlib.dumps(entitlements))
-                with self.assertRaises(ValueError):
-                    signing.verify(root, artifact)
+                profile_data['UUID'] = '00000000-0000-4000-8000-000000000002'
+                check_failure(3, 'Embedded provisioning profile validation failed')
+                profile_data = copy.deepcopy(self.profile)
+                entitlement_data['application-identifier'] = 'wrong.app'
+                check_failure(4, 'Signed entitlements validation failed')
+                entitlement_data = copy.deepcopy(self.profile['Entitlements'])
+                (root / 'signer-0').write_bytes(b'synthetic-wrong-certificate')
+                check_failure(5, 'Exported signing certificate validation failed')
+                (root / 'signer-0').write_bytes(self.cert)
+                bad_info = dict(info, CFBundleVersion='synthetic-invalid-build')
+                (app / 'Info.plist').write_bytes(plistlib.dumps(bad_info))
+                check_failure(6, 'Exported version/build validation failed')
+                (app / 'Info.plist').write_bytes(plistlib.dumps(info))
+                (artifact / 'signing-manifest.json').unlink()
+                (artifact / 'signing-manifest.json').mkdir()
+                check_failure(7, 'Signing manifest creation failed')
+
+    def test_verification_failures_emit_only_safe_stage_errors(self):
+        errors = [
+            'Exported bundle metadata validation failed', 'Exported architecture validation failed',
+            'Embedded provisioning profile validation failed', 'Signed entitlements validation failed',
+            'Exported signing certificate validation failed', 'Exported version/build validation failed',
+            'Signing manifest creation failed',
+        ]
+        for number, error in enumerate(errors, 1):
+            with self.subTest(stage=number), contextlib.redirect_stdout(io.StringIO()) as console:
+                with self.assertRaises(signing.VerificationError) as raised:
+                    with signing.verification_stage(number, 'Synthetic stage', error):
+                        raise subprocess.CalledProcessError(1, ['synthetic-secret-command'],
+                                                            stderr='synthetic-secret-stderr')
+                self.assertEqual(str(raised.exception), error)
+                self.assertEqual(console.getvalue(), f'[9.{number}] Synthetic stage\nERROR: {error}\n')
+
+    def test_invalid_entitlement_output_is_rejected_without_values(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            app = root / 'RIG.app'
+            app.mkdir()
+            (app / 'RIG').write_bytes(b'synthetic executable')
+            (app / 'embedded.mobileprovision').write_bytes(b'synthetic CMS fixture')
+            (app / 'Info.plist').write_bytes(plistlib.dumps(dict(
+                CFBundleIdentifier='dev.rig.app', CFBundleExecutable='RIG',
+                DTPlatformName='iphoneos', CFBundleSupportedPlatforms=['iPhoneOS'])))
+            (root / 'uuid').write_text(self.profile['UUID'])
+            def extract(command, **kwargs):
+                if command[0] == 'security':
+                    (root / 'embedded-profile.plist').write_bytes(plistlib.dumps(self.profile))
+                else:
+                    kwargs['stdout'].write(b'synthetic-entitlement-human-readable-value')
+            environment = dict(RIG_DEVICE_APP=str(app), RIG_DEVICE_IPA=str(root / 'fixture.ipa'),
+                               APPLE_TEAM_ID=self.team, RIG_DEVICE_SECRET_DIR=str(root),
+                               RIG_DEVICE_OUTPUT=str(root))
+            with patch.dict(os.environ, environment), patch.object(sys, 'argv', ['support', 'verify']), \
+                    patch.object(signing.subprocess, 'check_output', return_value='arm64'), \
+                    patch.object(signing.subprocess, 'run', side_effect=extract), \
+                    contextlib.redirect_stdout(io.StringIO()) as console, \
+                    contextlib.redirect_stderr(io.StringIO()) as errors:
+                self.assertEqual(signing.main(), 1)
+            self.assertIn('[9.4] Validate signed entitlements', console.getvalue())
+            self.assertIn('ERROR: Signed entitlements validation failed', console.getvalue())
+            self.assertNotIn('[9.5]', console.getvalue())
+            for forbidden in ('synthetic-entitlement-human-readable-value', self.team, self.profile['UUID']):
+                self.assertNotIn(forbidden, console.getvalue() + errors.getvalue())
+            self.assertEqual(errors.getvalue(), '')
+            self.assertFalse((root / 'artifact/signing-manifest.json').exists())
 
 
 if __name__ == '__main__':

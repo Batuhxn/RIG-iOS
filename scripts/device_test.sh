@@ -149,12 +149,9 @@ unzip -q "${ipas[0]}" -d "$secret_dir/ipa" >> "$secret_dir/zip.log" 2>&1 || fail
 apps=("$secret_dir/ipa/Payload/"*.app)
 [[ ${#apps[@]} -eq 1 && -d "${apps[0]}" ]] || fail 'Expected one app in IPA Payload'
 app="${apps[0]}"
-[[ -f "$app/embedded.mobileprovision" ]] || fail 'Embedded provisioning profile missing'
 codesign --verify --deep --strict "$app" > "$secret_dir/signature.log" 2>&1 || fail 'IPA signature verification failed'
-security cms -D -i "$app/embedded.mobileprovision" -o "$secret_dir/embedded-profile.plist" 2> "$secret_dir/embedded-errors.log" \
-  || fail 'Failed to decode embedded provisioning profile'
-codesign -d --entitlements :- "$app" > "$secret_dir/entitlements.plist" 2>> "$secret_dir/signature.log" \
-  || fail 'Failed to read signed entitlements'
+# The helper emits ordered [9.1] through [9.7] diagnostics and keeps CMS and
+# codesign extraction output private until parsed and validated.
 export RIG_DEVICE_APP="$app"
 export RIG_DEVICE_IPA="${ipas[0]}"
 python3 scripts/device_test_support.py verify 2> "$secret_dir/verify-errors.log" \
