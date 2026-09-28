@@ -6,6 +6,15 @@ import SwiftData
 enum OutfitRating: String, Codable, Hashable, Sendable {
     case liked
     case disliked
+
+    static let recordingExplanation = "Likes and dislikes are saved on this device. They do not change your suggestions."
+
+    var recordingActionLabel: String {
+        switch self {
+        case .liked: return "Save a like for this look"
+        case .disliked: return "Save a dislike for this look"
+        }
+    }
 }
 
 /// A recorded reaction to one outfit.

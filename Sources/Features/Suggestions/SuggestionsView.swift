@@ -48,7 +48,7 @@ struct SuggestionsView: View {
                     RIGEmptyState(
                         symbol: "square.grid.2x2",
                         title: "Not enough to work with yet",
-                        message: model.readiness.explanation
+                        message: model.emptyResultMessage
                     )
                     .frame(maxWidth: .infinity)
                     .padding(.top, RIGTheme.Spacing.xl)
@@ -56,7 +56,7 @@ struct SuggestionsView: View {
                     RIGEmptyState(
                         symbol: "sparkles",
                         title: "No looks to show",
-                        message: "RIG could not assemble a valid look from this wardrobe. Adding shoes or a second bottom usually helps."
+                        message: model.emptyResultMessage
                     )
                     .frame(maxWidth: .infinity)
                     .padding(.top, RIGTheme.Spacing.xl)
@@ -66,6 +66,10 @@ struct SuggestionsView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
+
+                    Text(OutfitRating.recordingExplanation)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
 
                     ForEach(model.suggestions) { suggestion in
                         OutfitCardView(

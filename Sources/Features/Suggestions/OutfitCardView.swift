@@ -75,7 +75,7 @@ struct OutfitCardView: View {
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
-                .accessibilityLabel("Like this look")
+                .accessibilityLabel(OutfitRating.liked.recordingActionLabel)
 
                 Button {
                     onRate(.disliked)
@@ -86,7 +86,7 @@ struct OutfitCardView: View {
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
-                .accessibilityLabel("Dislike this look")
+                .accessibilityLabel(OutfitRating.disliked.recordingActionLabel)
             }
         }
         .padding(RIGTheme.Spacing.m)

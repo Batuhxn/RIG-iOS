@@ -65,11 +65,9 @@ struct OutfitScoreBreakdown: Hashable, Sendable {
             fragments.append("seasons pull apart")
         }
 
-        if completeness >= 0.80 {
-            fragments.append("fully assembled")
-        } else if completeness <= 0.60 {
-            fragments.append("no shoes yet")
-        }
+        // Completeness is an aggregate score. It cannot tell us whether
+        // shoes specifically are present once optional pieces are independent.
+        fragments.append(completeness > OutfitCompleteness.baseScore ? "includes optional pieces" : "base look")
 
         return fragments.joined(separator: " · ")
     }

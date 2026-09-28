@@ -18,6 +18,14 @@ final class SuggestionsModel {
 
     private var seenSignatures: Set<String> = []
 
+    /// Ready wardrobes can still return no looks (for example after filtering).
+    /// That is not evidence that a particular category is missing.
+    var emptyResultMessage: String {
+        readiness.canSuggest
+            ? "No looks are available right now. Try again after reviewing your wardrobe."
+            : readiness.explanation
+    }
+
     /// Nonisolated on purpose: this is created as a `@State` default value
     /// inside a view struct, which is not itself actor-isolated. Every
     /// stored property above starts from a `Sendable` constant, so there is

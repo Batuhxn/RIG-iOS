@@ -79,6 +79,39 @@ final class OutfitRankingTests: XCTestCase {
         XCTAssertEqual(Set(bases).count, bases.count, "Each suggestion should use a different base")
     }
 
+    func testIndependentOptionalPiecesPreserveDistinctBasePreference() {
+        let wardrobe = [
+            Fixture.garment(1, .top), Fixture.garment(2, .top),
+            Fixture.garment(3, .bottom), Fixture.garment(4, .bottom),
+            Fixture.garment(5, .shoes), Fixture.garment(6, .outerwear), Fixture.garment(7, .bag),
+        ]
+        let suggestions = OutfitEngine().rankedSuggestions(from: wardrobe, limit: 4)
+        XCTAssertEqual(suggestions.count, 4)
+        XCTAssertEqual(Set(suggestions.map(\.candidate.baseSignature)).count, 4)
+        XCTAssertEqual(Set(suggestions.map(\.signature)).count, 4)
+    }
+
+    func testMultipleTopsOrBottomsEachReceiveADistinctBase() {
+        let wardrobes: [[GarmentCategory]] = [[.top, .top, .bottom], [.top, .bottom, .bottom]]
+        for categories in wardrobes {
+            let wardrobe = categories.enumerated().map { Fixture.garment($0.offset + 1, $0.element) }
+                + [Fixture.garment(9, .outerwear)]
+            let suggestions = OutfitEngine().rankedSuggestions(from: wardrobe, limit: 2)
+            XCTAssertEqual(Set(suggestions.map(\.candidate.baseSignature)).count, 2)
+        }
+    }
+
+    func testSummaryDoesNotInferShoesFromAggregateCompleteness() {
+        let items = [
+            Fixture.garment(1, .top), Fixture.garment(2, .bottom),
+            Fixture.garment(3, .outerwear), Fixture.garment(4, .bag),
+        ]
+        let summary = OutfitEngine().score(items).summary
+        XCTAssertTrue(summary.contains("includes optional pieces"))
+        XCTAssertFalse(summary.contains("fully assembled"))
+        XCTAssertFalse(summary.contains("shoes"))
+    }
+
     func testRankedSuggestionsRespectTheLimit() {
         let engine = OutfitEngine()
         XCTAssertEqual(engine.rankedSuggestions(from: Fixture.largeWardrobe(), limit: 3).count, 3)

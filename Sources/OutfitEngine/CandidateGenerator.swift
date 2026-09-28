@@ -28,6 +28,8 @@ struct CandidateGenerator: Sendable {
     }
 
     func candidates(from wardrobe: [GarmentSnapshot]) -> [OutfitCandidate] {
+        guard configuration.maximumEvaluatedCandidates > 0,
+              configuration.maximumBaseCombinations > 0 else { return [] }
         let ordered = wardrobe.inDisplayOrder
         let tops = ordered.filter { $0.category == .top }
         let bottoms = ordered.filter { $0.category == .bottom }
@@ -77,48 +79,67 @@ struct CandidateGenerator: Sendable {
         bottoms: [GarmentSnapshot],
         dresses: [GarmentSnapshot]
     ) -> [[GarmentSnapshot]] {
-        var bases: [[GarmentSnapshot]] = dresses.map { [$0] }
-
+        var bases: [[GarmentSnapshot]] = []
+        var seen = Set<String>()
+        for dress in dresses {
+            let base = [dress]
+            guard seen.insert(OutfitSignature.signature(for: base)).inserted else { continue }
+            bases.append(base)
+            if bases.count >= configuration.maximumBaseCombinations { return bases }
+        }
         if !tops.isEmpty && !bottoms.isEmpty {
             for offset in 0..<bottoms.count {
                 for (topIndex, top) in tops.enumerated() {
                     let bottomIndex = (topIndex + offset) % bottoms.count
-                    bases.append([top, bottoms[bottomIndex]])
+                    let base = [top, bottoms[bottomIndex]]
+                    guard seen.insert(OutfitSignature.signature(for: base)).inserted else { continue }
+                    bases.append(base)
+                    if bases.count >= configuration.maximumBaseCombinations { return bases }
                 }
             }
         }
-
-        var seen = Set<String>()
-        var deduplicated: [[GarmentSnapshot]] = []
-        for base in bases {
-            let key = OutfitSignature.signature(for: base)
-            guard seen.insert(key).inserted else { continue }
-            deduplicated.append(base)
-            if deduplicated.count >= configuration.maximumBaseCombinations { break }
-        }
-        return deduplicated
+        return bases
     }
 
-    /// Fixed decoration order: bare base, then shoes, then shoes plus outerwear,
-    /// then shoes plus one carried or worn extra.
+    /// Bare bases first, then independent optional pieces, then pairs and the
+    /// combined profile. Each category keeps its existing fanout limit.
     private func makeProfiles(shoeCount: Int, outerwearCount: Int, extraCount: Int) -> [DecorationProfile] {
         let shoeLimit = min(configuration.shoeFanout, shoeCount)
         let outerwearLimit = min(configuration.outerwearFanout, outerwearCount)
         let extraLimit = min(configuration.accessoryFanout, extraCount)
 
         var profiles: [DecorationProfile] = [DecorationProfile()]
+        let limit = configuration.maximumEvaluatedCandidates
+        guard profiles.count < limit else { return profiles }
 
         for shoeIndex in 0..<max(shoeLimit, 0) {
             profiles.append(DecorationProfile(shoeIndex: shoeIndex))
+            if profiles.count >= limit { return profiles }
+        }
+        for outerwearIndex in 0..<max(outerwearLimit, 0) {
+            profiles.append(DecorationProfile(outerwearIndex: outerwearIndex))
+            if profiles.count >= limit { return profiles }
+        }
+        for extraIndex in 0..<max(extraLimit, 0) {
+            profiles.append(DecorationProfile(extraIndex: extraIndex))
+            if profiles.count >= limit { return profiles }
         }
         for shoeIndex in 0..<max(shoeLimit, 0) {
             for outerwearIndex in 0..<max(outerwearLimit, 0) {
                 profiles.append(DecorationProfile(shoeIndex: shoeIndex, outerwearIndex: outerwearIndex))
+                if profiles.count >= limit { return profiles }
             }
         }
         for shoeIndex in 0..<max(shoeLimit, 0) {
             for extraIndex in 0..<max(extraLimit, 0) {
                 profiles.append(DecorationProfile(shoeIndex: shoeIndex, extraIndex: extraIndex))
+                if profiles.count >= limit { return profiles }
+            }
+        }
+        for outerwearIndex in 0..<max(outerwearLimit, 0) {
+            for extraIndex in 0..<max(extraLimit, 0) {
+                profiles.append(DecorationProfile(outerwearIndex: outerwearIndex, extraIndex: extraIndex))
+                if profiles.count >= limit { return profiles }
             }
         }
         for shoeIndex in 0..<max(shoeLimit, 0) {
@@ -131,6 +152,7 @@ struct CandidateGenerator: Sendable {
                             extraIndex: extraIndex
                         )
                     )
+                    if profiles.count >= limit { return profiles }
                 }
             }
         }
