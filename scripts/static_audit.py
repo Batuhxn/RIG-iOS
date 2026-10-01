@@ -337,9 +337,21 @@ def check_configuration() -> None:
         if is_release:
             for required in ("workflow_dispatch:", "upload_to_testflight:", "default: false",
                              "environment: testflight", "runs-on: macos-", "bash scripts/release_testflight.sh",
-                             "RC_UPLOAD: ${{ inputs.upload_to_testflight }}"):
+                             "RC_UPLOAD: ${{ inputs.upload_to_testflight }}",
+                             "bash scripts/release_testflight.sh --cleanup",
+                             "path: build/rc1/artifact/"):
                 if required not in text:
                     failures.append(f"Release workflow is missing safety requirement: {required}")
+            for forbidden in ("build/rc1/*.log", "build/rc1/export/*.ipa",
+                              "build/rc1/RIG.xcarchive/dSYMs"):
+                if forbidden in text:
+                    failures.append(f"Release workflow publishes private output: {forbidden}")
+            release_script = (ROOT / "scripts" / "release_testflight.sh").read_text(encoding="utf-8")
+            for required in ("scripts/release_support.py sanitize", "scripts/release_support.py manifest",
+                             "rm -rf \"$artifact_dir\"", "\"$secret_dir/archive.log\"",
+                             "\"$secret_dir/apple-validation.log\""):
+                if required not in release_script:
+                    failures.append(f"Release script is missing private diagnostics control: {required}")
             if re.search(r"^  (push|pull_request|schedule|workflow_run|workflow_call):", text, re.MULTILINE):
                 failures.append("Release workflow contains an automatic trigger")
             notes.append("Dedicated release workflow: manual dispatch, explicit upload opt-in")

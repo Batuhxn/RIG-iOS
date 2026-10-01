@@ -63,8 +63,9 @@ The repository keeps Automatic signing for developer builds, without a team ID.
 CI overrides to Manual with a temporary keychain and matching App Store profile.
 It rejects development/ad hoc/enterprise/expired/mismatched profiles. Credentials
 are removed on exit and never selected as artifacts. Job termination destroys
-the ephemeral runner. Signed IPA and dSYMs contain app/signing metadata; artifact
-retention is 14 days.
+the ephemeral runner. The signed IPA, dSYMs, archive, decoded credentials, and
+raw tool logs stay in runner temporary storage. Only sanitized diagnostics and
+a credential-free manifest are retained for 14 days.
 
 ## Release workflow operation
 
@@ -88,11 +89,20 @@ and Apple prerequisites are ready. This preparation dispatches only Gate A.
 Apple processing, export-compliance review, TestFlight test information and
 tester invitation remain separate. External testers may require beta review.
 
-Artifacts: generation/archive/export/signature/validation/upload logs, manifest
-(commit, version, toolchain, IPA hash), signed IPA and dSYMs. ExportOptions and
-credential files stay outside the artifact directory. The job has a 45-minute
-timeout; failures stop further release operations and artifact collection runs
-even on failure. No retry automatically uploads another build.
+Artifacts: sanitized stage diagnostics and a manifest containing commit, bundle,
+version, build, architecture, validation results and upload status. The sanitizer
+publishes only fixed status words and source locations for compiler errors; raw
+messages remain private. A sanitizer failure removes the artifact directory.
+The job has a 45-minute timeout; failures stop further release operations and
+artifact collection runs even on failure. No retry automatically uploads another
+build. An IPA for distribution is sent directly to App Store Connect only when
+upload is explicitly enabled.
+
+Artifact policy for this public repository: the allowlisted manifest and
+sanitized status/source-location logs may be shared. A signed IPA, dSYMs and
+archive are restricted to authorized developers and are not uploaded as Actions
+artifacts. Private keys, P12 files, profiles, temporary keychains, decoded
+entitlements, raw tool logs and authentication output must never be published.
 
 ## Compliance and privacy before upload
 
