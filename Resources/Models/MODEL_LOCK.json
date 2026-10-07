@@ -1,0 +1,13 @@
+{
+    "file":  "RIGGarmentEncoder.mlmodel",
+    "sha256":  "b2cbfb44ac47e10c89592b849a28ea5850df2c064ff26de029f9494ed98f8dfa",
+    "bytes":  88786688,
+    "modelID":  "fashion-clip:7e3ba62ce16b:prompts-3b82f6ce2c0c06a7:letterbox-v1:int8",
+    "prompts":  "RIGGarmentPrompts.json",
+    "source":  "huggingface.co/patrickjohncyh/fashion-clip@7e3ba62ce16b379a1ab479346b66f192e76f51b7",
+    "license":  "MIT (FashionCLIP weights; OpenAI CLIP architecture)",
+    "format":  "Core ML neural network (iOS 14+ spec), 8-bit linear weights on linear/conv layers",
+    "generator":  "AutoMetadataBench/scripts/export_fashionclip.py",
+    "url":  "",
+    "coremlRuntimeParity":  "UNVERIFIED: requires macOS"
+}
