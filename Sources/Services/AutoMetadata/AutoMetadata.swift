@@ -10,8 +10,8 @@ enum GarmentLength: String, CaseIterable, Codable, Sendable {
 
 struct MetadataSuggestion<Value: Codable & Hashable & Sendable>: Codable, Hashable, Sendable {
     let value: Value
-    /// Cosine similarity for semantic fields; fraction of accepted mask pixels for colours.
-    /// Neither is a calibrated probability of correctness.
+    /// Softmax share for embedding suggestions; fraction of accepted mask pixels for
+    /// pixel colours. Neither is a calibrated probability of correctness.
     let score: Double
 }
 
@@ -24,6 +24,8 @@ struct AutoMetadataResult: Codable, Hashable, Sendable {
     var modelID: String?
     var semanticStatus: String = "unavailable"
     var elapsedMilliseconds: Double = 0
+    /// The two likeliest kinds when none was confident enough to prefill.
+    var subtypeAlternatives: [String]? = nil
 }
 
 protocol GarmentMetadataAnalyzing: Sendable {
@@ -65,8 +67,16 @@ struct AutoMetadataService: GarmentMetadataAnalyzing {
             result.category = semantic.category
             result.subtype = semantic.subtype
             result.length = semantic.length
+            result.subtypeAlternatives = semantic.subtypeAlternatives
             result.modelID = semantic.modelID
             result.semanticStatus = semantic.semanticStatus
+            // The embedding names colour under indoor light where pixel thresholds read
+            // white as grey. The pixel secondary describes the pixel primary, so it is
+            // kept only when both agree.
+            if let semanticColor = semantic.primaryColor {
+                if result.primaryColor?.value != semanticColor.value { result.secondaryColor = nil }
+                result.primaryColor = semanticColor
+            }
         } catch {
             result.semanticStatus = "unavailable"
         }

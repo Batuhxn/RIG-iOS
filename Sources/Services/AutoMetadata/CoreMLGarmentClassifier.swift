@@ -6,10 +6,7 @@ import UIKit
 /// a matched RIGGarmentEncoder.mlmodelc / RIGGarmentPrompts.json pair from the exporter.
 /// Missing assets are a supported state; no fake classifier replaces them.
 actor CoreMLGarmentClassifier: GarmentSemanticClassifying {
-    struct Manifest: Codable {
-        let modelID: String
-        let groups: [String: [TextEmbedding]]
-    }
+    typealias Manifest = GarmentPromptManifest
 
     private var loaded: (MLModel, Manifest)?
     private let bundle: Bundle
@@ -23,6 +20,10 @@ actor CoreMLGarmentClassifier: GarmentSemanticClassifying {
             throw AutoMetadataError.unavailable
         }
         let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: promptURL))
+        guard manifest.version == 2, !(manifest.groups["flat"] ?? []).isEmpty,
+              manifest.threshold > 0, manifest.threshold <= 1 else {
+            throw AutoMetadataError.invalidContract
+        }
         let config = MLModelConfiguration()
         config.computeUnits = .all
         let model = try MLModel(contentsOf: modelURL, configuration: config)
@@ -48,18 +49,7 @@ actor CoreMLGarmentClassifier: GarmentSemanticClassifying {
             throw AutoMetadataError.invalidContract
         }
         let vector = (0..<output.count).map { output[$0].doubleValue }
-        var result = AutoMetadataResult(modelID: manifest.modelID, semanticStatus: "abstained")
-        guard let category = EmbeddingRanking.best(image: vector, candidates: manifest.groups["category"] ?? []),
-              let categoryValue = GarmentCategory(rawValue: category.value) else { return result }
-        result.category = MetadataSuggestion(value: categoryValue, score: category.score)
-        result.semanticStatus = "suggested"
-        result.subtype = EmbeddingRanking.best(image: vector, candidates: manifest.groups["subtype.\(category.value)"] ?? [])
-        if GarmentLength.applies(category: categoryValue, subtype: result.subtype?.value ?? ""),
-           let length = EmbeddingRanking.best(image: vector, candidates: manifest.groups["length.\(category.value)"] ?? []),
-           let value = GarmentLength(rawValue: length.value) {
-            result.length = MetadataSuggestion(value: value, score: length.score)
-        }
-        return result
+        return GarmentEmbeddingDecision.decide(image: vector, manifest: manifest)
     }
 
     /// Explicit export contract: white letterbox, 224 square, RGB CHW, CLIP mean/std.
