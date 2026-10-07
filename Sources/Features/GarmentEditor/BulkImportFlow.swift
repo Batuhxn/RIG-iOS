@@ -291,7 +291,7 @@ struct BulkImportFlow: View {
             subtype: fields.subtype.trimmingCharacters(in: .whitespacesAndNewlines),
             category: category,
             primaryColor: colorFamily,
-            seasons: fields.seasons,
+            seasons: fields.effectiveSeasons,
             isFavorite: fields.isFavorite,
             notes: fields.notes,
             originalImageRelativePath: result.originalRelativePath,

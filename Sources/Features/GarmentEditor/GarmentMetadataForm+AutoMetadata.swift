@@ -12,6 +12,49 @@ extension GarmentMetadataFields {
         }
         autoMetadata = result
         discardStaleConfidence()
+        refreshSuggestedName()
+    }
+
+    /// "Black mini skirt", built only from what is on the form right now.
+    var suggestedName: String? {
+        let kind = subtype.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let noun = kind.isEmpty ? category?.displayName : kind else { return nil }
+        var words: [String] = []
+        if let colorFamily { words.append(colorFamily.displayName) }
+        if let length, GarmentLength.applies(category: category, subtype: subtype) { words.append(length.rawValue) }
+        words.append(noun)
+        let phrase = words.joined(separator: " ").lowercased()
+        return phrase.prefix(1).uppercased() + phrase.dropFirst()
+    }
+
+    /// Keeps a RIG-written name in step with the fields. A name the user typed, or
+    /// deliberately cleared, is never touched.
+    mutating func refreshSuggestedName() {
+        guard !editedFields.contains(.name), trimmedName.isEmpty || displayName == generatedName,
+              let name = suggestedName else { return }
+        displayName = name
+        generatedName = name
+    }
+
+    /// One tap on a likely kind, offered when the photo did not settle it.
+    mutating func chooseSubtype(_ value: String) {
+        subtype = value
+        editedFields.formUnion([.subtype, .length])
+        autoMetadata?.subtype = nil
+        autoMetadata?.subtypeAlternatives = nil
+        refreshSuggestedName()
+    }
+
+    /// "Skirt · Mini · Black". Values come from the form, so the line follows any edit.
+    var summaryLine: String {
+        let kind = subtype.trimmingCharacters(in: .whitespacesAndNewlines)
+        var parts: [String] = []
+        if !kind.isEmpty { parts.append(kind.prefix(1).uppercased() + kind.dropFirst()) }
+        else if let category { parts.append(category.displayName) }
+        if let length, GarmentLength.applies(category: category, subtype: subtype) { parts.append(length.rawValue.capitalized) }
+        if let colorFamily { parts.append(colorFamily.displayName) }
+        if let secondaryColor { parts.append(secondaryColor.displayName) }
+        return parts.joined(separator: " · ")
     }
 
     mutating func discardStaleConfidence() {
@@ -44,6 +87,16 @@ extension GarmentMetadataForm {
             fields.autoMetadata?.category = nil
             fields.autoMetadata?.subtype = nil
             fields.autoMetadata?.length = nil
+            fields.autoMetadata?.subtypeAlternatives = nil
+            fields.refreshSuggestedName()
+        })
+    }
+
+    var nameBinding: Binding<String> {
+        Binding(get: { fields.displayName }, set: { value in
+            guard value != fields.displayName else { return }
+            fields.displayName = value
+            fields.editedFields.insert(.name)
         })
     }
 
@@ -56,7 +109,37 @@ extension GarmentMetadataForm {
                 fields.length = nil
                 fields.autoMetadata?.length = nil
             }
+            fields.refreshSuggestedName()
         })
+    }
+
+    /// The first thing on the form: what RIG saw, in one line, and nothing about models.
+    /// Shown only when the photo actually contributed something.
+    @ViewBuilder
+    var suggestionSummary: some View {
+        if let metadata = fields.autoMetadata,
+           metadata.semanticStatus == "suggested" || metadata.primaryColor != nil || metadata.subtypeAlternatives != nil {
+            Section {
+                if !fields.summaryLine.isEmpty {
+                    Text(fields.summaryLine)
+                        .font(.headline)
+                        .accessibilityLabel("From the photo: \(fields.summaryLine)")
+                }
+                if let alternatives = metadata.subtypeAlternatives, fields.subtype.isEmpty,
+                   !fields.editedFields.contains(.subtype) {
+                    HStack(spacing: RIGTheme.Spacing.s) {
+                        Text("Is it")
+                            .foregroundStyle(.secondary)
+                        ForEach(alternatives, id: \.self) { kind in
+                            Button(kind.prefix(1).uppercased() + kind.dropFirst()) { fields.chooseSubtype(kind) }
+                                .buttonStyle(.bordered)
+                        }
+                    }
+                }
+            } footer: {
+                Text("Tap any field below to change it.")
+            }
+        }
     }
 
     @ViewBuilder
@@ -74,30 +157,18 @@ extension GarmentMetadataForm {
             if GarmentLength.applies(category: fields.category, subtype: fields.subtype) {
                 Picker("Length", selection: Binding(
                     get: { fields.length },
-                    set: { fields.length = $0; fields.editedFields.insert(.length); fields.autoMetadata?.length = nil }
+                    set: {
+                        fields.length = $0
+                        fields.editedFields.insert(.length)
+                        fields.autoMetadata?.length = nil
+                        fields.refreshSuggestedName()
+                    }
                 )) {
                     Text("Not specified").tag(nil as GarmentLength?)
                     ForEach(GarmentLength.allCases, id: \.self) { length in
                         Text(length.rawValue.capitalized).tag(Optional(length))
                     }
                 }
-            }
-        }
-        if let metadata = fields.autoMetadata {
-            Section("Photo suggestions") {
-                if let category = metadata.category { Text("Suggested category: \(category.value.displayName)") }
-                if let subtype = metadata.subtype { Text("Suggested kind: \(subtype.value)") }
-                if let length = metadata.length { Text("Suggested length: \(length.value.rawValue.capitalized)") }
-                if let color = metadata.primaryColor { Text("Suggested colour: \(color.value.displayName)") }
-                if let color = metadata.secondaryColor { Text("Suggested secondary colour: \(color.value.displayName)") }
-                if metadata.semanticStatus == "unavailable" {
-                    Text("Choose the category and kind yourself for this photo.")
-                } else if metadata.category == nil || metadata.subtype == nil {
-                    Text("Some details could not be identified confidently. Please check the form.")
-                }
-                Text("Suggestions can be wrong. You can change every field before saving.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
         }
     }

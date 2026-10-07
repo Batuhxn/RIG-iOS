@@ -7,7 +7,7 @@ import SwiftUI
 /// so RIG asks for a category and a colour family and does not ask anyone to
 /// write prose about their trousers.
 struct GarmentMetadataFields: Equatable {
-    enum EditedField: Hashable { case category, subtype, length, primaryColor, secondaryColor }
+    enum EditedField: Hashable { case name, category, subtype, length, primaryColor, secondaryColor }
     var editedFields: Set<EditedField> = []
     var displayName: String = ""
     var subtype: String = ""
@@ -16,7 +16,11 @@ struct GarmentMetadataFields: Equatable {
     var secondaryColor: ColorFamily?
     var length: GarmentLength?
     var autoMetadata: AutoMetadataResult?
-    var seasons: SeasonSet = []
+    /// The last name RIG wrote for the user; a name equal to it is still RIG's to update.
+    var generatedName: String?
+    /// New garments default to all year. Season is not visible in a photo, and asking
+    /// for it would turn a one-tap save back into a form.
+    var seasons: SeasonSet = .all
     var isFavorite: Bool = false
     var notes: String = ""
 
@@ -25,8 +29,11 @@ struct GarmentMetadataFields: Equatable {
     }
 
     var isValid: Bool {
-        !trimmedName.isEmpty && category != nil && colorFamily != nil && !seasons.isEmpty
+        !trimmedName.isEmpty && category != nil && colorFamily != nil
     }
+
+    /// What is stored: clearing every season means "no particular season", i.e. all year.
+    var effectiveSeasons: SeasonSet { seasons.isEmpty ? .all : seasons }
 
     mutating func setSeason(_ season: Season, selected: Bool) {
         if selected {
@@ -63,7 +70,7 @@ struct GarmentMetadataFields: Equatable {
         item.category = category
         item.primaryColor = colorFamily
         applyAutoMetadata(to: item)
-        item.seasons = seasons
+        item.seasons = effectiveSeasons
         item.isFavorite = isFavorite
         item.notes = notes
         item.touch(now)
@@ -78,8 +85,10 @@ struct GarmentMetadataForm: View {
 
     var body: some View {
         Group {
+            suggestionSummary
+
             Section("Garment") {
-                TextField("Name", text: $fields.displayName)
+                TextField("Name", text: nameBinding)
                     .textInputAutocapitalization(.sentences)
                     .accessibilityLabel("Garment name")
                 TextField("Kind, for example crewneck (optional)", text: subtypeBinding)
@@ -104,6 +113,7 @@ struct GarmentMetadataForm: View {
                             fields.editedFields.insert(.primaryColor)
                             fields.autoMetadata?.primaryColor = nil
                             if fields.secondaryColor == family { fields.secondaryColor = nil; fields.autoMetadata?.secondaryColor = nil }
+                            fields.refreshSuggestedName()
                         }
                     }
                 }
@@ -120,9 +130,9 @@ struct GarmentMetadataForm: View {
                 }
                 Toggle("All year", isOn: allSeasonBinding)
             } header: {
-                Text("Seasons (required)")
+                Text("Seasons")
             } footer: {
-                Text("Choose at least one season. All year selects all four. This is not a weather forecast.")
+                Text("All year unless you narrow it down. This is not a weather forecast.")
             }
 
             autoMetadataFields
