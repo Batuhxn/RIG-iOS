@@ -23,7 +23,7 @@ TESTS = ROOT / "Tests"
 APPLE_MODULES = {
     "Foundation", "SwiftUI", "SwiftData", "UIKit", "Vision", "PhotosUI",
     "CoreImage", "CoreGraphics", "Observation", "XCTest", "Combine",
-    "AVFoundation", "ImageIO", "os",
+    "AVFoundation", "ImageIO", "os", "CoreML",
 }
 
 # Anything here would contradict the v0.1 privacy and dependency posture.
@@ -158,6 +158,8 @@ def main() -> int:
 
         is_test = path in tests
         for label, pattern in FORBIDDEN_PATTERNS.items():
+            if label == "machine-learning runtime" and path == SOURCES / "Services/AutoMetadata/CoreMLGarmentClassifier.swift":
+                continue  # v0.3: isolated on-device classifier only; binary policy remains unchanged.
             for match in re.finditer(pattern, code):
                 line = code[: match.start()].count("\n") + 1
                 failures.append(f"{path.relative_to(ROOT)}:{line}: {label} ({match.group(0)})")
