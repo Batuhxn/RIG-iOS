@@ -3,7 +3,8 @@ import XCTest
 
 final class AutoMetadataTests: XCTestCase {
     func testTransparentBackgroundCannotBecomePrimaryColor() {
-        let pixels = Array(repeating: UInt8(0), count: 400) + Array(repeating: [UInt8(255), 0, 0, 255], count: 100).flatMap { $0 }
+        let red: [UInt8] = Array(repeating: [UInt8(255), 0, 0, 255], count: 100).flatMap { $0 }
+        let pixels: [UInt8] = Array(repeating: UInt8(0), count: 400) + red
         let result = MaskedColorExtractor.extract(rgba: pixels)
         XCTAssertEqual(result?.primary.value, .red)
         XCTAssertNil(result?.secondary)
@@ -11,12 +12,13 @@ final class AutoMetadataTests: XCTestCase {
 
     func testEmptyAndSoftMasksAbstain() {
         XCTAssertNil(MaskedColorExtractor.extract(rgba: []))
-        XCTAssertNil(MaskedColorExtractor.extract(rgba: Array(repeating: [UInt8(50), 0, 0, 100], count: 100).flatMap { $0 }))
+        let soft: [UInt8] = Array(repeating: [UInt8(50), 0, 0, 100], count: 100).flatMap { $0 }
+        XCTAssertNil(MaskedColorExtractor.extract(rgba: soft))
     }
 
     func testSecondaryRequiresSignificantArea() {
-        let black = Array(repeating: [UInt8(0), 0, 0, 255], count: 80).flatMap { $0 }
-        let white = Array(repeating: [UInt8(255), 255, 255, 255], count: 20).flatMap { $0 }
+        let black: [UInt8] = Array(repeating: [UInt8(0), 0, 0, 255], count: 80).flatMap { $0 }
+        let white: [UInt8] = Array(repeating: [UInt8(255), 255, 255, 255], count: 20).flatMap { $0 }
         let result = MaskedColorExtractor.extract(rgba: black + white)
         XCTAssertEqual(result?.primary.value, .black)
         XCTAssertEqual(result?.secondary?.value, .white)
