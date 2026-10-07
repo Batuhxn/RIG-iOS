@@ -115,6 +115,7 @@ extension AddGarmentFlow {
             thumbnailRelativePath: presentation.thumbnailRelativePath,
             isBackgroundRemoved: presentation.usesCutout
         )
+        fields.applyAutoMetadata(to: item)
         modelContext.insert(item)
 
         do {

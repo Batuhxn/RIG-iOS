@@ -9,6 +9,9 @@ enum GarmentMutations {
         let displayName: String
         let subtype: String
         let categoryRaw: String
+        let secondaryColorRaw: String?
+        let lengthRaw: String?
+        let autoMetadataJSON: Data?
         let primaryColorRaw: String
         let seasonMask: Int
         let isFavorite: Bool
@@ -20,6 +23,9 @@ enum GarmentMutations {
             subtype = item.subtype
             categoryRaw = item.categoryRaw
             primaryColorRaw = item.primaryColorRaw
+            secondaryColorRaw = item.secondaryColorRaw
+            lengthRaw = item.lengthRaw
+            autoMetadataJSON = item.autoMetadataJSON
             seasonMask = item.seasonMask
             isFavorite = item.isFavorite
             notes = item.notes
@@ -31,6 +37,9 @@ enum GarmentMutations {
             item.subtype = subtype
             item.categoryRaw = categoryRaw
             item.primaryColorRaw = primaryColorRaw
+            item.secondaryColorRaw = secondaryColorRaw
+            item.lengthRaw = lengthRaw
+            item.autoMetadataJSON = autoMetadataJSON
             item.seasonMask = seasonMask
             item.isFavorite = isFavorite
             item.notes = notes
