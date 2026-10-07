@@ -15,6 +15,11 @@ name: iOS validation
 
 on:
   workflow_dispatch:
+  # TEMPORARY (v0.3 Auto Metadata review): build and test this one feature
+  # branch on push. The repository is public, so standard runners are not
+  # metered. Remove before merging.
+  push:
+    branches: [feat/v0.3-auto-metadata-fashionclip]
   # push:
   #   branches: [main]
   # pull_request:
