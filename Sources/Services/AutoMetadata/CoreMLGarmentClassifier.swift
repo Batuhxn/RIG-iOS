@@ -43,7 +43,7 @@ actor CoreMLGarmentClassifier: GarmentSemanticClassifying {
         let (model, manifest) = try load()
         let input = try Self.tensor(cutout)
         let features = try MLDictionaryFeatureProvider(dictionary: ["image": MLFeatureValue(multiArray: input)])
-        let prediction = try model.prediction(from: features)
+        let prediction = try await model.prediction(from: features)
         try Task.checkCancellation()
         guard let output = prediction.featureValue(for: "embedding")?.multiArrayValue else {
             throw AutoMetadataError.invalidContract
