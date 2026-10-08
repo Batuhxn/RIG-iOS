@@ -1,0 +1,966 @@
+{
+ "source": "alexeygrigorev/clothing-dataset (CC0), image ids",
+ "note": "The 120 most similar cross-photo pairs by raw-photo FashionCLIP cosine, labelled by eye. unsure pairs are excluded from every metric.",
+ "pairs": [
+  {
+   "rank": 0,
+   "a": "54f0bc77-e51b-48a8-872b-b552b89c5d73",
+   "b": "6050dd9d-c65c-4c57-9b07-00328b8aace3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9707,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 1,
+   "a": "1de9b9d6-a07c-4e88-899d-8fe4d0205f32",
+   "b": "4cd9a0b0-4953-47fb-b8d0-4eb9b3616b29",
+   "dataset_label": "Blazer",
+   "raw_photo_cosine": 0.9697,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 2,
+   "a": "ff3f01d5-0524-4851-8bcc-a1eb4bc096e6",
+   "b": "2475c540-ed7d-4d19-8c5c-171b7ab1d9af",
+   "dataset_label": "T-Shirt",
+   "raw_photo_cosine": 0.9642,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 3,
+   "a": "7e200cc9-e2fe-40ae-9e69-0d3ef877241b",
+   "b": "8cf2e2b8-6ae1-4fd0-b3ba-dcf4407e6641",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9636,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 4,
+   "a": "e6a8b33f-279c-4072-8dba-229d94205e55",
+   "b": "b59e4d4a-a283-4868-8a81-2f24d8b9c8d8",
+   "dataset_label": "Dress",
+   "raw_photo_cosine": 0.9635,
+   "verdict": "same_shot"
+  },
+  {
+   "rank": 5,
+   "a": "6e199a44-ee88-4a58-ace4-b6d926d82e6d",
+   "b": "2e688422-7be9-415a-94e6-488065873b40",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9624,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 6,
+   "a": "59ef7298-1528-4dfd-bacd-2d7d7786805d",
+   "b": "4cc4e673-fecd-4e4e-a7eb-f2efd39a5291",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9621,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 7,
+   "a": "ad517de5-8aad-4bc1-abf7-1ed07bd78cfe",
+   "b": "609b13bd-4048-4af2-b980-64ee45cb095a",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9616,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 8,
+   "a": "905cacba-3223-4260-9971-0de53b8f2447",
+   "b": "c88dde18-cd5c-402a-a23c-93d8d42c83eb",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9615,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 9,
+   "a": "b9e251b4-2d23-4e4a-9150-19c16c6f0565",
+   "b": "b94b8ac0-6119-4850-a688-8b59e8bc0ec3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9611,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 10,
+   "a": "06de9ebd-be39-4cc6-aea7-1d047ccf1a52",
+   "b": "76f8420a-bcea-4bb8-a049-befa05315470",
+   "dataset_label": "T-Shirt",
+   "raw_photo_cosine": 0.9603,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 11,
+   "a": "24eb8ba7-065a-4493-8fa6-b3afa89751f6",
+   "b": "9f68671b-af0e-4a50-bffd-2534a14fae59",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9597,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 12,
+   "a": "8cf2e2b8-6ae1-4fd0-b3ba-dcf4407e6641",
+   "b": "f43f802f-7ece-4bdd-994c-c2ed526d279f",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9595,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 13,
+   "a": "7e200cc9-e2fe-40ae-9e69-0d3ef877241b",
+   "b": "b070e185-a513-471e-bfa6-e0d4b480a73e",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9595,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 14,
+   "a": "0ccc318a-7d69-4d7f-a442-aac1f88bc453",
+   "b": "c54291e1-4aaa-43c1-b55a-5cb81a098bdb",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9583,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 15,
+   "a": "69c9f814-934a-47b7-a3d5-d107401207ff",
+   "b": "923d98e5-ff69-4b81-a16a-3fd3571a9a4a",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9577,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 16,
+   "a": "c6cdf184-6bc0-4a74-b979-cd8764781ab5",
+   "b": "718f71d8-3ff4-462c-8348-e35c5439e9bb",
+   "dataset_label": "Polo",
+   "raw_photo_cosine": 0.9573,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 17,
+   "a": "1fe7e919-6207-4927-82b6-2be0d12ceb55",
+   "b": "8033375c-8efe-40f6-a233-aa1577ab1b2c",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9571,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 18,
+   "a": "ad90a331-f35b-49e1-8321-2e916c637f1f",
+   "b": "00805d0e-7fe5-4251-b577-86065e4f6587",
+   "dataset_label": "T-Shirt",
+   "raw_photo_cosine": 0.9569,
+   "verdict": "same_shot"
+  },
+  {
+   "rank": 19,
+   "a": "8cf2e2b8-6ae1-4fd0-b3ba-dcf4407e6641",
+   "b": "908718d4-6fbc-4954-8237-e95966cdd063",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9565,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 20,
+   "a": "a934396b-3a7e-468d-bbc8-38290dd06507",
+   "b": "d3445515-3989-4420-8ad0-21e7ccf118eb",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9563,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 21,
+   "a": "fc532419-917e-46f4-bd63-f6edbd22f016",
+   "b": "bb619008-bd02-46c2-8690-ddab946dc10e",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9555,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 22,
+   "a": "78b7da73-ca6c-4e99-b88d-a9f358e7f0f2",
+   "b": "02341619-2fa3-42d4-bb5e-689518228e67",
+   "dataset_label": "Skirt",
+   "raw_photo_cosine": 0.9553,
+   "verdict": "same_shot"
+  },
+  {
+   "rank": 23,
+   "a": "74f16421-14fd-43de-9883-cbc02819336e",
+   "b": "2edb1db6-cd17-41d2-88e0-ba34801b656d",
+   "dataset_label": "Outwear",
+   "raw_photo_cosine": 0.9552,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 24,
+   "a": "b070e185-a513-471e-bfa6-e0d4b480a73e",
+   "b": "1834fc07-9e6a-4cb7-abc8-28f60dfdc5a3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9551,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 25,
+   "a": "8cf2e2b8-6ae1-4fd0-b3ba-dcf4407e6641",
+   "b": "1834fc07-9e6a-4cb7-abc8-28f60dfdc5a3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.955,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 26,
+   "a": "d58aed7a-6edc-4edf-abd0-f7d62f97ddb0",
+   "b": "ab587b33-a657-41e9-aa17-1d11bec3baaa",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9549,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 27,
+   "a": "b070e185-a513-471e-bfa6-e0d4b480a73e",
+   "b": "8cf2e2b8-6ae1-4fd0-b3ba-dcf4407e6641",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9544,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 28,
+   "a": "38e03d31-8068-4d73-82ac-c66334f907a5",
+   "b": "4cc4e673-fecd-4e4e-a7eb-f2efd39a5291",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9539,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 29,
+   "a": "9cb4943a-cf4b-467e-b39e-e4694d498fb2",
+   "b": "14c2f75c-458b-49cc-b3c7-5d4c30d416a7",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9533,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 30,
+   "a": "b070e185-a513-471e-bfa6-e0d4b480a73e",
+   "b": "908718d4-6fbc-4954-8237-e95966cdd063",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9528,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 31,
+   "a": "7e200cc9-e2fe-40ae-9e69-0d3ef877241b",
+   "b": "908718d4-6fbc-4954-8237-e95966cdd063",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9525,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 32,
+   "a": "8cf2e2b8-6ae1-4fd0-b3ba-dcf4407e6641",
+   "b": "29f8cf36-3ae6-4558-9f42-82f330c15b3d",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9521,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 33,
+   "a": "bbfb64cc-f0f9-470e-8b5a-eece4d4438fe",
+   "b": "90dfc5eb-a1d5-4cd9-a4ad-c3744461f01a",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9517,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 34,
+   "a": "b9e251b4-2d23-4e4a-9150-19c16c6f0565",
+   "b": "ae7a869f-c964-477a-90b4-11fd3ada4ccc",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9516,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 35,
+   "a": "10f4ac8d-9d8d-4a59-88dc-5e085d61aa48",
+   "b": "3306907c-309c-4227-b151-59c734cde663",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9499,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 36,
+   "a": "59ef7298-1528-4dfd-bacd-2d7d7786805d",
+   "b": "38e03d31-8068-4d73-82ac-c66334f907a5",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9499,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 37,
+   "a": "c56cf310-3a45-44f3-96c8-d478db8f6784",
+   "b": "4cc4e673-fecd-4e4e-a7eb-f2efd39a5291",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9495,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 38,
+   "a": "d347b134-5735-461a-9ee3-c1d0da89c101",
+   "b": "eaf87a18-8d62-408f-81b9-f22ecf14e34f",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9492,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 39,
+   "a": "b9e251b4-2d23-4e4a-9150-19c16c6f0565",
+   "b": "2701fe7b-49f6-4fba-8ac5-ab7f836b8681",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9487,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 40,
+   "a": "f86d0bfd-6a44-4dce-a1ee-235a5d0a49a8",
+   "b": "31bfad90-ce1e-4185-b92b-c527804af85f",
+   "dataset_label": "Outwear",
+   "raw_photo_cosine": 0.9486,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 41,
+   "a": "676b5429-6d96-4d32-ab30-d3bacc6eab8c",
+   "b": "b9549600-56ad-47ac-adcb-82ca5881dcae",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9483,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 42,
+   "a": "d0346b49-6710-4500-9394-eb19b4286b1d",
+   "b": "f46854d0-e922-4b63-9d93-cbadb993aace",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9483,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 43,
+   "a": "b9e251b4-2d23-4e4a-9150-19c16c6f0565",
+   "b": "7f427c6f-1c20-4ea0-a1d7-7e46715eeb8a",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9481,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 44,
+   "a": "f734ea0b-edd7-43f0-bd04-e6d2f82b80d7",
+   "b": "248aa31e-1a4e-48e3-ac17-8f007a4cf139",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9474,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 45,
+   "a": "c3ebfb65-451d-4192-92f6-29d06875898f",
+   "b": "6050dd9d-c65c-4c57-9b07-00328b8aace3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9473,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 46,
+   "a": "7eeb4c2f-b0b6-4208-a5ee-aed11bce6214",
+   "b": "26d61cdc-a947-45f1-a16c-bf3eb23a67ed",
+   "dataset_label": "Outwear",
+   "raw_photo_cosine": 0.9471,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 47,
+   "a": "7e200cc9-e2fe-40ae-9e69-0d3ef877241b",
+   "b": "29f8cf36-3ae6-4558-9f42-82f330c15b3d",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9469,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 48,
+   "a": "f30ba8bd-dbb8-4670-8d1b-fd13f0972296",
+   "b": "69c9f814-934a-47b7-a3d5-d107401207ff",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9469,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 49,
+   "a": "77117568-170e-4fa6-ad38-ba45bcbbc848",
+   "b": "ea0cfac2-165d-45ab-a87d-b34b7b1bdf87",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9469,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 50,
+   "a": "6f204610-7dce-4323-b1a2-f289a961f1de",
+   "b": "28fc3fad-5363-4c70-9c5d-ee739d2e21a8",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9468,
+   "verdict": "same_shot"
+  },
+  {
+   "rank": 51,
+   "a": "b5b06bb1-7888-417e-b3c4-0a47569b18a2",
+   "b": "c88dde18-cd5c-402a-a23c-93d8d42c83eb",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9467,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 52,
+   "a": "d4ca1d84-1cf0-4043-9988-fff1dacd52a0",
+   "b": "a6933111-83a0-42c6-868b-88df90dfcc56",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9464,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 53,
+   "a": "93f360fb-e0fe-4052-8ab2-fe37c44dc9c1",
+   "b": "1834fc07-9e6a-4cb7-abc8-28f60dfdc5a3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9463,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 54,
+   "a": "7237a8a6-7d86-429d-9310-a36c0c03c197",
+   "b": "8033375c-8efe-40f6-a233-aa1577ab1b2c",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9462,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 55,
+   "a": "908718d4-6fbc-4954-8237-e95966cdd063",
+   "b": "1834fc07-9e6a-4cb7-abc8-28f60dfdc5a3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9461,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 56,
+   "a": "718f71d8-3ff4-462c-8348-e35c5439e9bb",
+   "b": "e5bff47c-bc9d-4ee8-a76f-9b315188eddd",
+   "dataset_label": "Polo",
+   "raw_photo_cosine": 0.9458,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 57,
+   "a": "7f427c6f-1c20-4ea0-a1d7-7e46715eeb8a",
+   "b": "d4ca1d84-1cf0-4043-9988-fff1dacd52a0",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9453,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 58,
+   "a": "96f5353a-dec4-40c8-a8de-45793ee98bea",
+   "b": "d0fcfc1e-b1ae-43c9-ac0b-c4f65467756e",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9452,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 59,
+   "a": "39420559-56c9-4c0f-bb74-614bd0a3ddaa",
+   "b": "b94b8ac0-6119-4850-a688-8b59e8bc0ec3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9451,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 60,
+   "a": "ce627dae-599a-4aa4-915d-0d5a32737292",
+   "b": "c54291e1-4aaa-43c1-b55a-5cb81a098bdb",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.945,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 61,
+   "a": "395c39f5-dd23-4fb2-9e3a-78726081d909",
+   "b": "8033375c-8efe-40f6-a233-aa1577ab1b2c",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9447,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 62,
+   "a": "42a11cd4-2bb3-4db6-9bd3-baeac481b92d",
+   "b": "90dfc5eb-a1d5-4cd9-a4ad-c3744461f01a",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9444,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 63,
+   "a": "e77efa63-0477-4af2-b56d-c15da31bdad6",
+   "b": "e2a13922-97aa-4f43-8be3-c6b1bd983f81",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9443,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 64,
+   "a": "8993a2af-5a48-4477-ba0c-af3a7bce6c3e",
+   "b": "6e3cc915-a7c2-4dd3-b920-31b71e23d7fe",
+   "dataset_label": "Blazer",
+   "raw_photo_cosine": 0.9438,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 65,
+   "a": "b94b8ac0-6119-4850-a688-8b59e8bc0ec3",
+   "b": "2701fe7b-49f6-4fba-8ac5-ab7f836b8681",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9437,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 66,
+   "a": "8a3b06d4-6722-490e-85c9-de0eb834883d",
+   "b": "bc5487b6-c695-41c9-b2a9-62df4a83c387",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9434,
+   "verdict": "same_item"
+  },
+  {
+   "rank": 67,
+   "a": "676b5429-6d96-4d32-ab30-d3bacc6eab8c",
+   "b": "eaf87a18-8d62-408f-81b9-f22ecf14e34f",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9434,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 68,
+   "a": "b9e251b4-2d23-4e4a-9150-19c16c6f0565",
+   "b": "084214ae-f8d8-4ef2-80fa-f840c8376169",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9433,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 69,
+   "a": "91ad0f5f-7db0-4a18-88b6-6abdfa1789ce",
+   "b": "248aa31e-1a4e-48e3-ac17-8f007a4cf139",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9432,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 70,
+   "a": "2b3a5050-1533-4f69-a732-88e102b8e89d",
+   "b": "5ddd23ad-e060-4e8a-a5ef-f7d3179567ff",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9429,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 71,
+   "a": "b9549600-56ad-47ac-adcb-82ca5881dcae",
+   "b": "ab587b33-a657-41e9-aa17-1d11bec3baaa",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9429,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 72,
+   "a": "14b030c6-7721-42c3-acdf-a4b2f9fad919",
+   "b": "0c4fe429-cc94-49a1-b6b3-6660957db97b",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9428,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 73,
+   "a": "9b7cb036-7107-4b17-8c90-1bd82924997b",
+   "b": "c036e488-fea9-4061-9b6a-cbb982bdf346",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9426,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 74,
+   "a": "d4ca1d84-1cf0-4043-9988-fff1dacd52a0",
+   "b": "86e2c8d7-556b-47f8-9ea9-646e5eed03de",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9425,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 75,
+   "a": "86e2c8d7-556b-47f8-9ea9-646e5eed03de",
+   "b": "ddfa6840-69d8-4dec-8c91-7a11c57712fe",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9423,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 76,
+   "a": "194dd900-a3ed-4df7-a9bf-37f0d4630476",
+   "b": "5644e063-ad9d-4e12-896b-818a73bc3a15",
+   "dataset_label": "Undershirt",
+   "raw_photo_cosine": 0.9423,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 77,
+   "a": "7e200cc9-e2fe-40ae-9e69-0d3ef877241b",
+   "b": "08f1ea3a-3152-4956-91f2-1c5775a4d6c6",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9422,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 78,
+   "a": "d0fcfc1e-b1ae-43c9-ac0b-c4f65467756e",
+   "b": "6f620707-3a67-4a98-99c5-694763f3404f",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.942,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 79,
+   "a": "c7659814-270d-4295-a59f-1c7237180ffb",
+   "b": "cd4815be-7610-4b4a-bc20-e2fdeafb4b3a",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.942,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 80,
+   "a": "b5d1e4db-4455-412d-903b-108fb83723a8",
+   "b": "6e3cc915-a7c2-4dd3-b920-31b71e23d7fe",
+   "dataset_label": "Blazer",
+   "raw_photo_cosine": 0.9419,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 81,
+   "a": "378d4c2b-b181-4f51-bad6-1a04b728017f",
+   "b": "1834fc07-9e6a-4cb7-abc8-28f60dfdc5a3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9417,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 82,
+   "a": "0ccc318a-7d69-4d7f-a442-aac1f88bc453",
+   "b": "3306907c-309c-4227-b151-59c734cde663",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9416,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 83,
+   "a": "a9fe576c-a408-4b3f-80de-d9cb04d36360",
+   "b": "395c39f5-dd23-4fb2-9e3a-78726081d909",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9416,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 84,
+   "a": "68228a47-2453-4cf3-bdf6-72bfdd39c58b",
+   "b": "0d0bb91d-01d7-45df-827d-da96bbc44b15",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9415,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 85,
+   "a": "2701fe7b-49f6-4fba-8ac5-ab7f836b8681",
+   "b": "ae7a869f-c964-477a-90b4-11fd3ada4ccc",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9415,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 86,
+   "a": "7f427c6f-1c20-4ea0-a1d7-7e46715eeb8a",
+   "b": "1f89347d-3fe8-4e0e-853b-67c96c204c9e",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9414,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 87,
+   "a": "7e200cc9-e2fe-40ae-9e69-0d3ef877241b",
+   "b": "1834fc07-9e6a-4cb7-abc8-28f60dfdc5a3",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9406,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 88,
+   "a": "1ca03195-b1e8-4c47-85de-81a942ea561e",
+   "b": "34b616af-5ac8-45ba-a4cc-d73de11df0de",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9405,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 89,
+   "a": "1952d99b-8e70-480f-8423-1df24515096f",
+   "b": "d58aed7a-6edc-4edf-abd0-f7d62f97ddb0",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9403,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 90,
+   "a": "0c224954-0e0f-4caa-82c8-cf9581e89336",
+   "b": "c060dad4-b50b-44b7-a0df-151dfb781ea1",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9401,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 91,
+   "a": "7a203e8c-a607-44f1-803c-e524bbcee6ad",
+   "b": "77d24853-dcfd-428c-a7f5-a47de2df25bf",
+   "dataset_label": "Blazer",
+   "raw_photo_cosine": 0.9401,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 92,
+   "a": "bbeabf26-aa2e-420a-a7fa-d255adaa9f9a",
+   "b": "14c2f75c-458b-49cc-b3c7-5d4c30d416a7",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9401,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 93,
+   "a": "2adfd297-5e23-449b-bb28-b35a361b4645",
+   "b": "82387448-c860-4b92-b055-a9ae4d060ef9",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.94,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 94,
+   "a": "93f360fb-e0fe-4052-8ab2-fe37c44dc9c1",
+   "b": "378d4c2b-b181-4f51-bad6-1a04b728017f",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.94,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 95,
+   "a": "103926d8-d84b-4cc4-97c9-2bdb9b82f728",
+   "b": "663c933e-ff70-4221-b3f1-9a4f63f828e8",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9398,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 96,
+   "a": "ee23222a-f46f-4044-abb2-0a5d1795da36",
+   "b": "ab587b33-a657-41e9-aa17-1d11bec3baaa",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9398,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 97,
+   "a": "f734ea0b-edd7-43f0-bd04-e6d2f82b80d7",
+   "b": "91ad0f5f-7db0-4a18-88b6-6abdfa1789ce",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9396,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 98,
+   "a": "6cd85576-a3f5-4c47-98ab-5a236ec392ad",
+   "b": "7e4b6429-1db3-42d2-a114-18020dffded7",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9395,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 99,
+   "a": "9ae15e81-d0ca-4219-8adf-1a4231f6b98b",
+   "b": "cff2b443-f7ca-4771-8427-ebd1ccb7ddbd",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9393,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 100,
+   "a": "39420559-56c9-4c0f-bb74-614bd0a3ddaa",
+   "b": "0e7453e0-023c-4c34-b837-e6349846b112",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9393,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 101,
+   "a": "9d981826-b53b-449b-bf38-ead10ca80682",
+   "b": "e44b1445-0f43-4387-a8d6-e9c2d46de5ec",
+   "dataset_label": "T-Shirt",
+   "raw_photo_cosine": 0.9392,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 102,
+   "a": "0ff16b4c-4d65-45ed-bcc3-ee9b325ee011",
+   "b": "68cca66a-f96c-48a1-863c-77455172be43",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9391,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 103,
+   "a": "291e4ba7-108a-49c1-9ca9-b6d37fc28aa7",
+   "b": "908718d4-6fbc-4954-8237-e95966cdd063",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9391,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 104,
+   "a": "c56cf310-3a45-44f3-96c8-d478db8f6784",
+   "b": "59ef7298-1528-4dfd-bacd-2d7d7786805d",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.939,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 105,
+   "a": "89b99052-8133-4110-9b7e-9c152248d837",
+   "b": "f363bfeb-9ff0-4fcb-96fe-b103e9071acd",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9389,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 106,
+   "a": "c56cf310-3a45-44f3-96c8-d478db8f6784",
+   "b": "d00058bb-bca7-41ab-b933-4c06d7b06bb6",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9388,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 107,
+   "a": "c036e488-fea9-4061-9b6a-cbb982bdf346",
+   "b": "c5e0d38b-cfb8-4230-be76-75556947f563",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9386,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 108,
+   "a": "676b5429-6d96-4d32-ab30-d3bacc6eab8c",
+   "b": "c88dde18-cd5c-402a-a23c-93d8d42c83eb",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9385,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 109,
+   "a": "b94b8ac0-6119-4850-a688-8b59e8bc0ec3",
+   "b": "ea0cfac2-165d-45ab-a87d-b34b7b1bdf87",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9383,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 110,
+   "a": "54943d06-2d54-4356-868e-b7fe82b85814",
+   "b": "77d24853-dcfd-428c-a7f5-a47de2df25bf",
+   "dataset_label": "Blazer",
+   "raw_photo_cosine": 0.9382,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 111,
+   "a": "77117568-170e-4fa6-ad38-ba45bcbbc848",
+   "b": "b9e251b4-2d23-4e4a-9150-19c16c6f0565",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9382,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 112,
+   "a": "7f427c6f-1c20-4ea0-a1d7-7e46715eeb8a",
+   "b": "a6933111-83a0-42c6-868b-88df90dfcc56",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9381,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 113,
+   "a": "7e200cc9-e2fe-40ae-9e69-0d3ef877241b",
+   "b": "291e4ba7-108a-49c1-9ca9-b6d37fc28aa7",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9381,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 114,
+   "a": "95ab5afb-fc8f-4726-836f-2e44b0084dd7",
+   "b": "1caba263-088a-448a-be6d-30072c29af09",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.938,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 115,
+   "a": "c7659814-270d-4295-a59f-1c7237180ffb",
+   "b": "824224ea-df38-446b-a01e-ca078906bb93",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9379,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 116,
+   "a": "9fb287ae-c15a-4d3b-8b5b-6898a44d4e27",
+   "b": "cd7835bf-e5c8-4491-bb1c-23f193438632",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9378,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 117,
+   "a": "0ccc318a-7d69-4d7f-a442-aac1f88bc453",
+   "b": "ce627dae-599a-4aa4-915d-0d5a32737292",
+   "dataset_label": "Pants",
+   "raw_photo_cosine": 0.9378,
+   "verdict": "unsure"
+  },
+  {
+   "rank": 118,
+   "a": "bbeabf26-aa2e-420a-a7fa-d255adaa9f9a",
+   "b": "9cb4943a-cf4b-467e-b39e-e4694d498fb2",
+   "dataset_label": "Longsleeve",
+   "raw_photo_cosine": 0.9377,
+   "verdict": "look_alike"
+  },
+  {
+   "rank": 119,
+   "a": "ea0cfac2-165d-45ab-a87d-b34b7b1bdf87",
+   "b": "0e7453e0-023c-4c34-b837-e6349846b112",
+   "dataset_label": "Shirt",
+   "raw_photo_cosine": 0.9376,
+   "verdict": "look_alike"
+  }
+ ]
+}

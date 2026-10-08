@@ -77,6 +77,41 @@ ranks outfits, and `CompatibilityProvider` stays inert.
   no model present the app builds and the form is simply manual.
 - **Season** is no longer required: drafts default to all year. It cannot be seen
   in a photo, and requiring it turned a one-tap save back into a form.
+## A garment's identity is the v0.3 embedding, stored with it (v0.4)
+
+"Is this already in your wardrobe?" reuses the Auto Metadata encoder rather than
+adding a second model. The unit-length FashionCLIP image vector (512 Float32,
+2 KB) is saved on `ClothingItem` together with the ID of the model that made
+it. Vectors from different models are never compared, so changing the encoder
+only switches matching off for older items until they are embedded again.
+
+- **One suggestion or none.** Only the closest garment in the same category, and
+  only at cosine ≥ 0.93. The sheet shows the two photos and two buttons, "Same
+  item" and "Add as new". It shows no score and no band.
+- **0.93 is a provisional production threshold**, to be reopened after the iPhone
+  multi-view test. It is measured on three separate splits (garment-cropped
+  cutouts, as the app stores them):
+
+  | cosine | synthetic re-captures found / false | real same item found | real look-alike prompted |
+  |---|---|---|---|
+  | 0.89 | 71% / 0.5% | 14/14 | 57/68 |
+  | 0.93 | 47% / 0% | 10/14 | 13/68 |
+  | 0.95 | 23% / 0% | 6/14 | 0/68 |
+
+  Synthetic: 217 CC0 garments, 434 augmented re-captures, Apple Vision cutouts on
+  a macOS runner. Real: the 120 most similar photo pairs among 4,656 CC0 photos,
+  labelled by hand; the look-alikes are different garments (mostly one seller's
+  near-identical shirts and jeans), the hardest tail rather than a rate per user.
+- **The embedding cannot tell near-twins apart** (real same-item 0.91–0.98, real
+  look-alikes up to 0.95). Tile-by-tile embeddings and mask colour histograms did
+  not separate them either, so there is no second stage. 0.89 would prompt
+  often for anyone who owns several similar shirts or jeans; 0.95 would miss
+  most duplicates. A false prompt costs one tap; a miss costs a duplicate item.
+- Vision feature-print, the previous matcher, was worse at every operating point:
+  its shipped 0.75 cutoff would have prompted on about half of all new garments.
+  It is deleted.
+- Items saved before v0.4 have no stored vector and are embedded when a check
+  needs them. Nothing leaves the device.
 
 ## A compatibility signal can never exceed 15% of a score
 
@@ -131,9 +166,10 @@ Vision background removal, and the three fixed image sizes — so the two
 reviews differ in pacing, not in what they produce.
 
 What survived from the cancelled path is what that pipeline actually uses:
-Vision background removal and Vision feature-print similarity, whose duplicate
-comparison moved out of the cancelled session and into the individual import
-review, where the user is already looking at one candidate garment.
+Vision background removal and the duplicate comparison, which moved out of the
+cancelled session and into the individual import review, where the user is
+already looking at one candidate garment. (Its Vision feature-print matcher was
+replaced in v0.4; see below.)
 
 If multi-garment decomposition is revisited, it starts from the requirement,
 not from this code.

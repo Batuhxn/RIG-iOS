@@ -42,11 +42,13 @@ final class WardrobeIdentityTests: XCTestCase {
         XCTAssertNil(WardrobeIdentityMatching.best(candidate: candidate, among: [items[2]]))
     }
 
-    func testThresholdIsTheMeasuredFalsePromptBudget() {
-        XCTAssertEqual(WardrobeIdentityPolicy.threshold, 0.89)
+    func testThresholdIsTheProvisionalProductionValue() {
+        XCTAssertEqual(WardrobeIdentityPolicy.threshold, 0.93)
         let candidate = identity([1, 0])
-        let justBelow = identity([0.885, (1 - 0.885 * 0.885).squareRoot()])
+        let justBelow = identity([0.925, (1 - 0.925 * 0.925).squareRoot()])
+        let justAbove = identity([0.935, (1 - 0.935 * 0.935).squareRoot()])
         XCTAssertNil(WardrobeIdentityMatching.best(candidate: candidate, among: [(UUID(), justBelow)]))
+        XCTAssertNotNil(WardrobeIdentityMatching.best(candidate: candidate, among: [(UUID(), justAbove)]))
     }
 
     private actor FakeProvider: GarmentIdentityProviding {

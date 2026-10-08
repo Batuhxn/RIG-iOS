@@ -30,7 +30,7 @@ struct DuplicateComparisonSheet: View {
     var body: some View {
         VStack(spacing: RIGTheme.Spacing.m) {
             // v0.4 policy: one suggestion, no score or band, two choices. Shown only when the
-            // wardrobe identity is close enough that a false prompt is rare (~0.5% measured).
+            // wardrobe identity clears WardrobeIdentityPolicy.threshold.
             Text("Is this already in your wardrobe?")
                 .font(.headline)
                 .padding(.top, RIGTheme.Spacing.m)

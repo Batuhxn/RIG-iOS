@@ -1,12 +1,16 @@
 import Foundation
 
-/// v0.4 duplicate policy, from the wardrobe-identity benchmark (217 CC0 garments cut out by
-/// Apple Vision, re-captures re-cut by Vision, same-category scope): at cosine 0.89 the
-/// FashionCLIP identity raised a false "already in your wardrobe?" on 0.5% of new garments
-/// and found 71% of re-captures; Vision feature prints were worse at every operating point.
-/// Product rule (2026-10-08): one suggestion at most, false prompts <= ~1%, no score shown.
+/// v0.4 duplicate policy. Provisional production threshold, to be revisited after the iPhone
+/// multi-view gate. Measured on garment-cropped cutouts:
+/// - synthetic re-captures (217 CC0 garments, macOS Vision): 0.93 finds 47%, 0% false prompts
+///   (0.89: 71% / 0.5%);
+/// - real same-item photo pairs: 10/14 found (0.89: 14/14);
+/// - real look-alike different garments, the hardest 68 pairs of ~10.8M: 13/68 prompt (0.89: 57/68).
+/// The embedding cannot separate near-twin garments, so the threshold trades recall for fewer
+/// prompts in wardrobes with look-alikes. Vision feature prints were worse at every point.
+/// Product rule (2026-10-08): one suggestion at most, same category, no score shown.
 enum WardrobeIdentityPolicy {
-    static let threshold: Float = 0.89
+    static let threshold: Float = 0.93
 }
 
 /// Picks the single best stored identity above the threshold. Foundation-only, so the
