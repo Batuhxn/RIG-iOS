@@ -308,6 +308,38 @@ def shape_skirt(P, ids, ease=0.012, hip=0.86, rate=0.30):
     return new
 
 
+def straighten_hems(new, tris, band=0.035, split_x=False, neckline=0.0):
+    """Open-edge vertices near the garment's lowest point are snapped to one
+    height, so the hem is a straight line instead of following the quad grid's
+    steps. With split_x, each side (trouser leg) gets its own hem height."""
+    count = {}
+    for f in quads(tris):
+        loop = list(dict.fromkeys(f)) if len(f) == 3 else [f[0], f[1], f[2], f[5]]
+        for k in range(len(loop)):
+            e = tuple(sorted((loop[k], loop[(k + 1) % len(loop)])))
+            count[e] = count.get(e, 0) + 1
+    boundary = {v for e, c in count.items() if c == 1 for v in e if v in new}
+    groups = [[v for v in boundary if new[v][0] < 0], [v for v in boundary if new[v][0] >= 0]] if split_x else [list(boundary)]
+    for group in groups:
+        if not group:
+            continue
+        low = min(new[v][1] for v in group)
+        hem = [v for v in group if new[v][1] <= low + band]
+        y = float(np.mean([new[v][1] for v in hem]))
+        for v in hem:
+            new[v] = (new[v][0], y, new[v][2])
+    if neckline > 0:
+        # The neckline too: open-edge vertices near the top, centred on the body axis.
+        top = [v for v in boundary if abs(new[v][0]) < 0.12]
+        if top:
+            high = max(new[v][1] for v in top)
+            ring = [v for v in top if new[v][1] >= high - neckline]
+            y = float(np.mean([new[v][1] for v in ring]))
+            for v in ring:
+                new[v] = (new[v][0], y, new[v][2])
+    return new
+
+
 # --- binding ----------------------------------------------------------------
 
 def vertex_normals(P, tris):
@@ -517,7 +549,7 @@ def main():
     # 1. Relaxed T-shirt: hip-length hem, elbow sleeves.
     tee_tris = select(P, tights, lambda c: 0.84 <= c[1] <= NECK and abs(c[0]) <= 0.31)
     tee_ids = sorted(set(tee_tris))
-    tee_new = smooth_displacement(P, shape_top(P, tee_ids), tee_tris)
+    tee_new = straighten_hems(smooth_displacement(P, shape_top(P, tee_ids), tee_tris), tee_tris, neckline=0.025)
     axes = arm_axes(P, tee_ids)
     templates.append(build_template(
         "tee", P, body, bn, tee_tris, tee_new, allowed_any,
@@ -526,7 +558,7 @@ def main():
     # 2. Straight-leg trousers: waist to ankle.
     tr_tris = select(P, tights, lambda c: 0.06 <= c[1] <= WAIST and abs(c[0]) <= 0.33)
     tr_ids = sorted(set(tr_tris))
-    tr_new = smooth_displacement(P, shape_trousers(P, tr_ids), tr_tris)
+    tr_new = straighten_hems(smooth_displacement(P, shape_trousers(P, tr_ids), tr_tris), tr_tris, split_x=True)
     templates.append(build_template(
         "trousers", P, body, bn, tr_tris, tr_new, allowed_lower,
         lambda p: 0.10 <= p[1] <= WAIST - 0.03 and abs(p[0]) <= 0.30))
@@ -534,7 +566,7 @@ def main():
     # 3. A-line skirt: waist to knee.
     sk_tris = select(P, skirt, lambda c: c[1] >= 0.46)
     sk_ids = sorted(set(sk_tris))
-    sk_new = smooth_displacement(P, shape_skirt(P, sk_ids), sk_tris, iterations=3)
+    sk_new = straighten_hems(smooth_displacement(P, shape_skirt(P, sk_ids), sk_tris, iterations=3), sk_tris)
     templates.append(build_template(
         "skirt", P, body, bn, sk_tris, sk_new, allowed_torso,
         lambda p: 0.74 <= p[1] <= WAIST - 0.03 and abs(p[0]) <= 0.25))
@@ -545,7 +577,7 @@ def main():
     bod_new = shape_top(P, bod_ids, ease=0.010, hang_slope=0.25)
     dsk_tris = select(P, skirt, lambda c: c[1] >= 0.40)
     dsk_new = shape_skirt(P, sorted(set(dsk_tris)), ease=0.014, rate=0.22)
-    dress_new = smooth_displacement(P, {**bod_new, **dsk_new}, bod_tris + dsk_tris, iterations=3)
+    dress_new = straighten_hems(smooth_displacement(P, {**bod_new, **dsk_new}, bod_tris + dsk_tris, iterations=3), bod_tris + dsk_tris, neckline=0.025)
     templates.append(build_template(
         "dress", P, body, bn, bod_tris + dsk_tris, dress_new, allowed_torso,
         lambda p: 0.74 <= p[1] <= NECK - 0.06 and abs(p[0]) <= 0.18))
