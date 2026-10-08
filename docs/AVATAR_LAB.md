@@ -37,6 +37,28 @@ preview**, not a virtual fitting room. Nothing in it claims size, fit or drape.
   No photo, measurement or profile ever leaves the device. There is no network
   code; the static audit enforces that.
 
+## Garment Engine v1
+
+Four authored templates replace the body-hugging shells for the cuts they cover:
+relaxed tee (short sleeve, hip hem), straight-leg trousers, A-line skirt
+(knee/midi) and a simple sleeveless dress (knee/midi). Other cuts keep the
+shells: long sleeves, shorts, coats, shoes.
+
+| Step | What happens | Where |
+|---|---|---|
+| Cut | helper-tights / helper-skirt quads chosen by rest landmarks | build script |
+| Shape | convexified cross-sections + ease; tee hangs from the chest (slope 0.12), skirt flares 0.30 m/m below the hips, trouser legs keep the knee's section to the hem; displacement smoothed over the mesh | build script |
+| Panels | faces split front/back at the side seams; seam vertices duplicated, shading shared via `canonical` | build script |
+| Bind | nearest body triangle (limbs excluded where wrong), barycentric weights, offset along the normal + two tangents; the rest pose is reproduced to 1e-11 m | build script |
+| Hide | body triangles under the garment, with a margin at open ends | build script |
+| Deform | binding evaluated on the morphed body; normals from both panels | `GarmentDeformer` |
+| Assemble | body minus hidden triangles (3D), the whole body for 2D, garments in layer order | `AvatarOutfitBuilder` |
+
+**Photo vs unknown.** The front panel takes the garment's cutout. It is planar
+projected over the panel's front bounds and edge padded. The back panel is
+what one front photo cannot show: it is drawn in the garment's average
+colour, a shade darker, and never gets a mirrored or invented print.
+
 ## Architecture
 
 ```

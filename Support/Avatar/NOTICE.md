@@ -14,3 +14,13 @@ app does not use the MakeHuman name or logo.
 Not used: MakeHuman's application source (AGPL-3.0), MPFB2 code (GPL), and any
 community-repository assets (each has its own licence). Nothing in the app links
 or copies MakeHuman code; the build script only reads two plain text formats.
+
+# RIGGarments.rigarm — provenance
+
+Built by `Tools/AvatarAssets/build_garment_templates.py` from `RIGAvatarBody.rigavatar`
+alone: the four garment templates (tee, trousers, skirt, dress) are authored by that
+script from the CC0 `helper-tights` and `helper-skirt` topology in the body asset. No
+MakeHuman system or community clothing asset (`.mhclo`/`.obj`), and no MPFB code, is
+used or distributed; the barycentric binding is an independent implementation of the
+idea MakeHuman documents for `.mhclo` files. Rebuilding with the same body asset gives
+the same file.
