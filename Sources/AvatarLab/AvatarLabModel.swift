@@ -71,7 +71,10 @@ struct AvatarGarmentLayer: Identifiable {
 /// Everything the stage draws for one body shape and outfit.
 struct AvatarStageContent {
     let id = UUID()
+    /// The body without the skin 3D garments cover.
     let body: AvatarMesh
+    /// The whole body, for the 2D overlay (which draws no 3D garments).
+    var bareBody: AvatarMesh? = nil
     let garments: [AvatarGarmentLayer]
     let computeMilliseconds: Int
 }
@@ -96,7 +99,7 @@ final class AvatarLabModel {
     private(set) var silhouettePreviews: [String: UIImage] = [:]
 
     private var asset: AvatarBodyAsset?
-    private var builder: AvatarGarmentShellBuilder?
+    private var builder: AvatarOutfitBuilder?
     private var textures: [UUID: (image: UIImage?, photo: UIImage?, colour: UIColor)] = [:]
     private var updateTask: Task<Void, Never>?
     private let store: AvatarProfileStore?
@@ -113,7 +116,9 @@ final class AvatarLabModel {
         do {
             let (asset, builder) = try await Task.detached(priority: .userInitiated) {
                 let asset = try AvatarBodyAsset.bundled()
-                return (asset, AvatarGarmentShellBuilder(asset: asset))
+                // Garment Engine v1 templates are optional: without them every cut uses a shell.
+                let templates = try? GarmentTemplateLibrary.bundled(for: asset)
+                return (asset, AvatarOutfitBuilder(asset: asset, templates: templates))
             }.value
             self.asset = asset
             self.builder = builder
@@ -260,20 +265,15 @@ final class AvatarLabModel {
     }
 
     /// Off the main actor; nil once cancelled.
-    nonisolated private static func buildGeometry(asset: AvatarBodyAsset, builder: AvatarGarmentShellBuilder,
-                                                  shape: AvatarBodyShape, cuts: [AvatarGarmentCut]) async -> (AvatarMesh, [AvatarMesh])? {
-        let engine = AvatarMorphEngine(asset: asset)
-        let positions = engine.positions(for: shape)
-        guard !Task.isCancelled else { return nil }
-        let body = engine.mesh(named: "body", positions: positions)
-        guard !Task.isCancelled else { return nil }
-        return (body, builder.shells(for: cuts, positions: positions))
+    nonisolated private static func buildGeometry(builder: AvatarOutfitBuilder, shape: AvatarBodyShape,
+                                                  cuts: [AvatarGarmentCut]) async -> (body: AvatarMesh, bareBody: AvatarMesh, garments: [AvatarMesh])? {
+        builder.build(shape: shape, cuts: cuts)
     }
 
     /// Morphs the body and rebuilds the garment shells off the main thread.
     /// A newer request cancels an older one, so dragging a slider never queues work.
     private func refresh() {
-        guard let asset, let builder else { return }
+        guard let builder else { return }
         updateTask?.cancel()
         let shape = profile.shape
         let garments = activeGarments
@@ -286,17 +286,17 @@ final class AvatarLabModel {
             let started = Date()
             // Child tasks (not detached), so cancelling this refresh cancels them too.
             async let loaded = Self.loadTextures(missing, from: imageStore)
-            async let geometryJob = Self.buildGeometry(asset: asset, builder: builder, shape: shape, cuts: garments.map(\.cut))
+            async let geometryJob = Self.buildGeometry(builder: builder, shape: shape, cuts: garments.map(\.cut))
             let (newTextures, built) = await (loaded, geometryJob)
             guard let self, !Task.isCancelled, let geometry = built else { return }
             for (id, image, photo, colour) in newTextures { self.textures[id] = (image, photo, colour) }
-            let layers = zip(garments, geometry.1).map { garment, mesh in
+            let layers = zip(garments, geometry.garments).map { garment, mesh in
                 AvatarGarmentLayer(id: garment.id, cut: garment.cut, mesh: mesh,
                                    texture: self.textures[garment.id]?.image,
                                    photo: self.textures[garment.id]?.photo,
                                    colour: self.textures[garment.id]?.colour ?? .gray)
             }
-            self.content = AvatarStageContent(body: geometry.0, garments: layers,
+            self.content = AvatarStageContent(body: geometry.body, bareBody: geometry.bareBody, garments: layers,
                                               computeMilliseconds: Int(Date().timeIntervalSince(started) * 1000))
         }
     }

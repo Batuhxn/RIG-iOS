@@ -43,8 +43,11 @@ struct AvatarMesh: Sendable, Equatable {
     var normals: [SIMD3<Float>]
     var uvs: [SIMD2<Float>]
     var triangles: [UInt32]
+    /// A second triangle group drawn with its own material: a garment's back panel,
+    /// the part a single front photo cannot show. Empty for everything else.
+    var backTriangles: [UInt32] = []
 
-    var isEmpty: Bool { triangles.isEmpty }
+    var isEmpty: Bool { triangles.isEmpty && backTriangles.isEmpty }
 
     /// Front-view bounds (x, y) in metres.
     var frontBounds: (min: SIMD2<Float>, max: SIMD2<Float>)? {
@@ -61,9 +64,10 @@ struct AvatarMesh: Sendable, Equatable {
     func objText() -> String {
         var out = ""
         for p in positions { out += "v \(p.x) \(p.y) \(p.z)\n" }
+        let all = triangles + backTriangles
         var t = 0
-        while t + 2 < triangles.count {
-            out += "f \(triangles[t] + 1) \(triangles[t + 1] + 1) \(triangles[t + 2] + 1)\n"
+        while t + 2 < all.count {
+            out += "f \(all[t] + 1) \(all[t + 1] + 1) \(all[t + 2] + 1)\n"
             t += 3
         }
         return out

@@ -26,6 +26,9 @@ targets:
       # Tools/AvatarAssets/build_avatar_asset.py (docs/AVATAR_LAB.md).
       - path: Support/Avatar/RIGAvatarBody.rigavatar
         buildPhase: resources
+      # Garment Engine v1 templates, authored by Tools/AvatarAssets/build_garment_templates.py.
+      - path: Support/Avatar/RIGGarments.rigarm
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.rig.app

@@ -106,7 +106,7 @@ final class AvatarStageCoordinator {
         // SwiftUI updates the view for unrelated state too; only rebuild on new geometry.
         if let shown, shown.content == content.id, shown.mode == mode { return }
         shown = (content.id, mode)
-        let body = node(for: content.body, material: Self.skinMaterial)
+        let body = node(for: mode == .flat2D ? (content.bareBody ?? content.body) : content.body, materials: [Self.skinMaterial])
         bodyNode?.removeFromParentNode()
         avatarNode.addChildNode(body)
         bodyNode = body
@@ -115,19 +115,16 @@ final class AvatarStageCoordinator {
         garmentNodes = []
         guard mode != .flat2D else { return }
         for layer in content.garments where !layer.mesh.isEmpty {
-            let material = SCNMaterial()
-            material.lightingModel = .physicallyBased
-            material.roughness.contents = 0.85
-            material.metalness.contents = 0.0
-            material.isDoubleSided = true
+            let front = Self.fabric(layer.colour)
             if mode == .photo3D, let texture = layer.texture {
-                material.diffuse.contents = texture
-                material.diffuse.wrapS = .clamp
-                material.diffuse.wrapT = .clamp
-            } else {
-                material.diffuse.contents = layer.colour
+                front.diffuse.contents = texture
+                front.diffuse.wrapS = .clamp
+                front.diffuse.wrapT = .clamp
             }
-            let garment = node(for: layer.mesh, material: material)
+            // The back panel is what a single front photo cannot show: it gets the
+            // garment's own average colour, a shade darker, never an invented print.
+            let back = Self.fabric(Self.unknownRegion(layer.colour))
+            let garment = node(for: layer.mesh, materials: [front, back])
             garment.renderingOrder = layer.cut.layer
             avatarNode.addChildNode(garment)
             garmentNodes.append(garment)
@@ -169,17 +166,38 @@ final class AvatarStageCoordinator {
         return material
     }()
 
-    private func node(for mesh: AvatarMesh, material: SCNMaterial) -> SCNNode {
+    private static func fabric(_ colour: UIColor) -> SCNMaterial {
+        let material = SCNMaterial()
+        material.lightingModel = .physicallyBased
+        material.diffuse.contents = colour
+        material.roughness.contents = 0.85
+        material.metalness.contents = 0.0
+        material.isDoubleSided = true
+        return material
+    }
+
+    static func unknownRegion(_ colour: UIColor) -> UIColor {
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard colour.getHue(&h, saturation: &s, brightness: &b, alpha: &a) else { return colour }
+        return UIColor(hue: h, saturation: s * 0.9, brightness: b * 0.88, alpha: 1)
+    }
+
+    /// One geometry; the back panel, when there is one, is a second element with its
+    /// own material.
+    private func node(for mesh: AvatarMesh, materials: [SCNMaterial]) -> SCNNode {
         let vertices = mesh.positions.map { SCNVector3($0.x, $0.y, $0.z) }
         let normals = mesh.normals.map { SCNVector3($0.x, $0.y, $0.z) }
         let uvs = mesh.uvs.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) }
-        let element = SCNGeometryElement(indices: mesh.triangles, primitiveType: .triangles)
+        var elements = [SCNGeometryElement(indices: mesh.triangles, primitiveType: .triangles)]
+        if !mesh.backTriangles.isEmpty {
+            elements.append(SCNGeometryElement(indices: mesh.backTriangles, primitiveType: .triangles))
+        }
         let geometry = SCNGeometry(sources: [
             SCNGeometrySource(vertices: vertices),
             SCNGeometrySource(normals: normals),
             SCNGeometrySource(textureCoordinates: uvs),
-        ], elements: [element])
-        geometry.materials = [material]
+        ], elements: elements)
+        geometry.materials = Array(materials.prefix(elements.count))
         return SCNNode(geometry: geometry)
     }
 }

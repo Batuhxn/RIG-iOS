@@ -9,6 +9,8 @@ name: Avatar Lab
 
 on:
   workflow_dispatch:
+  push: # TEMPORARY (Garment Engine v1 session) — remove before merge
+    branches: [feat/v0.5-avatar-lab]
 
 permissions:
   contents: read
