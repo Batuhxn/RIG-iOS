@@ -59,9 +59,22 @@ def precision(rows, key, field):
 
 
 def summarize(out):
-    fixtures = {f["id"]: f for f in json.loads((out / "manifest.json").read_text())}
+    fixture_list = json.loads((out / "manifest.json").read_text())
+    fixtures = {f["id"]: f for f in fixture_list}
+    if len(fixtures) < 2 or len(fixtures) != len(fixture_list):
+        raise ValueError("E2E requires nonempty, unique cold and warm fixtures")
     reference = json.loads((out / "python_coreml_reference.json").read_text())
     obs = json.loads((out / "observations.json").read_text())
+    ids = [o["id"] for o in obs]
+    if len(ids) != len(set(ids)) or set(ids) != set(fixtures) or set(reference) != set(fixtures):
+        raise ValueError("E2E observations/reference must cover every fixture exactly once")
+    if sum(bool(o["cold"]) for o in obs) != 1:
+        raise ValueError("E2E requires exactly one cold observation")
+    for o in obs:
+        if o["expected"] != fixtures[o["id"]]["expected"]:
+            raise ValueError("E2E observation ground truth differs from its fixture")
+        if o.get("semanticStatus") not in ("suggested", "abstained"):
+            raise ValueError("E2E requires a successful classifier for every fixture")
     rows, flips, moves, ms = [], [], 0, []
     for o in obs:
         swift = dict(o["predicted"])
@@ -87,8 +100,9 @@ def summarize(out):
         for f in PREFILLED:
             c, n, l = precision(part, "swift", f)
             rc, rn, _ = precision(part, "ref", f)
-            if f in ("category", "subtype") and split == "catalog" and n and rn:
-                worst_drop = max(worst_drop, rc / rn - c / n)
+            if f in ("category", "subtype") and split == "catalog" and rn:
+                # A total loss of suggestions cannot establish retained precision.
+                worst_drop = max(worst_drop, rc / rn - (c / n if n else 0.0))
             line.append(f"{f}={c}/{n} of {l} (ref {rc}/{rn})")
         print(f"::notice title=E2E Swift {split}::" + " | ".join(line))
     cold = next(o["milliseconds"] for o in obs if o["cold"])

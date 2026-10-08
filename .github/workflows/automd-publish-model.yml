@@ -47,6 +47,14 @@ jobs:
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "release $tag already exists; refusing to overwrite" >&2; exit 1
           fi
+          # Releases and Git tags are different objects. --target does not retarget
+          # an existing tag; reject tag-only names as well, and fail on lookup errors.
+          existing="$(git ls-remote --tags --exit-code origin "refs/tags/$tag" 2>&1)" && status=0 || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "tag $tag already exists; refusing to reuse" >&2; exit 1
+          elif [ "$status" -ne 2 ]; then
+            echo "could not establish that tag $tag is absent" >&2; exit 1
+          fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=${tag#automd-model-}" >> "$GITHUB_OUTPUT"
 
@@ -110,7 +118,11 @@ jobs:
           VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" release/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+          # Atomically reserve a fresh tag at the gated commit. If another writer
+          # created it since preflight, fail rather than attaching assets to that tag.
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f "ref=refs/tags/$TAG" -f "sha=$GITHUB_SHA" > /dev/null
+          gh release create "$TAG" release/* --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "RiG Auto Metadata encoder $VERSION (FashionCLIP 2.0, nn-int8)" \
             --notes "On-device garment encoder for RiG Auto Metadata. FashionCLIP 2.0 image tower (MIT; see docs/FASHIONCLIP_LEGAL_RISK.md), Core ML neural network, 8-bit weights. These are the exact bytes that passed the Core ML parity gate in this workflow run; see SHA256-MANIFEST and coreml-parity. Not for general reuse; attribution: Patrick John Chia et al., FashionCLIP."
           echo "::notice title=Released::$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"
