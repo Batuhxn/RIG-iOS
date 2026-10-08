@@ -8,9 +8,9 @@ preview**, not a virtual fitting room. Nothing in it claims size, fit or drape.
 - **Body.** MakeHuman's CC0 base mesh, baked to its default neutral figure
   (1.65 m, A-pose), smoothed into a dress-form "mannequin" (face, chest and
   pelvis detail removed), with 30 sparse morph targets.
-- **Controls.** 16 signed sliders, five shown first: Shoulders, Upper body, Waist,
+- **Controls.** 15 signed sliders, five shown first: Shoulders, Upper body, Waist,
   Hips, Legs. The rest sit under "Refine": Height, Torso length, Chest, Ribcage,
-  Tummy, Seat, Thighs, Arm length, Upper arms, Overall, Frame. Each slider drives
+  Tummy, Seat, Thighs, Arm length, Upper arms, Overall. Each slider drives
   only its own region's targets: widening the hips moves no shoulder vertex
   (a test checks this). There are no units and no measurement fields.
 - **Garments.** Cut from MakeHuman's own clothing helpers (`helper-tights`, a
@@ -23,11 +23,14 @@ preview**, not a virtual fitting room. Nothing in it claims size, fit or drape.
     shell. Transparent areas of the cutout are filled with the garment's own
     average colour.
   - *3D colour*: the same shell in that average colour.
-  - *2D*: an orthographic front view with the cutout photo laid over the shell's
-    front bounds (Approach A).
+  - *2D* (default): an orthographic front view. The cutout photo is cut into 16
+    horizontal strips, collar to hem, and each strip is stretched to the shell's
+    front width at that height (Approach A). The photo keeps its own pixels and
+    follows shoulders, waist and hips.
   - Both 3D modes rotate (turntable).
-- **Onboarding.** "Make it feel like you": pick one of three starting points
-  (Balanced, Curved, Straight), then adjust. Nothing is required.
+- **Onboarding.** "Make it feel like you": pick one of three unnamed starting
+  points ("Silhouette 1 / 2 / 3", shown as rendered thumbnails), then adjust.
+  Nothing is required. The Frame control (MakeHuman's sex macros) is hidden.
 - **Storage.** One JSON file, `Application Support/Avatar/avatar-profile.json`:
   the slider values, the current outfit (garment IDs) and saved outfits. It is
   not a SwiftData model, so no store migration. "Delete avatar" removes the file.
@@ -97,7 +100,7 @@ asset or of OBJ files with numpy and Pillow, for checks without a Mac.
 | | A: 2D overlay | B: 3D shell + photo |
 |---|---|---|
 | Garment recognisability | best from the front: the real photo, undistorted | good from the front; side and back show the front photo stretched |
-| Body-shape compatibility | only a bounding box: the photo scales, never reshapes | follows every slider |
+| Body-shape compatibility | per-strip widths follow the outline; no depth | follows every slider |
 | Rotation | none | full turntable |
 | Runtime | trivial | ~50 ms per update for body + 2 garments (Linux CPU, debug); CI measures the simulator |
 | Complexity | low | moderate, already built |
