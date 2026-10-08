@@ -23,7 +23,7 @@ TESTS = ROOT / "Tests"
 APPLE_MODULES = {
     "Foundation", "SwiftUI", "SwiftData", "UIKit", "Vision", "PhotosUI",
     "CoreImage", "CoreGraphics", "Observation", "XCTest", "Combine",
-    "AVFoundation", "ImageIO", "os",
+    "AVFoundation", "ImageIO", "os", "SceneKit",
 }
 
 # Anything here would contradict the v0.1 privacy and dependency posture.

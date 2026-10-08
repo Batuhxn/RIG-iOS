@@ -22,6 +22,10 @@ targets:
       - path: Sources
       - path: Support/PrivacyInfo.xcprivacy
         buildPhase: resources
+      # Avatar Lab body asset, built from MakeHuman CC0 assets by
+      # Tools/AvatarAssets/build_avatar_asset.py (docs/AVATAR_LAB.md).
+      - path: Support/Avatar/RIGAvatarBody.rigavatar
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.rig.app

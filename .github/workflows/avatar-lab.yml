@@ -1,0 +1,73 @@
+# Avatar Lab (v0.5, experimental): build, full XCTest suite, and offscreen
+# avatar renders on an iPhone simulator. Runs on GitHub's standard macOS runner,
+# which is free for public repositories.
+#
+# TEMPORARY: the push trigger below exists only so the feature branch can be
+# verified without a Mac. Remove it before any merge; manual dispatch stays.
+
+name: Avatar Lab
+
+on:
+  workflow_dispatch:
+  push: # TEMPORARY — remove before merge
+    branches: [feat/v0.5-avatar-lab]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: avatar-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  avatar:
+    name: Build, test and render the avatar
+    runs-on: macos-15
+    timeout-minutes: 50
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16
+        run: |
+          set -euo pipefail
+          SELECTED="/Applications/Xcode_16.4.app"
+          [ -d "$SELECTED" ] || SELECTED="$(ls -d /Applications/Xcode_16*.app | sort -V | tail -n 1)"
+          sudo xcode-select --switch "$SELECTED/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: command -v xcodegen >/dev/null 2>&1 || brew install xcodegen
+
+      - name: Generate, build and run every test
+        run: |
+          set -o pipefail
+          mkdir -p build
+          bash scripts/validate_macos.sh 2>&1 | tee build/avatar-lab.log
+
+      - name: Publish avatar metrics and snapshots as annotations
+        if: always()
+        run: |
+          set -u
+          LOG=build/avatar-lab.log
+          [ -f "$LOG" ] || exit 0
+          METRICS="$(grep -o 'AVATAR_METRIC [^ ]*' "$LOG" | sed 's/AVATAR_METRIC //' | sort -u | tr '\n' ' ')"
+          echo "::notice title=avatar-metrics::${METRICS:-none}"
+          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' "$LOG" | sort -u -k2,2 | head -n 8 | while read -r _ name data; do
+            echo "::notice title=snap-${name}::${data}"
+          done
+          grep -E "error:|failed \(" "$LOG" | grep -v "^$" | head -n 10 | while read -r line; do
+            echo "::warning title=test-failure::${line}"
+          done
+          tail -n 3 "$LOG"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: avatar-lab-results
+          path: |
+            build/RIGTests.xcresult
+            build/avatar-lab.log
+          if-no-files-found: ignore
+          retention-days: 7

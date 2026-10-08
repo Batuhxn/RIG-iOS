@@ -4,6 +4,7 @@ enum RIGTab: Hashable {
     case home
     case wardrobe
     case looks
+    case avatar
 }
 
 struct RootView: View {
@@ -28,6 +29,12 @@ struct RootView: View {
                     Label("Looks", systemImage: "square.stack")
                 }
                 .tag(RIGTab.looks)
+
+            AvatarLabView()
+                .tabItem {
+                    Label("Avatar", systemImage: "figure.stand")
+                }
+                .tag(RIGTab.avatar)
         }
     }
 }
