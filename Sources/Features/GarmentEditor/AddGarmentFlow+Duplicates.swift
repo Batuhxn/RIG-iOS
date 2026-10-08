@@ -107,7 +107,7 @@ extension AddGarmentFlow {
             subtype: fields.subtype.trimmingCharacters(in: .whitespacesAndNewlines),
             category: category,
             primaryColor: colorFamily,
-            seasons: fields.seasons,
+            seasons: fields.effectiveSeasons,
             isFavorite: fields.isFavorite,
             notes: fields.notes,
             originalImageRelativePath: importResult.originalRelativePath,
@@ -115,6 +115,7 @@ extension AddGarmentFlow {
             thumbnailRelativePath: presentation.thumbnailRelativePath,
             isBackgroundRemoved: presentation.usesCutout
         )
+        fields.applyAutoMetadata(to: item)
         modelContext.insert(item)
 
         do {

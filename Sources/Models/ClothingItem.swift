@@ -14,6 +14,10 @@ final class ClothingItem {
     var displayName: String
     var subtype: String
     var categoryRaw: String
+    var secondaryColorRaw: String? = nil
+    var lengthRaw: String? = nil
+    /// Suggestion provenance, never authoritative over the user's chosen values.
+    var autoMetadataJSON: Data? = nil
     var primaryColorRaw: String
     var seasonMask: Int
     var isFavorite: Bool

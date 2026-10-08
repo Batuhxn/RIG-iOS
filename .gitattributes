@@ -1,0 +1,5 @@
+# Keep the repository LF everywhere; edits from Windows tools otherwise commit CRLF.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.mlmodel binary

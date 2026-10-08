@@ -1,0 +1,11 @@
+# Generated or third-party; never committed (Polyvore images are not ours to redistribute).
+.cache/
+data/images/
+data/cutouts/
+data/real/cut/
+data/polyvore_index.jsonl
+artifacts/
+results/
+device-fixtures/
+swift-check/
+__pycache__/

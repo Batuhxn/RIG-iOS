@@ -11,8 +11,10 @@ struct RIGServices: Sendable {
     let engine: OutfitEngine
     let similarityMatcher: any GarmentSimilarityMatching
 
+    var metadataAnalyzer: (any GarmentMetadataAnalyzing)? = nil
+
     var importService: GarmentImportService {
-        GarmentImportService(store: imageStore, backgroundRemover: backgroundRemover)
+        GarmentImportService(store: imageStore, backgroundRemover: backgroundRemover, metadataAnalyzer: metadataAnalyzer)
     }
 
     /// Production wiring. Note the compatibility provider: v0.1 passes none, so
@@ -22,7 +24,8 @@ struct RIGServices: Sendable {
             imageStore: try GarmentImageStore.applicationSupport(),
             backgroundRemover: VisionBackgroundRemover(),
             engine: OutfitEngine(configuration: .default, compatibilityProvider: nil),
-            similarityMatcher: VisionFeaturePrintSimilarityMatcher()
+            similarityMatcher: VisionFeaturePrintSimilarityMatcher(),
+            metadataAnalyzer: AutoMetadataService(classifier: CoreMLGarmentClassifier())
         )
     }
 

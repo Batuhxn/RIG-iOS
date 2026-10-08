@@ -1,0 +1,59 @@
+# Auto Metadata: Core ML runtime parity on a macOS runner.
+#
+# Re-exports the garment encoder from the pinned FashionCLIP revision, runs the
+# real Core ML runtime on the 311 benchmark cutouts and compares product
+# decisions with the fp32 PyTorch reference. Results are echoed as public
+# annotations. No secrets, no signing, no publishing.
+
+name: Auto Metadata Core ML parity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automd-coreml-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity:
+    name: Core ML runtime parity
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned toolchain
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.5.0 transformers==4.48.3 coremltools==8.3.0 \
+            pillow==11.0.0 numpy==1.26.4 pyarrow==19.0.1 huggingface_hub safetensors
+          python -c "import coremltools, torch; print(coremltools.__version__, torch.__version__)"
+
+      - name: Run Core ML parity
+        working-directory: Tools/AutoMetadataBench/scripts
+        env:
+          HF_HUB_DISABLE_TELEMETRY: "1"
+          PYTHONUNBUFFERED: "1"
+        run: python ci_parity.py
+
+      - name: Keep results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: automd-coreml-parity
+          path: |
+            Tools/AutoMetadataBench/results/
+            Tools/AutoMetadataBench/artifacts/export-validation.json
+            Tools/AutoMetadataBench/artifacts/RIGGarmentPrompts.json
+          if-no-files-found: ignore
+          retention-days: 14

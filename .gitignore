@@ -44,9 +44,10 @@ Thumbs.db
 __pycache__/
 *.pyc
 
-# Anything that must never enter the app bundle. RIG ships no model
-# artefacts of any kind — see docs/DECISIONS.md, "Rules before ML, and the ML
-# seam stays inert". The same patterns are enforced by scripts/static_audit.py.
+# Model artefacts never enter git. The single exception to "no bundled model"
+# (Resources/Models/RIGGarmentEncoder.mlmodel) is fetched against a pinned
+# SHA-256 — see docs/DECISIONS.md, "One garment encoder, delivered outside git".
+# The same patterns are enforced by scripts/static_audit.py.
 *.mlmodel
 *.mlmodelc
 *.mlpackage/

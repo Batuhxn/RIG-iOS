@@ -1,0 +1,3937 @@
+[
+ {
+  "id": "pv-133557533",
+  "source": "polyvore",
+  "item_id": "133557533",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 35420,
+  "title": "Lazy Tee White",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-36430459",
+  "source": "polyvore",
+  "item_id": "36430459",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 29093,
+  "title": "Rokit Recycled Black 'Harley Davidson' Cropped T-Shirt - Vintage cloth...",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-182198751",
+  "source": "polyvore",
+  "item_id": "182198751",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 14669,
+  "title": "Pink Drop Shoulder High Low Cuffed T-shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-205903482",
+  "source": "polyvore",
+  "item_id": "205903482",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36212,
+  "title": "black scooped neck basic tee",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-177564454",
+  "source": "polyvore",
+  "item_id": "177564454",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 14747,
+  "title": "Black Lives Matter TShirt",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-202243743",
+  "source": "polyvore",
+  "item_id": "202243743",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 26794,
+  "title": "Cropped Frilled T-Shirt Pink",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-67236495",
+  "source": "polyvore",
+  "item_id": "67236495",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 13986,
+  "title": "Beige Lace Hollow T-shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-207610299",
+  "source": "polyvore",
+  "item_id": "207610299",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 7484,
+  "title": "Ripped Hem Short Sleeve Tunic T-Shirt Black",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-153767702",
+  "source": "polyvore",
+  "item_id": "153767702",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 41675,
+  "title": "Mango Flecked V-Neck T-Shirt, Nude",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-13806565",
+  "source": "polyvore",
+  "item_id": "13806565",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 23382,
+  "title": "monki ninni tee white melange",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-140393304",
+  "source": "polyvore",
+  "item_id": "140393304",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 35937,
+  "title": "Choies Black Distressed Bat Sleeve Whatever T-shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-155441162",
+  "source": "polyvore",
+  "item_id": "155441162",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15082,
+  "title": "Wildfox Women's Hot Slice East T-Shirt - Black",
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-147167505",
+  "source": "polyvore",
+  "item_id": "147167505",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 27544,
+  "title": "white boyfriend batwing sleeve shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-204740279",
+  "source": "polyvore",
+  "item_id": "204740279",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8945,
+  "title": "cold shoulder henley shirt pink",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-134606595",
+  "source": "polyvore",
+  "item_id": "134606595",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 25200,
+  "title": "The Great White Shirt, No. 7 (Tuxedo)",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-143914603",
+  "source": "polyvore",
+  "item_id": "143914603",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 9794,
+  "title": "glamorous white knit shirt with",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-168117980",
+  "source": "polyvore",
+  "item_id": "168117980",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 21376,
+  "title": "TOPMAN White Short Sleeve Button Down Smart Shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-180396444",
+  "source": "polyvore",
+  "item_id": "180396444",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 11770,
+  "title": "WIDE FIT LEON T SHIRT (BEIGE)",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-211881854",
+  "source": "polyvore",
+  "item_id": "211881854",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36304,
+  "title": "Rolling Stones Slogan Black Cut Off Crop T Shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-171066952",
+  "source": "polyvore",
+  "item_id": "171066952",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 5925,
+  "title": "Frank & Eileen Eileen Shirt - Blue",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-163795127",
+  "source": "polyvore",
+  "item_id": "163795127",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36345,
+  "title": "Dorothy Perkins Khaki Military Shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "pv-173492612",
+  "source": "polyvore",
+  "item_id": "173492612",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 30247,
+  "title": "devastating black collar shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-67453935",
+  "source": "polyvore",
+  "item_id": "67453935",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18396,
+  "title": "Mary Katrantzou: The Acrobat Pink Keys Sleeveless Shirt",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-201542935",
+  "source": "polyvore",
+  "item_id": "201542935",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 34200,
+  "title": "oasis formal shirt mid orange",
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "orange"
+  }
+ },
+ {
+  "id": "pv-78523869",
+  "source": "polyvore",
+  "item_id": "78523869",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 40187,
+  "title": "Nude Contrast Leather Asymmetrical Chiffon Blouse",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-208860513",
+  "source": "polyvore",
+  "item_id": "208860513",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 28565,
+  "title": "Phoebe Silk Blouse | Blue | Phase Eight",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-201924996",
+  "source": "polyvore",
+  "item_id": "201924996",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18216,
+  "title": "Army Green Ruffle Trim Chiffon Blouse",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "pv-210566681",
+  "source": "polyvore",
+  "item_id": "210566681",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12973,
+  "title": "Off Shoulder Tied Sleeve Blouse White",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-203548062",
+  "source": "polyvore",
+  "item_id": "203548062",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20315,
+  "title": "Contrast Trim Cold Shoulder Chiffon Blouse Shallow Pink",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-139448220",
+  "source": "polyvore",
+  "item_id": "139448220",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 39426,
+  "title": "WithChic White Band Collar Long Sleeve Blouse",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-146763024",
+  "source": "polyvore",
+  "item_id": "146763024",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 5974,
+  "title": "Preowned 1990s Chanel Pastel Pink Silk Tie Up Blouse",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-173627543",
+  "source": "polyvore",
+  "item_id": "173627543",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 9633,
+  "title": "Red Off Shoulder Ruffle Sleeve Wrap Back Blouse",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-155675084",
+  "source": "polyvore",
+  "item_id": "155675084",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 23114,
+  "title": "Dorothy Perkins petite Blue High Neck Blouse",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-95196449",
+  "source": "polyvore",
+  "item_id": "95196449",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 13437,
+  "title": "Mango Contrasting Bow Blouse, Natural White",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-125245044",
+  "source": "polyvore",
+  "item_id": "125245044",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 25762,
+  "title": "SheIn(sheinside) White V Neck Long Sleeve Loose Blouse",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-156065835",
+  "source": "polyvore",
+  "item_id": "156065835",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20857,
+  "title": "White Plain Split Hem Long Sleeve Chiffon Blouse",
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-126091634",
+  "source": "polyvore",
+  "item_id": "126091634",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 28765,
+  "title": "Proenza Schouler Cotton and cashmere-blend sweater, White, Women's, Si...",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-149215881",
+  "source": "polyvore",
+  "item_id": "149215881",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 27860,
+  "title": "A.P.C. Atelier de Production et de Création Ribbed camel hair sweater",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-197869607",
+  "source": "polyvore",
+  "item_id": "197869607",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 1629,
+  "title": "THE ROW Delia Ribbed Camel Hair Jumper - Size XS",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-96190386",
+  "source": "polyvore",
+  "item_id": "96190386",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 7662,
+  "title": "Soft blue superfine merino v-neck jumper",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-46091450",
+  "source": "polyvore",
+  "item_id": "46091450",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 35155,
+  "title": "Wildfox Couture Stag Baggy Beach Jumper in Dirty White",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-28538799",
+  "source": "polyvore",
+  "item_id": "28538799",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36536,
+  "title": "MTWTFSS WEEKDAY Endless Knit Sweater Beige",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-66551214",
+  "source": "polyvore",
+  "item_id": "66551214",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 1699,
+  "title": "WILDFOX Lennon Cat Face Clean White Knit sweater with cats",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-118623008",
+  "source": "polyvore",
+  "item_id": "118623008",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 1969,
+  "title": "DELPOZO Poppy Red Pima Cotton Silk Sweater",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-192211690",
+  "source": "polyvore",
+  "item_id": "192211690",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 4822,
+  "title": "SheIn(sheinside) Black Drop Shoulder Textured Sweater",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-147106391",
+  "source": "polyvore",
+  "item_id": "147106391",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 29902,
+  "title": "burgundy cowl neck sweater",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "burgundy"
+  }
+ },
+ {
+  "id": "pv-145038078",
+  "source": "polyvore",
+  "item_id": "145038078",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 32830,
+  "title": "Zac Posen Scarf Cashmere Sweater In Burnt Orange",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "orange"
+  }
+ },
+ {
+  "id": "pv-184358035",
+  "source": "polyvore",
+  "item_id": "184358035",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15176,
+  "title": "Bella Freud 1970 metallic intarsia knitted sweater",
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-190220243",
+  "source": "polyvore",
+  "item_id": "190220243",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 37088,
+  "title": "Dorothy Perkins White Plain Hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-180952273",
+  "source": "polyvore",
+  "item_id": "180952273",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3708,
+  "title": "Gray Long Sleeve Drawstring Short Hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-108181362",
+  "source": "polyvore",
+  "item_id": "108181362",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20162,
+  "title": "Pineapple Crop Hoodie (Black)",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-146409696",
+  "source": "polyvore",
+  "item_id": "146409696",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 38745,
+  "title": "Mango Cropped Cotton Hoodie, Navy",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "pv-212135286",
+  "source": "polyvore",
+  "item_id": "212135286",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 21316,
+  "title": "Helmut Lang Women's Red Shrunken Hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-214357875",
+  "source": "polyvore",
+  "item_id": "214357875",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 40855,
+  "title": "pink crop hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-151024378",
+  "source": "polyvore",
+  "item_id": "151024378",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12209,
+  "title": "Rick Owens DRKSHDW Beige Cotton Felpa Tied Hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-174466352",
+  "source": "polyvore",
+  "item_id": "174466352",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 24588,
+  "title": "PINK University of Tennessee Varsity Pullover Hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-197663162",
+  "source": "polyvore",
+  "item_id": "197663162",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20535,
+  "title": "Rick Owens DRKSHDW Cotton Hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "pv-182550574",
+  "source": "polyvore",
+  "item_id": "182550574",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20602,
+  "title": "Local Heroes LH Cropped Hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "pv-157792509",
+  "source": "polyvore",
+  "item_id": "157792509",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 26935,
+  "title": "Pre-owned Victorias Secret Pink Bling Sequin Hoodie Off-white Varsity...",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "pv-191112126",
+  "source": "polyvore",
+  "item_id": "191112126",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12221,
+  "title": "Studio Concrete \\'Aerospace\\' unisex hoodie",
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "pv-192503504",
+  "source": "polyvore",
+  "item_id": "192503504",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3152,
+  "title": "Eyelash Lace Velvet Camisole Top Black",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-211445193",
+  "source": "polyvore",
+  "item_id": "211445193",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12056,
+  "title": "PINK Curved Hem Tank",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-172957048",
+  "source": "polyvore",
+  "item_id": "172957048",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8055,
+  "title": "Americana Classic Rib Neck Muscle Tank PINK",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-125588750",
+  "source": "polyvore",
+  "item_id": "125588750",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 25424,
+  "title": "Thin Strap Basic Crop Tank Olive",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "pv-209766349",
+  "source": "polyvore",
+  "item_id": "209766349",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 39854,
+  "title": "crossover jacquard tank top pink",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-125711071",
+  "source": "polyvore",
+  "item_id": "125711071",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 32484,
+  "title": "Grey Cropped Cami",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-200512124",
+  "source": "polyvore",
+  "item_id": "200512124",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 32012,
+  "title": "Pink Tie Hem Cropped Cami Top",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-135533887",
+  "source": "polyvore",
+  "item_id": "135533887",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 24600,
+  "title": "SheIn(sheinside) Black Spaghetti Strap Chiffon Cami Top",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-160196925",
+  "source": "polyvore",
+  "item_id": "160196925",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 25180,
+  "title": "Yellow Lace Cropped Cami Top",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "yellow"
+  }
+ },
+ {
+  "id": "pv-202873886",
+  "source": "polyvore",
+  "item_id": "202873886",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 41800,
+  "title": "Glitter High Neck Crop Tank Top Black",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-63095809",
+  "source": "polyvore",
+  "item_id": "63095809",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 37265,
+  "title": "ENZA COSTA TISSUE Grey Jersey Tunic Tank",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-173354938",
+  "source": "polyvore",
+  "item_id": "173354938",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 28583,
+  "title": "SheIn(sheinside) Grey Crisscross Back Cami Top",
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-169119610",
+  "source": "polyvore",
+  "item_id": "169119610",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 34875,
+  "title": "TopShop Moto Grey Lucas Jeans",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-125386721",
+  "source": "polyvore",
+  "item_id": "125386721",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36982,
+  "title": "River Island White ripped Amelie superskinny reform jeans",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-113172966",
+  "source": "polyvore",
+  "item_id": "113172966",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 24474,
+  "title": "Womens Jeans Citizens Of Humanity Avedon Blue Skinny Jeans",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-211712038",
+  "source": "polyvore",
+  "item_id": "211712038",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15085,
+  "title": "Amiri Slim Black Jean",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-97696443",
+  "source": "polyvore",
+  "item_id": "97696443",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 6599,
+  "title": "J-Brand black thin Super Skinny jeans",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-66078660",
+  "source": "polyvore",
+  "item_id": "66078660",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3948,
+  "title": "TRUE RELIGION Mustard Misty Legging Finnigan Jeans",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "yellow"
+  }
+ },
+ {
+  "id": "pv-147993227",
+  "source": "polyvore",
+  "item_id": "147993227",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 41247,
+  "title": "TopShop Moto Black Ripped Leigh Jeans",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-88785582",
+  "source": "polyvore",
+  "item_id": "88785582",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 40410,
+  "title": "RUDE Khaki Skinny Fit Jeans",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "pv-82342789",
+  "source": "polyvore",
+  "item_id": "82342789",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18659,
+  "title": "Mill White Tassels Jeans",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-103067482",
+  "source": "polyvore",
+  "item_id": "103067482",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 35309,
+  "title": "Armani Jeans Black High Rise Skinny J18 Jean",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-138911919",
+  "source": "polyvore",
+  "item_id": "138911919",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 38015,
+  "title": "Miss Selfridge Lizzie Shredded Jeans, Black",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-210552712",
+  "source": "polyvore",
+  "item_id": "210552712",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 19123,
+  "title": "Kayley Skinny Jeans Blue",
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-211088394",
+  "source": "polyvore",
+  "item_id": "211088394",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33796,
+  "title": "blue zags harem pants buddha",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-211815585",
+  "source": "polyvore",
+  "item_id": "211815585",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 13946,
+  "title": "Houndstooth Wide Leg Gaucho Pants Khaki",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "pv-194844709",
+  "source": "polyvore",
+  "item_id": "194844709",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 23944,
+  "title": "Huishan Zhang Metallic Flared Trousers",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-184403558",
+  "source": "polyvore",
+  "item_id": "184403558",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 40733,
+  "title": "Haider Ackermann Red Velvet & Leather Panel Trousers",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-145903197",
+  "source": "polyvore",
+  "item_id": "145903197",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 38496,
+  "title": "Antonio Berardi Metallic jacquard straight-leg pants",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-92333928",
+  "source": "polyvore",
+  "item_id": "92333928",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 21445,
+  "title": "Givenchy Black leather pants",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-199913441",
+  "source": "polyvore",
+  "item_id": "199913441",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8443,
+  "title": "Jil Sander Navy cropped trousers",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "pv-202013595",
+  "source": "polyvore",
+  "item_id": "202013595",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 10167,
+  "title": "pencil pu pants black",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-201906499",
+  "source": "polyvore",
+  "item_id": "201906499",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3342,
+  "title": "yoins black cropped tapered trousers",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-184121261",
+  "source": "polyvore",
+  "item_id": "184121261",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 34633,
+  "title": "Hebe Studio - The Hebe Suit White Girlfriend Palazzo Pants",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-187207732",
+  "source": "polyvore",
+  "item_id": "187207732",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 28420,
+  "title": "drawstring joggings pants deep gray",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-195071580",
+  "source": "polyvore",
+  "item_id": "195071580",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20026,
+  "title": "black faux leather skinny pants",
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-165262760",
+  "source": "polyvore",
+  "item_id": "165262760",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12947,
+  "title": "Navy Seersucker Shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "pv-97757263",
+  "source": "polyvore",
+  "item_id": "97757263",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 14469,
+  "title": "TOPSHOP Orange Jersey Runner Shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "orange"
+  }
+ },
+ {
+  "id": "pv-132085415",
+  "source": "polyvore",
+  "item_id": "132085415",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 24107,
+  "title": "TOPSHOP MOTO White Rosa Shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-186912420",
+  "source": "polyvore",
+  "item_id": "186912420",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33926,
+  "title": "Pre-owned Lululemon Athletica Athletic Shorts Size 6: Black Women's Ac...",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-180266817",
+  "source": "polyvore",
+  "item_id": "180266817",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 19303,
+  "title": "Pop Sick Vintage 90s Vintage Pastel Pink High Waisted Shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-171549273",
+  "source": "polyvore",
+  "item_id": "171549273",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15930,
+  "title": "red stretch-linen high-waisted shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-207630131",
+  "source": "polyvore",
+  "item_id": "207630131",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 13722,
+  "title": "Europe Black Broken-Hole Knee Length Seay Shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-84696215",
+  "source": "polyvore",
+  "item_id": "84696215",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 5027,
+  "title": "Gold Leather Versace Shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-212132778",
+  "source": "polyvore",
+  "item_id": "212132778",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 14082,
+  "title": "Sporty Velvet Shorts Gray S",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-176705997",
+  "source": "polyvore",
+  "item_id": "176705997",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 39915,
+  "title": "Red Valentino Brocade Shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-143202944",
+  "source": "polyvore",
+  "item_id": "143202944",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36434,
+  "title": "Black Elastic Waist PU Shorts",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-197353792",
+  "source": "polyvore",
+  "item_id": "197353792",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18838,
+  "title": "blue silk shorts shahida parides",
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-196116536",
+  "source": "polyvore",
+  "item_id": "196116536",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36811,
+  "title": "Kristine Camel Ribbed Mini Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-152954919",
+  "source": "polyvore",
+  "item_id": "152954919",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 37050,
+  "title": "Yoins Wine Buttons A-line Mini Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "burgundy"
+  }
+ },
+ {
+  "id": "pv-149356909",
+  "source": "polyvore",
+  "item_id": "149356909",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 1721,
+  "title": "Rodarte White Angora Mini Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-187527946",
+  "source": "polyvore",
+  "item_id": "187527946",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 34316,
+  "title": "Gray Faux Suede Lace Up Front Pencil Mini Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-158618435",
+  "source": "polyvore",
+  "item_id": "158618435",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 7226,
+  "title": "Yoins Black Leather Mini Skirt with Pleated Side",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-124854629",
+  "source": "polyvore",
+  "item_id": "124854629",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 38720,
+  "title": "Chicwish Quilted Faux Leather Mini Skater Skirt in Black",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-211551941",
+  "source": "polyvore",
+  "item_id": "211551941",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 7739,
+  "title": "3.1 Phillip Lim Velvet and metallic chiffon mini skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-163974957",
+  "source": "polyvore",
+  "item_id": "163974957",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 11409,
+  "title": "New Look Black Leaf Jacquard Mini Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-188885513",
+  "source": "polyvore",
+  "item_id": "188885513",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 17134,
+  "title": "Black Zipper Back Mini Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-151014667",
+  "source": "polyvore",
+  "item_id": "151014667",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 1482,
+  "title": "Carven Grey Wool Blend Draped Mini Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-129871573",
+  "source": "polyvore",
+  "item_id": "129871573",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 29417,
+  "title": "Chicwish Sweet Your Heart Bowknot Pleated Mini Skirt in Pea Green",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "pv-189451997",
+  "source": "polyvore",
+  "item_id": "189451997",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 22211,
+  "title": "River Island Nude faux suede lace hem mini skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-210447641",
+  "source": "polyvore",
+  "item_id": "210447641",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 6965,
+  "title": "Slit Decorative Button Solid Pencil Midi Skirt In Red",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-171195929",
+  "source": "polyvore",
+  "item_id": "171195929",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 21514,
+  "title": "New Look Blue Wrap Tie Side Midi Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-204467433",
+  "source": "polyvore",
+  "item_id": "204467433",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 11868,
+  "title": "Rochas - Metallic Cotton-blend Jacquard Midi Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-99589405",
+  "source": "polyvore",
+  "item_id": "99589405",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 24325,
+  "title": "Chicwish Full A-line Midi Skirt in Green",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "pv-202324482",
+  "source": "polyvore",
+  "item_id": "202324482",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 31339,
+  "title": "Rochas Marigold Yellow Tulle Midi Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "yellow"
+  }
+ },
+ {
+  "id": "pv-124786516",
+  "source": "polyvore",
+  "item_id": "124786516",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 9813,
+  "title": "Yoins Black Midi Pencil Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-124925531",
+  "source": "polyvore",
+  "item_id": "124925531",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 38477,
+  "title": "Yoins Black Midi Pencil Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-191873502",
+  "source": "polyvore",
+  "item_id": "191873502",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 22524,
+  "title": "Midi Elastic Waist Pleated Skirt Khaki",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "pv-191303606",
+  "source": "polyvore",
+  "item_id": "191303606",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 4359,
+  "title": "shiny metallic midi pleated skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-155398769",
+  "source": "polyvore",
+  "item_id": "155398769",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 23246,
+  "title": "Chicwish Bravo Split Hem Midi Skirt in Grey",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-212695764",
+  "source": "polyvore",
+  "item_id": "212695764",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20928,
+  "title": "purple tie waist midi skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "purple"
+  }
+ },
+ {
+  "id": "pv-207023189",
+  "source": "polyvore",
+  "item_id": "207023189",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 484,
+  "title": "Beaded Swing Midi Mesh Overlay Skirt Black",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-109288693",
+  "source": "polyvore",
+  "item_id": "109288693",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 31417,
+  "title": "Chicwish Amore Maxi Tulle Prom Skirt in Pink",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-201071846",
+  "source": "polyvore",
+  "item_id": "201071846",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15300,
+  "title": "Needle & Thread Needle & Thread - Tulle Maxi Skirt - Blush",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-147228291",
+  "source": "polyvore",
+  "item_id": "147228291",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18368,
+  "title": "Chicwish Bowknot Pleated Full Maxi Skirt in Black",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-205118575",
+  "source": "polyvore",
+  "item_id": "205118575",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 6250,
+  "title": "River Island White mesh asymmetric high-low hem maxi skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-65459446",
+  "source": "polyvore",
+  "item_id": "65459446",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20131,
+  "title": "Peach Pink Pleated Maxi Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-127525233",
+  "source": "polyvore",
+  "item_id": "127525233",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8396,
+  "title": "Black Jersey Elasticated Split Side Maxi Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-196344895",
+  "source": "polyvore",
+  "item_id": "196344895",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 28260,
+  "title": "purple split chiffon maxi skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi",
+   "primaryColor": "purple"
+  }
+ },
+ {
+  "id": "pv-153091025",
+  "source": "polyvore",
+  "item_id": "153091025",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 30807,
+  "title": "Emilia Wickstead Pearly striped silk-twill maxi skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-210614380",
+  "source": "polyvore",
+  "item_id": "210614380",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3351,
+  "title": "Mogul Women's Peasant Maxi Skirt Orange Printed Silk Sari Boho Chic Su...",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-208670203",
+  "source": "polyvore",
+  "item_id": "208670203",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12977,
+  "title": "Miguelina Ballerina printed linen wrap maxi skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-62889579",
+  "source": "polyvore",
+  "item_id": "62889579",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 9054,
+  "title": "OASIS Colourblock Maxi Skirt",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-167048132",
+  "source": "polyvore",
+  "item_id": "167048132",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15061,
+  "title": "Alice + Olivia Alice + Olivia - Kamryn Embroidered Tulle Maxi Skirt -...",
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-200875902",
+  "source": "polyvore",
+  "item_id": "200875902",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 9547,
+  "title": "mini crossover metallic choker dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-197981801",
+  "source": "polyvore",
+  "item_id": "197981801",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 19557,
+  "title": "mini crossover metallic choker dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-162648486",
+  "source": "polyvore",
+  "item_id": "162648486",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33232,
+  "title": "white off-shoulder mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-182504330",
+  "source": "polyvore",
+  "item_id": "182504330",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 30273,
+  "title": "pink velvet ruched mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-208045139",
+  "source": "polyvore",
+  "item_id": "208045139",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 28738,
+  "title": "red one shoulder mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-191183275",
+  "source": "polyvore",
+  "item_id": "191183275",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 11791,
+  "title": "Georges Hobeika Embroidered Lace Long Sleeve Mini Dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "pv-129495688",
+  "source": "polyvore",
+  "item_id": "129495688",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20563,
+  "title": "balmain embellished leather mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "pv-192649155",
+  "source": "polyvore",
+  "item_id": "192649155",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 41512,
+  "title": "roberto cavalli ruffled mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "pv-178376658",
+  "source": "polyvore",
+  "item_id": "178376658",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 31472,
+  "title": "row raja wool-blend mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "pv-191229230",
+  "source": "polyvore",
+  "item_id": "191229230",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3176,
+  "title": "balmain embellished velvet mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "pv-204479726",
+  "source": "polyvore",
+  "item_id": "204479726",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 24300,
+  "title": "gingham tartan contrast mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "pv-158693815",
+  "source": "polyvore",
+  "item_id": "158693815",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 2549,
+  "title": "moschino boucl%C3%A9-tweed mini dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "pv-141270057",
+  "source": "polyvore",
+  "item_id": "141270057",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 39028,
+  "title": "boss black dalemi midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-131274606",
+  "source": "polyvore",
+  "item_id": "131274606",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 31358,
+  "title": "dkny scuba-mesh midi dress white",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-204727848",
+  "source": "polyvore",
+  "item_id": "204727848",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 26396,
+  "title": "little mistress lace midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-169556971",
+  "source": "polyvore",
+  "item_id": "169556971",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 16347,
+  "title": "warehouse applique lace midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-191604175",
+  "source": "polyvore",
+  "item_id": "191604175",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36441,
+  "title": "emilia wickstead silk midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-186781774",
+  "source": "polyvore",
+  "item_id": "186781774",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 7646,
+  "title": "equipment anika silk-satin midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-166706433",
+  "source": "polyvore",
+  "item_id": "166706433",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 31425,
+  "title": "dolce gabbana flared midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-184967461",
+  "source": "polyvore",
+  "item_id": "184967461",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 39331,
+  "title": "akris punto layered midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-149828490",
+  "source": "polyvore",
+  "item_id": "149828490",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 16356,
+  "title": "balmain embellished velvet midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-190229699",
+  "source": "polyvore",
+  "item_id": "190229699",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8119,
+  "title": "midi slim fit sheath dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-175141856",
+  "source": "polyvore",
+  "item_id": "175141856",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 17903,
+  "title": "midi denim overall dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-213153723",
+  "source": "polyvore",
+  "item_id": "213153723",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 11971,
+  "title": "maje knit midi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "midi"
+  }
+ },
+ {
+  "id": "pv-206010093",
+  "source": "polyvore",
+  "item_id": "206010093",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 27920,
+  "title": "royal blue maxi women dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-210191185",
+  "source": "polyvore",
+  "item_id": "210191185",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33742,
+  "title": "george cold shoulder maxi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-195993815",
+  "source": "polyvore",
+  "item_id": "195993815",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36074,
+  "title": "maxi crossover dress with belt",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-155811816",
+  "source": "polyvore",
+  "item_id": "155811816",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 34327,
+  "title": "mango wrap front maxi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-144054198",
+  "source": "polyvore",
+  "item_id": "144054198",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8979,
+  "title": "lagence grace printed maxi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-203938111",
+  "source": "polyvore",
+  "item_id": "203938111",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 32572,
+  "title": "floral print maxi chiffon dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-207485560",
+  "source": "polyvore",
+  "item_id": "207485560",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 39105,
+  "title": "blugirl cactus print maxi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-190455874",
+  "source": "polyvore",
+  "item_id": "190455874",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 23430,
+  "title": "reformation velvet maxi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-212030086",
+  "source": "polyvore",
+  "item_id": "212030086",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36548,
+  "title": "maxi dress 24.99",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-206202190",
+  "source": "polyvore",
+  "item_id": "206202190",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 2936,
+  "title": "lilly sarti denim maxi dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-194905337",
+  "source": "polyvore",
+  "item_id": "194905337",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 30373,
+  "title": "chiffon maxi dress 49.99",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-195543776",
+  "source": "polyvore",
+  "item_id": "195543776",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 41061,
+  "title": "velvet mermaid maxi cami dress",
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "pv-156451894",
+  "source": "polyvore",
+  "item_id": "156451894",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 25193,
+  "title": "Relaxfeel Women's Anti-Collar Black Leather Jacket Black",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-72485620",
+  "source": "polyvore",
+  "item_id": "72485620",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 6962,
+  "title": "sophie hermann black suede jacket",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-177498209",
+  "source": "polyvore",
+  "item_id": "177498209",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 4620,
+  "title": "Rotita Black Faux Leather Power Shoulder Biker Motorcycle Jacket",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-166541429",
+  "source": "polyvore",
+  "item_id": "166541429",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 32676,
+  "title": "eskandar black scrunch shawl jacket",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-180735301",
+  "source": "polyvore",
+  "item_id": "180735301",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18473,
+  "title": "chicwish suave classic white jacket",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-163290710",
+  "source": "polyvore",
+  "item_id": "163290710",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 40678,
+  "title": "metallic leather bomber jacket gucci",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-200475248",
+  "source": "polyvore",
+  "item_id": "200475248",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 9310,
+  "title": "lips satin bomber jacket black",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-205285223",
+  "source": "polyvore",
+  "item_id": "205285223",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12646,
+  "title": "viparo womens black wb3 jacket",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-187519987",
+  "source": "polyvore",
+  "item_id": "187519987",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 25744,
+  "title": "brown oblique zipper suede jacket",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "pv-203039908",
+  "source": "polyvore",
+  "item_id": "203039908",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 22205,
+  "title": "black drape front biker jacket",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-146295581",
+  "source": "polyvore",
+  "item_id": "146295581",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 29618,
+  "title": "balmain black leather quilted jacket",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-155579739",
+  "source": "polyvore",
+  "item_id": "155579739",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 11656,
+  "title": "Club Foreign \"British\" MA1 Bomber Jacket \"Pitch Red\"",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-129174313",
+  "source": "polyvore",
+  "item_id": "129174313",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 6487,
+  "title": "warehouse textured boucle coat yellow",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "yellow"
+  }
+ },
+ {
+  "id": "pv-160347822",
+  "source": "polyvore",
+  "item_id": "160347822",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 2473,
+  "title": "white wool coat carven",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-154539193",
+  "source": "polyvore",
+  "item_id": "154539193",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 30024,
+  "title": "yoins black hooded trench coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-206555757",
+  "source": "polyvore",
+  "item_id": "206555757",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 21411,
+  "title": "gucci mink coat with red",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-157194352",
+  "source": "polyvore",
+  "item_id": "157194352",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 22594,
+  "title": "yoins pink lapel trench coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-413959",
+  "source": "polyvore",
+  "item_id": "413959",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 6847,
+  "title": "burberry prorsum gold brocade coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-189013991",
+  "source": "polyvore",
+  "item_id": "189013991",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 7622,
+  "title": "navy luisa long fur coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "pv-151271569",
+  "source": "polyvore",
+  "item_id": "151271569",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8927,
+  "title": "yoins pink lapel trench coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-154221878",
+  "source": "polyvore",
+  "item_id": "154221878",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8729,
+  "title": "yoins pink fluffy longline coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-61384414",
+  "source": "polyvore",
+  "item_id": "61384414",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 2447,
+  "title": "Slim Medium Style Khaki Trench Coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "pv-151448627",
+  "source": "polyvore",
+  "item_id": "151448627",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 34511,
+  "title": "camel draped open-front long coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-124065627",
+  "source": "polyvore",
+  "item_id": "124065627",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 28295,
+  "title": "Blue Lapel Long Sleeve Loose Woolen Coat",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "coat",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-145932954",
+  "source": "polyvore",
+  "item_id": "145932954",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12979,
+  "title": "Black Long Sleeveless Blazer",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-203974027",
+  "source": "polyvore",
+  "item_id": "203974027",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8604,
+  "title": "balmain metallic blazer",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-123666257",
+  "source": "polyvore",
+  "item_id": "123666257",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 41087,
+  "title": "joules henford tweed blazer navy",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "pv-120643637",
+  "source": "polyvore",
+  "item_id": "120643637",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8078,
+  "title": "mango contrast flap blazer black",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-130323484",
+  "source": "polyvore",
+  "item_id": "130323484",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 40940,
+  "title": "shell pink crepe blazer",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-193875050",
+  "source": "polyvore",
+  "item_id": "193875050",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 25066,
+  "title": "balmain double-breasted wool blazer beige",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-117589342",
+  "source": "polyvore",
+  "item_id": "117589342",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18271,
+  "title": "black collarless blazer",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-160840978",
+  "source": "polyvore",
+  "item_id": "160840978",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 5191,
+  "title": "mango oversized blazer medium brown",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "pv-38602140",
+  "source": "polyvore",
+  "item_id": "38602140",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 13535,
+  "title": "givenchy fading lapel blazer camel",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-53692606",
+  "source": "polyvore",
+  "item_id": "53692606",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8239,
+  "title": "black boyfriend blazer",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-59230497",
+  "source": "polyvore",
+  "item_id": "59230497",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 22212,
+  "title": "white tailored blazer with sleeves",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-57407018",
+  "source": "polyvore",
+  "item_id": "57407018",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 31604,
+  "title": "gucci camel hair blazer",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-146543064",
+  "source": "polyvore",
+  "item_id": "146543064",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 34692,
+  "title": "Yellow V Neck Pockets Knit Cardigan",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "yellow"
+  }
+ },
+ {
+  "id": "pv-132625702",
+  "source": "polyvore",
+  "item_id": "132625702",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 25580,
+  "title": "pink waterfall cardigan",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-94715894",
+  "source": "polyvore",
+  "item_id": "94715894",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 648,
+  "title": "Chicnova Fashion Charcoal Oversized Batwing Cardigan",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-175921884",
+  "source": "polyvore",
+  "item_id": "175921884",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 11847,
+  "title": "dkny white fine-knit cardigan",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-162260570",
+  "source": "polyvore",
+  "item_id": "162260570",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 39743,
+  "title": "dorothy perkins petite blue cardigan",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-111202869",
+  "source": "polyvore",
+  "item_id": "111202869",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 16990,
+  "title": "White Half Sleeve Ballet Wrap Cardigan",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-145180907",
+  "source": "polyvore",
+  "item_id": "145180907",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 17187,
+  "title": "mango basic cardigan medium grey",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-70624995",
+  "source": "polyvore",
+  "item_id": "70624995",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 17483,
+  "title": "Blue Cable Knit Cardigan With Open Front And Batwing Sleeves",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-66884341",
+  "source": "polyvore",
+  "item_id": "66884341",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18458,
+  "title": "Garzon Grey Merino Mulita Cropped Cardigan",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-211563009",
+  "source": "polyvore",
+  "item_id": "211563009",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8639,
+  "title": "Moss Green Draped Cardigan Lookbook Store",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "pv-202133606",
+  "source": "polyvore",
+  "item_id": "202133606",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12262,
+  "title": "houndstooth jacquard back cardigan white",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-92747044",
+  "source": "polyvore",
+  "item_id": "92747044",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 30890,
+  "title": "east crew neck cardigan yellow",
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan",
+   "primaryColor": "yellow"
+  }
+ },
+ {
+  "id": "pv-192276703",
+  "source": "polyvore",
+  "item_id": "192276703",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 22847,
+  "title": "White Lace Up Faux Leather Rubber Sole Low Top Sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-194697124",
+  "source": "polyvore",
+  "item_id": "194697124",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 5423,
+  "title": "Acne Studios Black Nubuck Triple Sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-176746479",
+  "source": "polyvore",
+  "item_id": "176746479",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3171,
+  "title": "Jil Sander Pink Leather Miro Sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-128159627",
+  "source": "polyvore",
+  "item_id": "128159627",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 4080,
+  "title": "Dolce And Gabbana Blush Pink Leather and Lace Sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-190712535",
+  "source": "polyvore",
+  "item_id": "190712535",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 40032,
+  "title": "Isabel Marant Étoile White Leather Bart Trainers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-198815526",
+  "source": "polyvore",
+  "item_id": "198815526",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 4757,
+  "title": "Vans Trainers Womens Old Skool Purple",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "purple"
+  }
+ },
+ {
+  "id": "pv-168335311",
+  "source": "polyvore",
+  "item_id": "168335311",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 19349,
+  "title": "Golden Goose Deluxe BrandSuper Star Glittered Metallic Leather Sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-208188927",
+  "source": "polyvore",
+  "item_id": "208188927",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 14689,
+  "title": "Charlotte Russe Metallic Lace-Up Sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-209829722",
+  "source": "polyvore",
+  "item_id": "209829722",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 14598,
+  "title": "Givenchy Knots pink leather sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-211668163",
+  "source": "polyvore",
+  "item_id": "211668163",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 23194,
+  "title": "black ultra boost sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-146771304",
+  "source": "polyvore",
+  "item_id": "146771304",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36969,
+  "title": "Converse Chuck Taylor All Star ˜70 – portrait gray Sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "pv-117414628",
+  "source": "polyvore",
+  "item_id": "117414628",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 10108,
+  "title": "Converse Chuck Taylor All Star Leather – white Sneakers",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-86699976",
+  "source": "polyvore",
+  "item_id": "86699976",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 32606,
+  "title": "Giuseppe Zanotti Design metallic strap bootie",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-191422025",
+  "source": "polyvore",
+  "item_id": "191422025",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3527,
+  "title": "IRREGULAR CHOICE Oriental Day Dream Retro Heel Boots in Red",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-99923242",
+  "source": "polyvore",
+  "item_id": "99923242",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 17482,
+  "title": "HOLIDAY SALE Vintage Rugged Brown Leather Lace Up Ankle Boots Size 8",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "pv-172144340",
+  "source": "polyvore",
+  "item_id": "172144340",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 27919,
+  "title": "Pre-owned CASTANER Red Suede Ankle boots",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-105024929",
+  "source": "polyvore",
+  "item_id": "105024929",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 14514,
+  "title": "Lipstik Tophat Black Boot my",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-179657468",
+  "source": "polyvore",
+  "item_id": "179657468",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33967,
+  "title": "red leather combat boots hot",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-84316345",
+  "source": "polyvore",
+  "item_id": "84316345",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 16344,
+  "title": "rag & bone Harrow Suede Booties: Black",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-185490107",
+  "source": "polyvore",
+  "item_id": "185490107",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33655,
+  "title": "SheIn(sheinside) Black Lace Up Side Zipper Chunky Heels Ankle Boots",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-211009088",
+  "source": "polyvore",
+  "item_id": "211009088",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18034,
+  "title": "Danii Black Stud Platform Shoe Boot-8",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-194963929",
+  "source": "polyvore",
+  "item_id": "194963929",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 16313,
+  "title": "Black Boho Fringe Womens Stacked Heel Booties",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-127389559",
+  "source": "polyvore",
+  "item_id": "127389559",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15715,
+  "title": "Hunter Original Tall Gloss Rain Boots - Black",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-83360049",
+  "source": "polyvore",
+  "item_id": "83360049",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 31347,
+  "title": "Hunter Original Great metallic Wellington boots",
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-186662882",
+  "source": "polyvore",
+  "item_id": "186662882",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 23751,
+  "title": "black chunky heel engraving tie",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-164349445",
+  "source": "polyvore",
+  "item_id": "164349445",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 9499,
+  "title": "Pre-owned Christian Louboutin Pigalle Follie Pink Pumps",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-194224924",
+  "source": "polyvore",
+  "item_id": "194224924",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 10450,
+  "title": "yoins brown patckwork design stiletto",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "pv-125505491",
+  "source": "polyvore",
+  "item_id": "125505491",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 37588,
+  "title": "Christian Louboutin So Kate 120 green suede pump",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "pv-167164193",
+  "source": "polyvore",
+  "item_id": "167164193",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 17079,
+  "title": "Dorateymur Black Python Turbojet Heels",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-159432632",
+  "source": "polyvore",
+  "item_id": "159432632",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3885,
+  "title": "Jean-Michel Cazabat Women's Emily T-Strap Pump - Red - Size 40",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-202181322",
+  "source": "polyvore",
+  "item_id": "202181322",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 1529,
+  "title": "Attico Elsa White Vinyl Pump",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-180814872",
+  "source": "polyvore",
+  "item_id": "180814872",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 221,
+  "title": "Yoins Black Crossing Strap Lace-up Ladies Heels",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-202830008",
+  "source": "polyvore",
+  "item_id": "202830008",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 17867,
+  "title": "KENDALL &AMP; KYLIE Ellery Tassel Nubuck Heels - Blush",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-151390452",
+  "source": "polyvore",
+  "item_id": "151390452",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 24118,
+  "title": "Valentino Rockstud Metallic Leather Pumps",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-169930444",
+  "source": "polyvore",
+  "item_id": "169930444",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 16200,
+  "title": "New Look Black Leather Ankle Strap Platform Heels",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-183751849",
+  "source": "polyvore",
+  "item_id": "183751849",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 3884,
+  "title": "Gianvito Rossi Burgundy Velvet Gianvito Pump",
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "burgundy"
+  }
+ },
+ {
+  "id": "pv-146326110",
+  "source": "polyvore",
+  "item_id": "146326110",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 35844,
+  "title": "beige weave crocodile pattern flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-145144132",
+  "source": "polyvore",
+  "item_id": "145144132",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 9659,
+  "title": "Aquazzura Navy Belgravia Pointed Suede Flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "pv-129004425",
+  "source": "polyvore",
+  "item_id": "129004425",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 20565,
+  "title": "Valentino Rockstud Naples Yellow Leather Ballerina",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "yellow"
+  }
+ },
+ {
+  "id": "pv-134846813",
+  "source": "polyvore",
+  "item_id": "134846813",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 30022,
+  "title": "Pre-owned Cole Haan New Navy D'orsay Skimmer Flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "pv-115215753",
+  "source": "polyvore",
+  "item_id": "115215753",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15422,
+  "title": "PAOLO IANTORNO Kate Dip Dyed Coker Brown Woven Leather Ballerina Flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "pv-77941042",
+  "source": "polyvore",
+  "item_id": "77941042",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 2010,
+  "title": "McQ Alexander McQueen Goldtone Stud Green Leather Ballerina",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "pv-136437694",
+  "source": "polyvore",
+  "item_id": "136437694",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 17846,
+  "title": "black round toe heavy-bottomed flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-142318374",
+  "source": "polyvore",
+  "item_id": "142318374",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 24704,
+  "title": "River Island Black ghillie lace up pointed flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-75665205",
+  "source": "polyvore",
+  "item_id": "75665205",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 11055,
+  "title": "MARC BY MARC JACOBS Nappa Mouse Nude Leather ballet flats with studs",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-198758354",
+  "source": "polyvore",
+  "item_id": "198758354",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 29021,
+  "title": "Loeffler Randall Penelope Red Suede Tassel Tie Flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "pv-158676905",
+  "source": "polyvore",
+  "item_id": "158676905",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 66,
+  "title": "Jimmy Choo Silver Mirrored Attila Ballerina Flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-175315267",
+  "source": "polyvore",
+  "item_id": "175315267",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 6027,
+  "title": "Repetto Navy Suede Cendrillon Ballerina Flats",
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "pv-64234906",
+  "source": "polyvore",
+  "item_id": "64234906",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 15237,
+  "title": "Lance gold mirror strappy sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-169156838",
+  "source": "polyvore",
+  "item_id": "169156838",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 38298,
+  "title": "See by Chloé Black suede flatform sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-205932702",
+  "source": "polyvore",
+  "item_id": "205932702",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 29829,
+  "title": "Miu Miu Yellow Feather Compact Sole Sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "yellow"
+  }
+ },
+ {
+  "id": "pv-200977424",
+  "source": "polyvore",
+  "item_id": "200977424",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 2948,
+  "title": "Gianvito Rossi Portofino Green Satin Sandals - Size 6",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "pv-213072198",
+  "source": "polyvore",
+  "item_id": "213072198",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 193,
+  "title": "Ankle Strap Flat Sandals Black 38",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-212156894",
+  "source": "polyvore",
+  "item_id": "212156894",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 23439,
+  "title": "Metallic Open Toe Sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-167315476",
+  "source": "polyvore",
+  "item_id": "167315476",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 28510,
+  "title": "bride sandals white beach wedding",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-197086059",
+  "source": "polyvore",
+  "item_id": "197086059",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8139,
+  "title": "Nicholas Kirkwood Penelope embellished metallic mesh sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-178857233",
+  "source": "polyvore",
+  "item_id": "178857233",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 31716,
+  "title": "SheIn(sheinside) Blue Ankle Strap Flat Sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-205224330",
+  "source": "polyvore",
+  "item_id": "205224330",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33543,
+  "title": "womens white calf lonatu sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "pv-135720926",
+  "source": "polyvore",
+  "item_id": "135720926",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 14333,
+  "title": "Ancient Greek Sandals Blue Leather Clio Sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-198385980",
+  "source": "polyvore",
+  "item_id": "198385980",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 37039,
+  "title": "Baja East Blue Fila Edition Drifter Sandals",
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-200900750",
+  "source": "polyvore",
+  "item_id": "200900750",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 29513,
+  "title": "gold clutch women evening bags",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-198331716",
+  "source": "polyvore",
+  "item_id": "198331716",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 19679,
+  "title": "valentino pink small lock bag",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-190236267",
+  "source": "polyvore",
+  "item_id": "190236267",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 34946,
+  "title": "clutch bag envelope letter beige",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "pv-161416933",
+  "source": "polyvore",
+  "item_id": "161416933",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 35569,
+  "title": "mahon joyero gold satchel bag",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "metallic"
+  }
+ },
+ {
+  "id": "pv-124323930",
+  "source": "polyvore",
+  "item_id": "124323930",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 8269,
+  "title": "black newbark bag",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-70486463",
+  "source": "polyvore",
+  "item_id": "70486463",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33584,
+  "title": "black velour clutch vintage purse",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-131866498",
+  "source": "polyvore",
+  "item_id": "131866498",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 12015,
+  "title": "royal blue clutch bridal bridesmaid",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "pv-78627576",
+  "source": "polyvore",
+  "item_id": "78627576",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 33108,
+  "title": "pink perspex hard box clutch",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "pv-213364807",
+  "source": "polyvore",
+  "item_id": "213364807",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 18304,
+  "title": "large cowhide tote in black",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-192582047",
+  "source": "polyvore",
+  "item_id": "192582047",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 7119,
+  "title": "volon black cube shoulder bag",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "pv-43951213",
+  "source": "polyvore",
+  "item_id": "43951213",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 26161,
+  "title": "salvatore ferragamo bordeaux leather tote",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "burgundy"
+  }
+ },
+ {
+  "id": "pv-202643246",
+  "source": "polyvore",
+  "item_id": "202643246",
+  "file": "data/data-00000-of-00005.parquet",
+  "row": 36806,
+  "title": "beige banana straw shoulder bag",
+  "expected": {
+   "category": "bag",
+   "subtype": "handbag",
+   "primaryColor": "beige"
+  }
+ }
+]

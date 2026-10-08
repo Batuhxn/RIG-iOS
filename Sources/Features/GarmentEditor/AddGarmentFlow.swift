@@ -40,6 +40,8 @@ struct AddGarmentFlow: View {
     @State var fields = GarmentMetadataFields()
     @State var errorMessage: String?
     @State private var didBootstrap = false
+    @State private var importGeneration = UUID()
+    @State private var isDismissed = false
 
     @State var duplicateReview: DuplicateReviewState?
     @State var duplicateCandidateImageData: Data?
@@ -96,6 +98,10 @@ struct AddGarmentFlow: View {
             .task {
                 guard !didBootstrap else { return }
                 didBootstrap = true
+                if let analyzer = services.metadataAnalyzer {
+                    // Load the encoder while the user picks a photo, off the main actor.
+                    Task.detached(priority: .utility) { await analyzer.prewarm() }
+                }
                 if let initialSelection {
                     await loadFromPhotos(initialSelection)
                 } else if startsWithCamera, CameraPicker.isAvailable {
@@ -107,6 +113,7 @@ struct AddGarmentFlow: View {
         // on the same view as the camera sheet: two sheet modifiers on one
         // view is a well-known way to lose one of them.
         .sheet(isPresented: duplicateSheetBinding) { duplicateSheet }
+        .onDisappear { isDismissed = true; importGeneration = UUID() }
     }
 
     // MARK: - Steps
@@ -172,7 +179,7 @@ struct AddGarmentFlow: View {
     private var processingStep: some View {
         VStack(spacing: RIGTheme.Spacing.m) {
             ProgressView()
-            Text("Separating the garment…")
+            Text("Preparing the garment and suggestions…")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -226,13 +233,24 @@ struct AddGarmentFlow: View {
 
     @MainActor
     private func process(_ data: Data) async {
+        let generation = UUID()
+        importGeneration = generation
+        discardCandidateFiles()
+        importResult = nil
+        fields = GarmentMetadataFields()
         step = .processing
         do {
             let result = try await services.importService.importImage(data)
+            guard !isDismissed, importGeneration == generation, !Task.isCancelled else {
+                try? services.imageStore.removeAll(for: result.garmentID)
+                return
+            }
             importResult = result
+            if let metadata = result.metadata { fields.fillEmptyFields(from: metadata) }
             imageChoice = .initial(for: result)
             step = .review
         } catch {
+            guard !isDismissed, importGeneration == generation, !Task.isCancelled else { return }
             fail((error as? LocalizedError)?.errorDescription ?? "That photo could not be processed.")
         }
     }
@@ -244,6 +262,8 @@ struct AddGarmentFlow: View {
     }
 
     private func cancel() {
+        isDismissed = true
+        importGeneration = UUID()
         discardCandidateFiles()
         dismiss()
     }

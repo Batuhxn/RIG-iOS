@@ -23,7 +23,7 @@ TESTS = ROOT / "Tests"
 APPLE_MODULES = {
     "Foundation", "SwiftUI", "SwiftData", "UIKit", "Vision", "PhotosUI",
     "CoreImage", "CoreGraphics", "Observation", "XCTest", "Combine",
-    "AVFoundation", "ImageIO", "os",
+    "AVFoundation", "ImageIO", "os", "CoreML",
 }
 
 # Anything here would contradict the v0.1 privacy and dependency posture.
@@ -43,6 +43,36 @@ FORCE_PATTERNS = {
 }
 
 BINARY_SUFFIXES = {".mlmodel", ".mlpackage", ".pth", ".pt", ".ckpt", ".onnx", ".zip", ".bin", ".safetensors"}
+
+# v0.3: exactly one model may sit in the tree, never in git, and only the bytes
+# pinned by MODEL_LOCK.json — see DECISIONS.md, "One garment encoder, delivered
+# outside git".
+MODEL_DIR = ROOT / "Resources" / "Models"
+MODEL_LOCK = MODEL_DIR / "MODEL_LOCK.json"
+
+
+def pinned_model(path: Path) -> bool:
+    import hashlib
+    import json
+    import subprocess
+
+    if path.parent != MODEL_DIR or not MODEL_LOCK.is_file():
+        return False
+    lock = json.loads(MODEL_LOCK.read_text(encoding="utf-8"))
+    if path.name != lock.get("file"):
+        return False
+    tracked = subprocess.run(["git", "-C", str(ROOT), "ls-files", "--error-unmatch", str(path)],
+                             capture_output=True).returncode == 0
+    if tracked:
+        failures.append(f"{path.relative_to(ROOT)}: the model must never be committed")
+        return True
+    with path.open("rb") as stream:
+        digest = hashlib.sha256(stream.read()).hexdigest()
+    if digest != lock.get("sha256"):
+        failures.append(f"{path.relative_to(ROOT)}: SHA-256 does not match MODEL_LOCK.json")
+    else:
+        notes.append(f"{path.name} matches its pinned SHA-256")
+    return True
 
 failures: list[str] = []
 notes: list[str] = []
@@ -158,6 +188,8 @@ def main() -> int:
 
         is_test = path in tests
         for label, pattern in FORBIDDEN_PATTERNS.items():
+            if label == "machine-learning runtime" and path == SOURCES / "Services/AutoMetadata/CoreMLGarmentClassifier.swift":
+                continue  # v0.3: isolated on-device classifier only; binary policy remains unchanged.
             for match in re.finditer(pattern, code):
                 line = code[: match.start()].count("\n") + 1
                 failures.append(f"{path.relative_to(ROOT)}:{line}: {label} ({match.group(0)})")
@@ -199,7 +231,7 @@ def main() -> int:
     for path in ROOT.rglob("*"):
         if ".git" in path.parts:
             continue
-        if path.is_file() and path.suffix.lower() in BINARY_SUFFIXES:
+        if path.is_file() and path.suffix.lower() in BINARY_SUFFIXES and not pinned_model(path):
             failures.append(f"{path.relative_to(ROOT)}: model or archive artefact inside the app")
 
     check_configuration()

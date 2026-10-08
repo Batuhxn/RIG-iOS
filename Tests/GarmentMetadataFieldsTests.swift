@@ -9,7 +9,7 @@ final class GarmentMetadataFieldsTests: XCTestCase {
 
         XCTAssertNil(fields.category)
         XCTAssertNil(fields.colorFamily)
-        XCTAssertTrue(fields.seasons.isEmpty)
+        XCTAssertEqual(fields.seasons, .all, "season defaults to all year, it is never inferred")
         XCTAssertFalse(fields.isValid)
     }
 
@@ -21,20 +21,22 @@ final class GarmentMetadataFieldsTests: XCTestCase {
         XCTAssertFalse(fields.isValid)
     }
 
-    func testCategoryAndColorStillNeedSeason() {
+    func testCategoryAndColorSufficeBecauseSeasonDefaultsToAllYear() {
         var fields = GarmentMetadataFields()
         fields.displayName = "Jacket"
         fields.category = .outerwear
         fields.colorFamily = .navy
 
-        XCTAssertFalse(fields.isValid)
+        XCTAssertTrue(fields.isValid)
+        XCTAssertEqual(fields.effectiveSeasons, .all)
     }
 
-    func testOneExplicitSeasonMakesDraftValid() {
+    func testNarrowingToOneSeasonIsKept() {
         var fields = GarmentMetadataFields()
         fields.displayName = "Jacket"
         fields.category = .outerwear
         fields.colorFamily = .navy
+        fields.setAllYear(false)
         fields.setSeason(.winter, selected: true)
 
         XCTAssertTrue(fields.isValid)
@@ -53,16 +55,20 @@ final class GarmentMetadataFieldsTests: XCTestCase {
         XCTAssertEqual(fields.seasons.seasons.count, 4)
     }
 
-    func testClearingLastSeasonDoesNotNormalizeDraft() {
+    func testClearingEverySeasonSavesAsAllYearWithoutBlocking() {
         var fields = GarmentMetadataFields()
         fields.displayName = "Jacket"
         fields.category = .outerwear
         fields.colorFamily = .navy
+        fields.setAllYear(false)
         fields.setSeason(.winter, selected: true)
         fields.setSeason(.winter, selected: false)
 
-        XCTAssertTrue(fields.seasons.isEmpty)
-        XCTAssertFalse(fields.isValid)
+        XCTAssertTrue(fields.seasons.isEmpty, "the draft shows what the user chose")
+        XCTAssertTrue(fields.isValid)
+        let item = ClothingItem(displayName: "Old", category: .top, primaryColor: .white, seasons: [.summer])
+        XCTAssertTrue(fields.apply(to: item))
+        XCTAssertEqual(item.seasons, .all)
     }
 
     func testTurningOffAllYearLeavesNoSeasonSelected() {
@@ -74,7 +80,8 @@ final class GarmentMetadataFieldsTests: XCTestCase {
         fields.setAllYear(false)
 
         XCTAssertTrue(fields.seasons.isEmpty)
-        XCTAssertFalse(fields.isValid)
+        XCTAssertTrue(fields.isValid)
+        XCTAssertEqual(fields.effectiveSeasons, .all)
     }
 
     func testExistingGarmentPopulatesValidDraftWithoutReconfirmation() {

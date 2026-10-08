@@ -1,0 +1,2136 @@
+[
+ {
+  "id": "cc0-2df565b9",
+  "image_id": "2df565b9-1115-4dc7-bd4a-060f9490a8fe",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-8519fc6c",
+  "image_id": "8519fc6c-b5c6-4e10-b2c8-e2e04ba80663",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-7e1b6f54",
+  "image_id": "7e1b6f54-a706-4c84-9653-124cf3e8a2d3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-5f0a3fa0",
+  "image_id": "5f0a3fa0-6a3d-4b68-b213-72766a643de7",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-788825c1",
+  "image_id": "788825c1-9d04-4c01-bc63-312a461dca78",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-6eb2176e",
+  "image_id": "6eb2176e-dd45-4e27-b5aa-a87e08870ac2",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-58e51574",
+  "image_id": "58e51574-d451-4a2c-a5d4-c6675781cb54",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-d90a72b6",
+  "image_id": "d90a72b6-288f-470e-b478-530bbd635826",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-c226f48f",
+  "image_id": "c226f48f-ae09-425f-bf2c-6e4c7dd56b52",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-91b1ab10",
+  "image_id": "91b1ab10-19de-4262-9560-5c0ae1351612",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-84971313",
+  "image_id": "84971313-7ca7-4193-b8a5-0926e1a5ac0d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-dc982c2d",
+  "image_id": "dc982c2d-49e9-4c08-8b49-4bcc0671c355",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-cb37ff0a",
+  "image_id": "cb37ff0a-73c1-4a90-8420-d12baec45ac8",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-7b016eb0",
+  "image_id": "7b016eb0-ff0d-4d43-8fff-008cb02f050c",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "T-Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-7274c3e4",
+  "image_id": "7274c3e4-817d-4667-96db-4b79ffddb3fd",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-f000dafc",
+  "image_id": "f000dafc-8ea1-4354-8c2b-afea5e07f354",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-b24c37e0",
+  "image_id": "b24c37e0-2175-445b-9801-2fd517253f2b",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-a94791db",
+  "image_id": "a94791db-897f-4f65-9741-200ee61e911d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-ec196957",
+  "image_id": "ec196957-56c2-4ebf-acfe-c13b620f79cc",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-54a7aa48",
+  "image_id": "54a7aa48-feef-4689-93ba-cc475f93c4e7",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-2ccdf961",
+  "image_id": "2ccdf961-afe2-47a3-bf38-5e84ae6e9b0a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-7155bc52",
+  "image_id": "7155bc52-d5f2-42a2-9caa-0f485a02f5bc",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-9bfe2ccf",
+  "image_id": "9bfe2ccf-a192-4ab3-baba-0e07016e2428",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-a6a09210",
+  "image_id": "a6a09210-3242-4f00-820b-cda15b5383c1",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-909f9c2f",
+  "image_id": "909f9c2f-3564-4a30-a891-85601707f188",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-b2986b3e",
+  "image_id": "b2986b3e-4fc1-4eb4-85b3-8a6776b659e3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-ac5bb666",
+  "image_id": "ac5bb666-2aa9-4f10-b94a-7df35c75ecd0",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-ea1a27dd",
+  "image_id": "ea1a27dd-f340-4f24-ba49-4ec1ef5d20ee",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Longsleeve",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-e77efa63",
+  "image_id": "e77efa63-0477-4af2-b56d-c15da31bdad6",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-a6153f06",
+  "image_id": "a6153f06-bb9a-4303-b36c-80ffb61a9565",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-31547719",
+  "image_id": "31547719-bfd1-404d-bc3f-d341489be26d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-de929bc4",
+  "image_id": "de929bc4-1c06-4a46-9401-a1681cda0aff",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-e1243518",
+  "image_id": "e1243518-e811-4662-aabb-c2fc5f7d8151",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-111622d7",
+  "image_id": "111622d7-2852-4162-a972-3ddc2c01b4e6",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-d9603b7a",
+  "image_id": "d9603b7a-b32e-401a-bb59-b59c6b7de571",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-4db14d3d",
+  "image_id": "4db14d3d-05ca-48b1-9257-204b447c27bb",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-c23545ad",
+  "image_id": "c23545ad-1b46-478f-b6b8-d37eaea6a5e1",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-00143901",
+  "image_id": "00143901-a14c-4600-960f-7747b4a3a8cd",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-ad219457",
+  "image_id": "ad219457-e072-41b6-8b71-97637c38f478",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-69a2aafb",
+  "image_id": "69a2aafb-a8ef-4734-9b78-ed7289171319",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-ceb9e75d",
+  "image_id": "ceb9e75d-b804-472e-9869-98b2c698b370",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-ee23222a",
+  "image_id": "ee23222a-f46f-4044-abb2-0a5d1795da36",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shirt",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-3163669a",
+  "image_id": "3163669a-a958-45d2-af43-b1fd70d21727",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-1347965a",
+  "image_id": "1347965a-cf67-4b29-9038-4816e7fd5b86",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-91774b48",
+  "image_id": "91774b48-eacb-4fd1-92a6-2073882a019f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-0527af7c",
+  "image_id": "0527af7c-3a7c-4c87-9e1c-bee2d9db0e98",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-ea4298ea",
+  "image_id": "ea4298ea-8f39-4bb5-976b-1f4f804e4f8a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-92d4a750",
+  "image_id": "92d4a750-0aab-43b7-997f-e5ebe9c9a92e",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-d5eeaaed",
+  "image_id": "d5eeaaed-97fe-4fea-a3cb-17a086cc8167",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-9568b507",
+  "image_id": "9568b507-e113-4670-ae39-30a444e41cac",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-0ef80b69",
+  "image_id": "0ef80b69-2c18-435d-b091-91f401e01ed4",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-c5b80186",
+  "image_id": "c5b80186-15fa-4b9a-9ca4-88005b0db7bf",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-6110bc5f",
+  "image_id": "6110bc5f-2101-4382-a79c-d2158d052b23",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-4ef0dece",
+  "image_id": "4ef0dece-adfc-4036-ad34-922d607d4bd5",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blouse",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-3e9d7e85",
+  "image_id": "3e9d7e85-075c-4720-bd0e-7735d30859a1",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-d0a1b45e",
+  "image_id": "d0a1b45e-f6d3-4402-aad1-e921b9ee3589",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-000d31f6",
+  "image_id": "000d31f6-44b5-4758-8d86-c4fcfb234392",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-405cc200",
+  "image_id": "405cc200-8f74-4917-adaa-d43cca8e8ba4",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-fd576f74",
+  "image_id": "fd576f74-65ea-4c1f-95dc-1b541a9b7988",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-b1236b80",
+  "image_id": "b1236b80-4b3d-45e3-8c39-4e5ff1e169e1",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-8b2f6c39",
+  "image_id": "8b2f6c39-2726-478e-a489-cb02a7bd1b7f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-3902b16f",
+  "image_id": "3902b16f-a0e4-49c4-adba-75a2ba07d224",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-d8fab624",
+  "image_id": "d8fab624-77ea-48e9-a1fd-3ccfebf4a0e7",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-29002194",
+  "image_id": "29002194-4f1c-4ef8-aac0-3e92d79d5b37",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-9f80e84d",
+  "image_id": "9f80e84d-74a5-4d3e-bcb0-0bf201b92b8f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-de484f70",
+  "image_id": "de484f70-c1ef-4f66-9435-8ac433940881",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-709126d8",
+  "image_id": "709126d8-270b-4393-84d3-765a9df3b3b8",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-7b61cc39",
+  "image_id": "7b61cc39-72e3-4e09-9288-edfffb0785e2",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hoodie",
+  "weak_expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-7c801522",
+  "image_id": "7c801522-2ef0-40b8-ae76-76c3f68cb1da",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-6bbcfcef",
+  "image_id": "6bbcfcef-9b5d-4ba7-abb5-ed1881479959",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-fcd8821f",
+  "image_id": "fcd8821f-80ff-4b8a-8f87-8be36ae7288d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-e56c1cd4",
+  "image_id": "e56c1cd4-4852-4310-ae2c-9bcaf7bab68b",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-5d8bacce",
+  "image_id": "5d8bacce-65eb-4bff-9f89-3d023d881d37",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-6b1355ff",
+  "image_id": "6b1355ff-cc52-4e2a-a870-e91e75b926fe",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-2617b57c",
+  "image_id": "2617b57c-b899-4758-a512-c8cc516da560",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-1e53d9cf",
+  "image_id": "1e53d9cf-bacd-4675-8e7c-5563ce2f743f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-235161c9",
+  "image_id": "235161c9-4d33-4c76-8fb1-cee0355aee45",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-1a6601f1",
+  "image_id": "1a6601f1-4ad2-43c9-b1b6-d46e09995c7a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Top",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-ae596614",
+  "image_id": "ae596614-9997-47d9-9203-b90214b5ae32",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Polo",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-6a06dfe2",
+  "image_id": "6a06dfe2-5e0f-4e2f-875d-56f159de38ab",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Polo",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-0925fb2c",
+  "image_id": "0925fb2c-d509-4791-9770-48b398c68511",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Polo",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-85287925",
+  "image_id": "85287925-224a-4f67-b34d-507b3859f962",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Polo",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-0cab4de0",
+  "image_id": "0cab4de0-5818-4680-a00a-35dbc6e95525",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Polo",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-45fb7ce0",
+  "image_id": "45fb7ce0-9203-4f83-9554-49ddb0f15929",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Polo",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-358457f4",
+  "image_id": "358457f4-e6c1-4a58-bbcf-09b5776e3c51",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Undershirt",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-bfb145d2",
+  "image_id": "bfb145d2-ac67-4ce0-b193-747d0fa563a3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Undershirt",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-808175a1",
+  "image_id": "808175a1-9a46-4dbf-971e-d641d2c4818a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Undershirt",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-9bdac063",
+  "image_id": "9bdac063-6c07-4bfc-a04a-e45224c503df",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Undershirt",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-b5856585",
+  "image_id": "b5856585-87b2-4c0e-904d-9a6fbf549a96",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Undershirt",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-4a963327",
+  "image_id": "4a963327-44c6-4bd6-bf02-e7a3d74c1586",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Undershirt",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-94fbfd0a",
+  "image_id": "94fbfd0a-290b-4034-b788-abab0a3dd19a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Undershirt",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-ce5fecb7",
+  "image_id": "ce5fecb7-7b60-41a5-b517-7cf21f389c68",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Undershirt",
+  "weak_expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-7fa97b45",
+  "image_id": "7fa97b45-380a-4c9c-8de4-522976cb4972",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-d119997f",
+  "image_id": "d119997f-3466-4948-9aec-7cc2bf5a9acc",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-0c99f0b4",
+  "image_id": "0c99f0b4-3a0d-4d24-bfdd-e9e98914892c",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-ef6d60c5",
+  "image_id": "ef6d60c5-7fae-4bd8-a991-d750f0e9091a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-5638d782",
+  "image_id": "5638d782-4a13-49be-9318-77c40aab7a3c",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-9fb287ae",
+  "image_id": "9fb287ae-c15a-4d3b-8b5b-6898a44d4e27",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-ad22bcd3",
+  "image_id": "ad22bcd3-abd8-4b31-9605-2cc460b93e4a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-29ea96da",
+  "image_id": "29ea96da-0051-47ba-adea-76ff6c5b817c",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-26ee6859",
+  "image_id": "26ee6859-a0f8-42ce-8604-a263882e6d96",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-a3e47bc3",
+  "image_id": "a3e47bc3-ba2d-480d-a2bd-1c9d2c96abd8",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-34b08259",
+  "image_id": "34b08259-f999-45c8-bf2f-be3becec7fe4",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-dad82d38",
+  "image_id": "dad82d38-a305-4baf-9e54-cb6b894deb11",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-69c9f814",
+  "image_id": "69c9f814-934a-47b7-a3d5-d107401207ff",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-93ee0d8b",
+  "image_id": "93ee0d8b-f24e-4ee5-a6fa-a11e82d96757",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-a5111c97",
+  "image_id": "a5111c97-2304-4432-9846-3dea021ef2e0",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-245a3c16",
+  "image_id": "245a3c16-7c5e-423b-b5af-b8f12d89a59f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-5d6be0e5",
+  "image_id": "5d6be0e5-7d7c-4105-b00c-251d62737863",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-5cb0fa87",
+  "image_id": "5cb0fa87-7669-44bd-94a7-4bcdec2049ad",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-b2283dee",
+  "image_id": "b2283dee-271e-44b1-a0e4-1f3b717af614",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-cd3e5c86",
+  "image_id": "cd3e5c86-c3e3-46aa-b7fc-9c825f7fbfd8",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-831722d0",
+  "image_id": "831722d0-3e3c-4ecd-b3b3-14dd0ea222bc",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-38dbb71c",
+  "image_id": "38dbb71c-2e31-4f17-af08-90719ad818d0",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Pants",
+  "weak_expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-dfb9288a",
+  "image_id": "dfb9288a-faa2-435b-85a0-dbaf8031b705",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-9e29f08f",
+  "image_id": "9e29f08f-0e9a-42ff-86f3-7330babc2c6f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-dca066cf",
+  "image_id": "dca066cf-b564-4b86-a75e-34b9b0bf01b0",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-367f402d",
+  "image_id": "367f402d-cf3d-4a39-8717-d5f30d9b8560",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-23916e8a",
+  "image_id": "23916e8a-6b1f-4b78-a4dd-a70f5ea8c88b",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-b21eba8d",
+  "image_id": "b21eba8d-0bde-44c5-b689-01fbc1ffc4be",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-97620b7f",
+  "image_id": "97620b7f-54ba-445a-9817-b39c8684f890",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-52a76d18",
+  "image_id": "52a76d18-122b-4b19-9643-da4948434667",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-157f5e09",
+  "image_id": "157f5e09-784d-45c8-a6bd-6029920ef0fd",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-eae092a5",
+  "image_id": "eae092a5-8a1c-49d6-88f6-1ee8c71c0e07",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-9dc5e144",
+  "image_id": "9dc5e144-c3d2-4fde-8dac-a5f8c3b37c59",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-671603f9",
+  "image_id": "671603f9-b503-4d14-a389-3c46ff8bf163",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-273d37f5",
+  "image_id": "273d37f5-1f5f-4ab2-bfbf-1e5a4648500c",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-3179d873",
+  "image_id": "3179d873-a710-41a9-8773-98f01184d016",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-7d829cd3",
+  "image_id": "7d829cd3-ea26-4d40-a03f-3eb7367a5ad1",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-547cba07",
+  "image_id": "547cba07-80cb-43cf-ae23-c7a126a6b766",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shorts",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-2459a9ab",
+  "image_id": "2459a9ab-b654-4aef-be7c-89340da78cec",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-667a7349",
+  "image_id": "667a7349-f0a7-43bc-bb70-246b61e6354b",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-f4b934fc",
+  "image_id": "f4b934fc-e326-4f72-b535-53288b8b82d3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-95e66e02",
+  "image_id": "95e66e02-b4ed-4fe9-b538-db6bac4fb7df",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-ce118595",
+  "image_id": "ce118595-1373-463c-9be5-0b7d62ce1f0d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-bb361f03",
+  "image_id": "bb361f03-abc9-4a8e-a2a4-ff306a5b4612",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-f1ff2780",
+  "image_id": "f1ff2780-2ab1-401f-8089-089b5dfa1cf2",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-910268c2",
+  "image_id": "910268c2-a132-4d25-80b1-59812c52e65c",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-2fdb6ac9",
+  "image_id": "2fdb6ac9-dfe4-4824-baab-6bf4e1d2f802",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-491982c3",
+  "image_id": "491982c3-3e90-431e-99e6-b14ecea36384",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-5e2b335d",
+  "image_id": "5e2b335d-2f5e-4356-9aba-a735af742b6a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-1d08ddfe",
+  "image_id": "1d08ddfe-dfd4-4bf9-81a7-9cc8dfa2833f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-7e77ec6d",
+  "image_id": "7e77ec6d-2bd6-45c7-9904-cf1fae288afc",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-8d173264",
+  "image_id": "8d173264-bc7d-4175-8130-711c94d3f1ca",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-48895e87",
+  "image_id": "48895e87-ae51-4c7e-98ae-2855991264d1",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-c938f1ac",
+  "image_id": "c938f1ac-6e47-41a9-8546-9ca7c27477aa",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-8a7353cf",
+  "image_id": "8a7353cf-f8e3-4a73-b72e-239ed04d4e2d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-46e4c390",
+  "image_id": "46e4c390-2154-4f6f-8c6f-e7805564d929",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Skirt",
+  "weak_expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-d2db3c6a",
+  "image_id": "d2db3c6a-605a-450c-b21f-dc5af1a513b1",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-b2279dec",
+  "image_id": "b2279dec-874d-4571-a8b5-8e7d704e596d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-a1190e56",
+  "image_id": "a1190e56-0e53-41e3-ad16-a63575173747",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-bcb839e0",
+  "image_id": "bcb839e0-9055-4760-b5a4-b7fd703b716f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-2bc3b252",
+  "image_id": "2bc3b252-bec7-4dbc-beb3-f7977e71000f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-160c2e1c",
+  "image_id": "160c2e1c-48d5-4e31-8155-83152e2ad649",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-354f2a8e",
+  "image_id": "354f2a8e-8ecb-4284-9ab9-e39399e36afb",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-221f6226",
+  "image_id": "221f6226-4285-4d83-83ab-d3a1950e4a22",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-824014f4",
+  "image_id": "824014f4-825b-4bf2-835e-e3b8b7d0f387",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-58caa9fd",
+  "image_id": "58caa9fd-a3df-44ac-b296-05dbd8d02d47",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-af7c9c78",
+  "image_id": "af7c9c78-220e-4242-bc54-b0559838a0b3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-833cea61",
+  "image_id": "833cea61-c79a-4481-8082-8c0fe309c194",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-f28fb711",
+  "image_id": "f28fb711-b7bf-4d6e-9935-6970a311a14e",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-d356b8a6",
+  "image_id": "d356b8a6-b8bf-4666-81b9-a957aea03f98",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-07cddef1",
+  "image_id": "07cddef1-1fc8-47e4-a28a-613e60912590",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-7fc487f9",
+  "image_id": "7fc487f9-81a1-4285-aef9-45574cc8adce",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-05d361f6",
+  "image_id": "05d361f6-9518-4bf7-a644-6dba9402adf4",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-e4f8a796",
+  "image_id": "e4f8a796-8963-4a43-8e20-de6430d33780",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Dress",
+  "weak_expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-60e4697b",
+  "image_id": "60e4697b-f69b-4f9e-a0c9-4e707d0b0f2f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-c2f138b8",
+  "image_id": "c2f138b8-9581-4ad4-b370-efee47b5752d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-42518e91",
+  "image_id": "42518e91-c969-49f5-ac68-dfe394d7451e",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-90d2529c",
+  "image_id": "90d2529c-7bdb-4ca3-8292-696346706ad9",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-d29d1b88",
+  "image_id": "d29d1b88-0268-43cb-9674-cde9cb1e4922",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-96239b9d",
+  "image_id": "96239b9d-c1fd-4c6a-ad74-1d61e9a4503a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-f4f59703",
+  "image_id": "f4f59703-4f85-40f5-8ff4-79f2eca93684",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-ed518faf",
+  "image_id": "ed518faf-4e7a-4b38-90c6-18164211f952",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-8dd4871d",
+  "image_id": "8dd4871d-7522-4152-b837-cffb5f2cc261",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-90716fe4",
+  "image_id": "90716fe4-7c08-4156-9a30-629cfbfc463d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-b167f39f",
+  "image_id": "b167f39f-eea8-4f69-9494-e2346bd7e2c5",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-febae8c9",
+  "image_id": "febae8c9-1a36-4303-90aa-9fc306278cb2",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-d74b5597",
+  "image_id": "d74b5597-9fd8-4d25-ae3d-1af31ea70507",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-01420fed",
+  "image_id": "01420fed-89b3-4801-9d91-af5507322fa3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-21c78c7e",
+  "image_id": "21c78c7e-a927-49ea-94d4-9ceeaa847bb2",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-3b67cb0e",
+  "image_id": "3b67cb0e-eb7c-4f4e-a67a-804ae460932d",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-0cb4fc9c",
+  "image_id": "0cb4fc9c-7d38-4f11-95ea-71b61d0ae54c",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-161e35df",
+  "image_id": "161e35df-93d4-4b30-817e-de03c8c1d55a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-bdbe8d4b",
+  "image_id": "bdbe8d4b-a830-4d90-bc43-625b1ea2d0e3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-cb8ad9eb",
+  "image_id": "cb8ad9eb-0347-42bf-8b49-6695f4a16dd0",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Outwear",
+  "weak_expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-a58bc314",
+  "image_id": "a58bc314-45f6-434f-af5b-9ae0998de9ad",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-c7f0e9ee",
+  "image_id": "c7f0e9ee-507b-4b89-b7d1-7669a680560e",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-7a203e8c",
+  "image_id": "7a203e8c-a607-44f1-803c-e524bbcee6ad",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-c14d5954",
+  "image_id": "c14d5954-a90e-40a0-9412-5e70c4bbef8f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-e3348ff1",
+  "image_id": "e3348ff1-c8b0-47ea-9136-7de3df84c805",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-7fe3f9b7",
+  "image_id": "7fe3f9b7-ccee-4d88-a165-389762f3d77a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-3087f582",
+  "image_id": "3087f582-6895-41a2-93b5-145b1f209942",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-18741138",
+  "image_id": "18741138-5ba2-46c3-af17-ea9450ff4356",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-6db59125",
+  "image_id": "6db59125-aec0-4fd7-aca6-337a28277e44",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-644a1b3b",
+  "image_id": "644a1b3b-b434-4bbf-8d12-b81dc1a77bd8",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-71d79b5f",
+  "image_id": "71d79b5f-d1ec-4f0e-be31-deb86883573f",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-d55fe704",
+  "image_id": "d55fe704-5e35-4eea-a0a6-fa09f759a978",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Blazer",
+  "weak_expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-dc0d9ba1",
+  "image_id": "dc0d9ba1-165e-46d8-bdb1-fba1d753ead8",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-5e577f40",
+  "image_id": "5e577f40-dd22-4b40-9827-ce6cae5ac3fd",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-e454baf3",
+  "image_id": "e454baf3-5081-42fe-a145-e244e9a5edd2",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-ecd45864",
+  "image_id": "ecd45864-ec3c-4193-90c4-2bc4b3a38eb1",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-38cf3258",
+  "image_id": "38cf3258-0817-4a90-917c-5bda3c93bc99",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-bbd52702",
+  "image_id": "bbd52702-8038-4658-bcab-d6ee6586dd01",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-10d807a5",
+  "image_id": "10d807a5-fdbd-4b90-a70d-8e58c4d981d3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-f72b6737",
+  "image_id": "f72b6737-47de-4b8f-a1f0-a874d3d591b6",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-a353e037",
+  "image_id": "a353e037-381a-46a0-b0d6-10e1f1a7ebbe",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-261b36f3",
+  "image_id": "261b36f3-5c90-4d89-93d2-0d20a7782287",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-fe177283",
+  "image_id": "fe177283-e19e-479e-a495-fdd3a477bd4a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-50f6bd8d",
+  "image_id": "50f6bd8d-cf7a-4cb7-a1e8-190618947ef4",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-962253ff",
+  "image_id": "962253ff-260f-45bc-98b3-119468d98354",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-33a07241",
+  "image_id": "33a07241-01ee-4e64-97f6-e0cc65ae4f5c",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-9016f21f",
+  "image_id": "9016f21f-b6d7-469e-991f-aafca7c6c9ae",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-fa5fe172",
+  "image_id": "fa5fe172-a5b0-465a-bf25-7e22e7af43cf",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-c1480bd3",
+  "image_id": "c1480bd3-e7cb-421e-a58b-1b3cb7e4ff27",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-2b54e651",
+  "image_id": "2b54e651-5d43-4f24-9e9e-a58ce16d7c88",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-75557d1e",
+  "image_id": "75557d1e-b607-4918-82d0-b3f14f31d5a7",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-7e970ea2",
+  "image_id": "7e970ea2-6f5e-484b-a0d0-ed8da34d78fd",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-48d77020",
+  "image_id": "48d77020-2f4f-4ee5-b824-fded1bd3e5b0",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-29003421",
+  "image_id": "29003421-15e6-41f1-9c65-c0abdfcfaa6e",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Shoes",
+  "weak_expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-22745622",
+  "image_id": "22745622-ae32-407f-9af1-9a25eb79d7b3",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hat",
+  "weak_expected": {
+   "category": "accessory"
+  }
+ },
+ {
+  "id": "cc0-86a3f65f",
+  "image_id": "86a3f65f-8c08-48b6-a783-0e38ffa006ef",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hat",
+  "weak_expected": {
+   "category": "accessory"
+  }
+ },
+ {
+  "id": "cc0-ceb6ea8b",
+  "image_id": "ceb6ea8b-5289-4305-a52b-b4b44d3beeb9",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hat",
+  "weak_expected": {
+   "category": "accessory"
+  }
+ },
+ {
+  "id": "cc0-324b3d8f",
+  "image_id": "324b3d8f-3a20-4668-b58b-b4083ed1039a",
+  "source": "cc0-clothing-dataset",
+  "weak_label": "Hat",
+  "weak_expected": {
+   "category": "accessory"
+  }
+ }
+]
