@@ -57,24 +57,51 @@ if __name__ == "__main__":
         traced = torch.jit.trace(tower, example)
         ref = traced(torch.randn(1, 3, 224, 224, generator=torch.Generator().manual_seed(7)))
     import coremltools as ct
-    from coremltools.models.neural_network import quantization_utils
 
-    mlmodel = ct.convert(traced, inputs=[ct.TensorType(name="image", shape=(1, 3, 224, 224), dtype=np.float32)],
-                         outputs=[ct.TensorType(name="embedding")], convert_to="neuralnetwork",
-                         minimum_deployment_target=ct.target.iOS14, skip_model_load=True)
-    class LinearOnly(quantization_utils.QuantizedLayerSelector):
-        """Quantise only fully-connected/conv weights, matching int8_parity.py; norms stay float."""
-        def do_quantize(self, layer, **kwargs):
-            return layer.WhichOneof("layer") in ("innerProduct", "convolution") and super().do_quantize(layer, **kwargs)
+    variant = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--variant=")), "nn-int8")
+    inputs = [ct.TensorType(name="image", shape=(1, 3, 224, 224), dtype=np.float32)]
+    outputs = [ct.TensorType(name="embedding")]
+    if variant.startswith("nn-"):
+        from coremltools.models.neural_network import quantization_utils
 
-    q = quantization_utils.quantize_weights(mlmodel, nbits=8, quantization_mode="linear", selector=LinearOnly())
+        q = ct.convert(traced, inputs=inputs, outputs=outputs, convert_to="neuralnetwork",
+                       minimum_deployment_target=ct.target.iOS14, skip_model_load=True)
+        if variant == "nn-int8":
+            class LinearOnly(quantization_utils.QuantizedLayerSelector):
+                """Quantise only fully-connected/conv weights, matching int8_parity.py; norms stay float."""
+                def do_quantize(self, layer, **kwargs):
+                    return layer.WhichOneof("layer") in ("innerProduct", "convolution") and super().do_quantize(layer, **kwargs)
+
+            q = quantization_utils.quantize_weights(q, nbits=8, quantization_mode="linear", selector=LinearOnly())
+        suffix = "mlmodel"
+    elif variant in ("mlprogram-int8", "mlprogram-fp16"):
+        # ML Program (iOS 17 floor): fp16 compute like the Neural Engine; optional
+        # per-channel symmetric int8 weights. Requires macOS (BlobWriter).
+        q = ct.convert(traced, inputs=inputs, outputs=outputs, convert_to="mlprogram",
+                       minimum_deployment_target=ct.target.iOS17, compute_precision=ct.precision.FLOAT16,
+                       skip_model_load=True)
+        if variant == "mlprogram-int8":
+            import coremltools.optimize.coreml as cto
+            config = cto.OptimizationConfig(global_config=cto.OpLinearQuantizerConfig(
+                mode="linear_symmetric", granularity="per_channel", weight_threshold=2048))
+            q = cto.linear_quantize_weights(q, config=config)
+        suffix = "mlpackage"
+    else:
+        raise SystemExit(f"unknown variant {variant}")
+    model_id = model_id.rsplit(":", 1)[0] + f":{variant}"
+    manifest["modelID"] = model_id
+    if variant != "nn-int8":
+        out = out / "variants" / variant
+        out.mkdir(parents=True, exist_ok=True)
+    (out / "RIGGarmentPrompts.json").write_text(json.dumps(manifest, separators=(",", ":")))
     q.user_defined_metadata["rigModelID"] = model_id
-    q.short_description = "RiG garment encoder: FashionCLIP (MIT) image tower, 8-bit linear weights."
+    q.short_description = f"RiG garment encoder: FashionCLIP (MIT) image tower, {variant}."
     q.license = "MIT (patrickjohncyh/fashion-clip; OpenAI CLIP). See THIRD_PARTY_NOTICES."
-    path = out / "RIGGarmentEncoder.mlmodel"
+    path = out / f"RIGGarmentEncoder.{suffix}"
     q.save(str(path))
     spec = q.get_spec()
-    report = {"modelID": model_id, "bytes": path.stat().st_size, "hf_snapshot": snap,
+    size = path.stat().st_size if path.is_file() else sum(p.stat().st_size for p in path.rglob("*") if p.is_file())
+    report = {"modelID": model_id, "variant": variant, "bytes": size, "hf_snapshot": snap,
               "inputs": [i.name for i in spec.description.input], "outputs": [o.name for o in spec.description.output],
               "torch_reference_norm": float(ref.norm()), "coreml_runtime_parity": "UNVERIFIED on Windows; run on macOS",
               "manifest_bytes": (out / "RIGGarmentPrompts.json").stat().st_size,

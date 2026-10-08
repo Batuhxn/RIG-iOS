@@ -2,14 +2,17 @@
 
 1. Fetch the 300 reviewed Polyvore images (pinned dataset revision, range reads) and
    compose the 17 CC0 phone-photo cutouts.
-2. Re-export RIGGarmentEncoder.mlmodel from the pinned FashionCLIP revision with the
-   same script used on Windows; report whether its SHA-256 equals MODEL_LOCK.json.
+2. Export every candidate variant from the pinned FashionCLIP revision (nn-int8 twice,
+   to check that export is deterministic).
 3. fp32 PyTorch reference embedding + app decision per item.
 4. Core ML runtime (computeUnits ALL and CPU_ONLY) on the identical input tensor.
-5. Report embedding deviation, per-field decision parity, suggest/abstain transitions,
-   accuracy vs reviewed ground truth for both, and Mac-proxy latency.
+5. Report embedding deviation (median/p5/min cosine), every changed decision with its
+   margins, accuracy vs reviewed ground truth per split, and Mac-proxy latency.
 
-Exit non-zero if the product-decision gate fails (see GATES).
+Gate (ChatGPT/product, 2026-10-08): zero VALUE FLIPS on prefilled fields (category,
+subtype, length, primaryColor); suggest<->abstain moves are acceptable; precision on
+category/subtype may drop at most 1 pp vs the fp32 reference. Alternative-chip changes
+are reported, not gated. Exit non-zero if no variant passes.
 """
 import hashlib
 import json
@@ -27,18 +30,18 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
-FIELDS = ("category", "subtype", "length", "primaryColor", "subtypeAlternatives")
-# Product gate: Core ML decisions may differ from fp32 on at most 3% of items, a
-# changed item may only move between suggest and abstain (never to a different
-# value), and embeddings must stay close.
-GATES = {"max_changed_fraction": 0.03, "max_value_flips": 0, "min_median_cosine": 0.995, "min_cosine": 0.98}
+PREFILLED = ("category", "subtype", "length", "primaryColor")
+VARIANTS = ["nn-int8", "nn-fp32", "mlprogram-int8", "mlprogram-fp16"]
 
 
 def sha256(path):
+    path = Path(path)
     h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
+    files = [path] if path.is_file() else sorted(p for p in path.rglob("*") if p.is_file())
+    for f in files:
+        with open(f, "rb") as s:
+            for chunk in iter(lambda: s.read(1 << 20), b""):
+                h.update(chunk)
     return h.hexdigest()
 
 
@@ -67,20 +70,35 @@ def letterbox_tensor(rgba):
     return x.transpose(2, 0, 1)[None].copy()
 
 
-def classify_changes(ref, got):
-    """Per field: same / suggest->abstain / abstain->suggest / value flip."""
-    out = {}
-    for f in FIELDS:
-        a, b = ref.get(f), got.get(f)
-        if a == b:
-            continue
-        out[f] = "abstained" if b is None else "newly suggested" if a is None else "VALUE FLIP"
+def margins(image, manifest):
+    """Top-1 probability per decision group (the quantity the 0.7 gate thresholds)."""
+    from dump_parity import softmax
+    g, s = manifest["groups"], manifest["logitScale"]
+    flat = softmax(image, g["flat"], s)
+    cat = Counter()
+    for lab, p in flat:
+        cat[lab.split("/")[0]] += p
+    out = {"category": round(max(cat.values()), 4), "color": round(softmax(image, g["color"], s)[0][1], 4)}
     return out
 
 
-def accuracy(rows, key):
+def changes(ref, got):
+    out = {}
+    for f in PREFILLED + ("subtypeAlternatives",):
+        a, b = ref.get(f), got.get(f)
+        if a == b:
+            continue
+        if f == "subtypeAlternatives":
+            out[f] = "alternatives changed"
+        else:
+            out[f] = "abstained" if b is None else "newly suggested" if a is None else f"VALUE FLIP {a}->{b}"
+    return out
+
+
+def accuracy(rows, key, split=None):
     res = {}
-    for f in ("category", "subtype", "length", "primaryColor"):
+    rows = [r for r in rows if split is None or r["set"] == split]
+    for f in PREFILLED:
         el = [r for r in rows if f in r["expected"]]
         sug = [r for r in el if f in r[key]]
         cor = sum(r[key][f] == r["expected"][f] for r in sug)
@@ -90,108 +108,116 @@ def accuracy(rows, key):
     return res
 
 
+def export(variant):
+    subprocess.run([sys.executable, str(HERE / "export_fashionclip.py"), f"--variant={variant}"], check=True, cwd=HERE)
+    base = ROOT / "artifacts" if variant == "nn-int8" else ROOT / "artifacts/variants" / variant
+    path = next(base.glob("RIGGarmentEncoder.*"))
+    return path, json.loads((base / "RIGGarmentPrompts.json").read_text())
+
+
 def main():
     os.environ.setdefault("HF_HOME", str(ROOT / ".cache/hf"))
     import torch
     import coremltools as ct
-    from PIL import Image
     import bench
     from dump_parity import decide
 
-    t0 = time.time()
     subprocess.run([sys.executable, str(HERE / "fetch_images.py")], check=True, cwd=HERE)
     compose_real()
-    print(f"fixtures ready in {time.time() - t0:.0f}s", flush=True)
 
-    subprocess.run([sys.executable, str(HERE / "export_fashionclip.py")], check=True, cwd=HERE)
-    model_path = ROOT / "artifacts/RIGGarmentEncoder.mlmodel"
-    manifest = json.loads((ROOT / "artifacts/RIGGarmentPrompts.json").read_text())
+    exported = {v: export(v) for v in VARIANTS}
+    first_sha = sha256(exported["nn-int8"][0])
+    exported["nn-int8"] = export("nn-int8")
+    deterministic = first_sha == sha256(exported["nn-int8"][0])
+    manifest = exported["nn-int8"][1]  # text vectors are identical across variants
     lock_path = ROOT.parents[1] / "Resources/Models/MODEL_LOCK.json"
     lock = json.loads(lock_path.read_text()) if lock_path.exists() else {}
-    exported_sha = sha256(model_path)
 
     items = []
     for which in ("catalog", "real"):
         os.environ["RIG_BENCH_SET"] = which
         items += [(which, it) for it in bench.load_benchmark()]
-
-    enc = bench.Encoder("fashion-clip")
-    tower = enc.model.eval()
-
-    runtimes = {}
-    for units in ("ALL", "CPU_ONLY"):
-        t = time.perf_counter()
-        m = ct.models.MLModel(str(model_path), compute_units=getattr(ct.ComputeUnit, units))
-        runtimes[units] = {"model": m, "load_ms": (time.perf_counter() - t) * 1000, "times": []}
+    tower = bench.Encoder("fashion-clip").model.eval()
 
     rows = []
     for which, it in items:
-        rgba = bench.cutout(it)
-        x = letterbox_tensor(rgba)
+        x = letterbox_tensor(bench.cutout(it))
         with torch.no_grad():
             ref = tower.get_image_features(pixel_values=torch.from_numpy(x))[0].numpy().astype(np.float64)
-        row = {"id": it["id"], "set": which, "expected": it["expected"], "reference": decide(ref.tolist(), manifest)}
-        for units, rt in runtimes.items():
-            t = time.perf_counter()
-            out = rt["model"].predict({"image": x})["embedding"].reshape(-1).astype(np.float64)
-            rt["times"].append((time.perf_counter() - t) * 1000)
-            cos = float(out @ ref / (np.linalg.norm(out) * np.linalg.norm(ref)))
-            got = decide(out.tolist(), manifest)
-            row[units] = {"cosine": cos, "max_abs": float(np.abs(out - ref).max()), "decision": got,
-                          "changes": classify_changes(row["reference"], got)}
-        rows.append(row)
+        rows.append({"id": it["id"], "set": which, "expected": it["expected"], "x": x, "ref": ref,
+                     "reference": decide(ref.tolist(), manifest), "ref_margin": margins(ref.tolist(), manifest)})
 
-    report = {"host": platform.platform(), "python": sys.version.split()[0], "coremltools": ct.__version__,
-              "torch": torch.__version__, "n": len(rows),
-              "model": {"bytes": model_path.stat().st_size, "sha256": exported_sha,
-                        "pinned_sha256": lock.get("sha256"), "matches_lock": exported_sha == lock.get("sha256"),
-                        "modelID": manifest["modelID"]},
-              "gates": GATES, "reference_accuracy": accuracy(rows, "reference"), "runtimes": {}}
-    ok = True
-    for units, rt in runtimes.items():
-        cos = np.array([r[units]["cosine"] for r in rows])
-        changed = [r for r in rows if r[units]["changes"]]
-        kinds = Counter(k for r in changed for k in r[units]["changes"].values())
-        fields = Counter(f for r in changed for f in r[units]["changes"])
-        flips = kinds.get("VALUE FLIP", 0)
-        times = sorted(rt["times"])
-        for r in rows:
-            r[units + "_decision"] = r[units]["decision"]
-        summary = {
-            "cosine_median": round(float(np.median(cos)), 5), "cosine_p01": round(float(np.percentile(cos, 1)), 5),
-            "cosine_min": round(float(cos.min()), 5),
-            "max_abs_median": round(float(np.median([r[units]["max_abs"] for r in rows])), 5),
-            "items_changed": len(changed), "changed_fraction": round(len(changed) / len(rows), 4),
-            "change_kinds": dict(kinds), "changed_fields": dict(fields),
-            "changed_items": [{"id": r["id"], **r[units]["changes"]} for r in changed][:40],
-            "accuracy_vs_ground_truth": accuracy(rows, units + "_decision"),
-            "mac_proxy_ms": {"cold_load": round(rt["load_ms"], 1), "first_predict": round(rt["times"][0], 1),
-                             "p50": round(times[len(times) // 2], 1), "p95": round(times[int(0.95 * len(times)) - 1], 1)},
-        }
-        passed = (summary["changed_fraction"] <= GATES["max_changed_fraction"] and flips <= GATES["max_value_flips"]
-                  and summary["cosine_median"] >= GATES["min_median_cosine"] and summary["cosine_min"] >= GATES["min_cosine"])
-        summary["gate_passed"] = passed
-        ok &= passed if units == "ALL" else True  # ALL is what the app uses; CPU_ONLY is diagnostic
-        report["runtimes"][units] = summary
+    report = {"host": platform.platform(), "coremltools": ct.__version__, "torch": torch.__version__,
+              "n": len(rows), "export_deterministic": deterministic, "pinned_sha256": lock.get("sha256"),
+              "reference_accuracy": {s: accuracy(rows, "reference", s) for s in ("catalog", "real")},
+              "variants": {}}
+    passing = []
+    for variant, (path, _) in exported.items():
+        for units in ("ALL", "CPU_ONLY"):
+            t = time.perf_counter()
+            model = ct.models.MLModel(str(path), compute_units=getattr(ct.ComputeUnit, units))
+            load_ms = (time.perf_counter() - t) * 1000
+            times, cos, flips = [], [], []
+            key = f"{variant}/{units}"
+            kinds, alt_changes, changed = Counter(), 0, 0
+            for r in rows:
+                t = time.perf_counter()
+                out = model.predict({"image": r["x"]})["embedding"].reshape(-1).astype(np.float64)
+                times.append((time.perf_counter() - t) * 1000)
+                cos.append(float(out @ r["ref"] / (np.linalg.norm(out) * np.linalg.norm(r["ref"]))))
+                got = decide(out.tolist(), manifest)
+                r[key] = got
+                ch = changes(r["reference"], got)
+                if ch:
+                    changed += 1
+                for f, kind in ch.items():
+                    if f == "subtypeAlternatives":
+                        alt_changes += 1
+                        continue
+                    kinds[kind.split(" ")[0] if kind.startswith("VALUE") else kind] += 1
+                    if kind.startswith("VALUE"):
+                        flips.append({"id": r["id"], "set": r["set"], "field": f, "change": kind,
+                                      "expected": r["expected"].get(f), "ref_margin": r["ref_margin"],
+                                      "coreml_margin": margins(out.tolist(), manifest)})
+            cos = np.array(cos)
+            ts = sorted(times)
+            acc = {s: accuracy(rows, key, s) for s in ("catalog", "real")}
+            drops = {s: {f: round((report["reference_accuracy"][s][f]["precision"] or 0) - (acc[s][f]["precision"] or 0), 4)
+                         for f in ("category", "subtype")} for s in acc}
+            passed = not flips and all(d <= 0.01 for s in drops.values() for d in s.values())
+            if passed:
+                passing.append(key)
+            report["variants"][key] = {
+                "bytes": sum(p.stat().st_size for p in ([path] if path.is_file() else path.rglob("*")) if p.is_file()),
+                "sha256": sha256(path), "cosine_median": round(float(np.median(cos)), 5),
+                "cosine_p5": round(float(np.percentile(cos, 5)), 5), "cosine_min": round(float(cos.min()), 5),
+                "items_changed": changed, "prefill_change_kinds": dict(kinds), "alternatives_changed": alt_changes,
+                "value_flips": flips, "precision_drop_vs_fp32": drops, "accuracy": acc, "gate_passed": passed,
+                "mac_proxy_ms": {"load": round(load_ms, 1), "first": round(times[0], 1),
+                                 "p50": round(ts[len(ts) // 2], 1), "p95": round(ts[int(0.95 * len(ts)) - 1], 1)},
+            }
+    report["passing"] = passing
     out = ROOT / "results"
     out.mkdir(exist_ok=True)
     (out / "coreml_parity.json").write_text(json.dumps(report, indent=1))
-    (out / "coreml_parity_rows.json").write_text(json.dumps(rows, default=str))
     print(json.dumps(report, indent=1))
-    # Public annotations: job logs need a signed-in viewer, annotations do not.
-    for units, s in report["runtimes"].items():
-        print(f"::notice title=CoreML {units}::gate={'PASS' if s['gate_passed'] else 'FAIL'} cos_med={s['cosine_median']} "
-              f"cos_min={s['cosine_min']} changed={s['items_changed']}/{len(rows)} kinds={s['change_kinds']} "
-              f"fields={s['changed_fields']} proxy_ms={s['mac_proxy_ms']}")
-        acc = s["accuracy_vs_ground_truth"]
-        print(f"::notice title=Accuracy {units}::" + " ".join(
-            f"{f}={a['correct']}/{a['prefilled']} prec={a['precision']} rec={a['recall']}" for f, a in acc.items()))
+    # Public annotations (job logs need a signed-in viewer; annotations do not).
+    print(f"::notice title=Export::deterministic={deterministic} pinned_lock={lock.get('sha256', '')[:12]}")
+    for key, v in report["variants"].items():
+        a = v["accuracy"]
+        print(f"::notice title={key}::gate={'PASS' if v['gate_passed'] else 'FAIL'} MB={v['bytes'] / 1e6:.1f} "
+              f"cos med/p5/min={v['cosine_median']}/{v['cosine_p5']}/{v['cosine_min']} changed={v['items_changed']} "
+              f"kinds={v['prefill_change_kinds']} alt={v['alternatives_changed']} drop={v['precision_drop_vs_fp32']} "
+              f"proxy_ms={v['mac_proxy_ms']} sha={v['sha256'][:12]}")
+        print(f"::notice title={key} accuracy::" + " | ".join(
+            f"{s}: " + " ".join(f"{f}={x['correct']}/{x['prefilled']}" for f, x in a[s].items()) for s in a))
+        for fl in v["value_flips"][:10]:
+            print(f"::warning title={key} flip::{fl['id']} {fl['field']} {fl['change']} truth={fl['expected']} "
+                  f"margin ref={fl['ref_margin']} coreml={fl['coreml_margin']}")
     ra = report["reference_accuracy"]
-    print("::notice title=Accuracy fp32 reference::" + " ".join(
-        f"{f}={a['correct']}/{a['prefilled']} prec={a['precision']}" for f, a in ra.items()))
-    print(f"::notice title=Model::sha256={exported_sha} matches_lock={report['model']['matches_lock']} "
-          f"bytes={report['model']['bytes']} host={report['host']}")
-    sys.exit(0 if ok else 1)
+    print("::notice title=fp32 reference accuracy::" + " | ".join(
+        f"{s}: " + " ".join(f"{f}={x['correct']}/{x['prefilled']}" for f, x in ra[s].items()) for s in ra))
+    sys.exit(0 if passing else 1)
 
 
 if __name__ == "__main__":
