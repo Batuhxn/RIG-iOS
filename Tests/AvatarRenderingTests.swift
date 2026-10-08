@@ -165,7 +165,7 @@ final class AvatarRenderingTests: XCTestCase {
                 }
             }
         }
-        emit("grid", grid, width: Int(cell.width * 4), height: Int(cell.height * CGFloat(tiles.count)), quality: 0.6)
+        attach("grid", grid)
     }
 
     /// Garment Engine v1 review: the same striped garments as before, old 2D and old 3D
