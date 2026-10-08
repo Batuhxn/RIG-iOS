@@ -16,12 +16,6 @@ on:
         description: Release tag (never overwritten)
         required: true
         default: automd-model-v1
-  # TEMPORARY (no gh auth on the maintainer machine): a push that changes the
-  # request file publishes the tag named in it. Remove after publishing.
-  push:
-    branches: [feat/v0.3-auto-metadata-fashionclip]
-    paths:
-      - "Tools/AutoMetadataBench/publish-request.txt"
 
 permissions:
   contents: read
@@ -48,7 +42,7 @@ jobs:
           INPUT_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          tag="${INPUT_TAG:-$(head -n1 Tools/AutoMetadataBench/publish-request.txt | tr -d '[:space:]')}"
+          tag="$INPUT_TAG"
           [[ "$tag" =~ ^automd-model-v[0-9]+$ ]] || { echo "invalid tag '$tag'" >&2; exit 1; }
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "release $tag already exists; refusing to overwrite" >&2; exit 1

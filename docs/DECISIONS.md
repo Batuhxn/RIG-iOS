@@ -68,8 +68,11 @@ ranks outfits, and `CompatibilityProvider` stays inert.
   secondary colour when they agree with the primary. Metallic is not guessed from
   pixels.
 - **Delivery:** the `.mlmodel` is git-ignored. `Resources/Models/MODEL_LOCK.json`
-  pins its SHA-256; `scripts/fetch_metadata_model.sh` fetches the versioned
-  release asset (URL pinned before TestFlight) and fails the build on mismatch.
+  pins the URL and SHA-256 of Release `automd-model-v1`.
+  `scripts/fetch_metadata_model.sh` fetches it and fails the build on a mismatch.
+  The asset is built by `.github/workflows/automd-publish-model.yml`, which exports
+  with a pinned toolchain, runs the Core ML parity gate, and uploads those exact
+  bytes (export is not byte-deterministic). Tags are never overwritten.
   The static audit allows exactly that file and only with matching bytes. With
   no model present the app builds and the form is simply manual.
 - **Season** is no longer required: drafts default to all year. It cannot be seen
