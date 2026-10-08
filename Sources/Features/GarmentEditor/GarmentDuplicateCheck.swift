@@ -5,6 +5,8 @@ struct GarmentDuplicateSource: Sendable {
     let garmentID: UUID
     let category: GarmentCategory
     let imagePath: String
+    /// Stored visual identity; when present the photo is not even read for comparison.
+    var identity: GarmentVisualIdentity? = nil
 }
 
 enum GarmentDuplicateCheck {
@@ -28,12 +30,15 @@ enum GarmentDuplicateCheck {
             return .save
         }
         let candidates = sources.compactMap { source -> WardrobeSimilarityCandidateItem? in
-            guard source.category == category, source.garmentID != result.garmentID,
-                  let data = store.data(atRelativePath: source.imagePath) else { return nil }
+            guard source.category == category, source.garmentID != result.garmentID else { return nil }
+            // A stored identity makes the photo unnecessary; only older items are read from disk.
+            let data = source.identity == nil ? store.data(atRelativePath: source.imagePath) : Data()
+            guard let data, source.identity != nil || !data.isEmpty else { return nil }
             return WardrobeSimilarityCandidateItem(
                 garmentID: source.garmentID,
                 category: source.category,
-                imageData: data
+                imageData: data,
+                identity: source.identity
             )
         }
         let matches = await matcher.rankSimilarItems(

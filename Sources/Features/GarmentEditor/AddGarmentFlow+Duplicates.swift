@@ -63,7 +63,8 @@ extension AddGarmentFlow {
 
         let sources: [GarmentDuplicateSource] = wardrobeItems.compactMap { item in
             guard let path = item.preferredImageRelativePath else { return nil }
-            return GarmentDuplicateSource(garmentID: item.id, category: item.category, imagePath: path)
+            return GarmentDuplicateSource(garmentID: item.id, category: item.category, imagePath: path,
+                                          identity: item.visualIdentity)
         }
         isCheckingForDuplicates = true
         Task { @MainActor in

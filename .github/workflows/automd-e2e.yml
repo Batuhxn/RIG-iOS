@@ -7,6 +7,13 @@ name: Auto Metadata end to end
 
 on:
   workflow_dispatch:
+  # TEMPORARY (v0.4 work): build + test on pushes to the v0.4 branch. Remove before merging.
+  push:
+    branches: [feat/v0.4-wardrobe-identity]
+    paths:
+      - "Sources/**"
+      - "Tests/**"
+      - ".github/workflows/automd-e2e.yml"
 
 permissions:
   contents: read

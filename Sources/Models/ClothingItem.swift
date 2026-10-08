@@ -18,6 +18,10 @@ final class ClothingItem {
     var lengthRaw: String? = nil
     /// Suggestion provenance, never authoritative over the user's chosen values.
     var autoMetadataJSON: Data? = nil
+    /// v0.4 wardrobe identity: the garment's image embedding and the encoder that made it.
+    /// Optional, so older stores open unchanged; stale or missing values are recomputed lazily.
+    var visualEmbedding: Data? = nil
+    var visualEmbeddingModelID: String? = nil
     var primaryColorRaw: String
     var seasonMask: Int
     var isFavorite: Bool
@@ -106,6 +110,15 @@ extension ClothingItem {
     /// `??` collapses the wrong layer, which silently swallows the fallback.
     var displayImageRelativePath: String? {
         thumbnailRelativePath ?? preferredImageRelativePath
+    }
+
+    /// The stored wardrobe identity, or nil when absent or unreadable.
+    var visualIdentity: GarmentVisualIdentity? {
+        get { GarmentVisualIdentity(modelID: visualEmbeddingModelID, data: visualEmbedding) }
+        set {
+            visualEmbedding = newValue?.data
+            visualEmbeddingModelID = newValue?.modelID
+        }
     }
 
     var relativeImagePaths: [String] {

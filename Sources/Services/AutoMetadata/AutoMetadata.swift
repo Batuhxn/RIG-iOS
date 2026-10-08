@@ -27,6 +27,55 @@ struct AutoMetadataResult: Codable, Hashable, Sendable {
     var elapsedMilliseconds: Double = 0
     /// The two likeliest kinds when none was confident enough to prefill.
     var subtypeAlternatives: [String]? = nil
+    /// The garment's visual identity from the same inference. Kept in memory so it can be
+    /// stored on the garment; deliberately not part of the persisted suggestion JSON.
+    var identity: GarmentVisualIdentity? = nil
+
+    private enum CodingKeys: String, CodingKey {
+        case category, subtype, length, primaryColor, secondaryColor, modelID, semanticStatus
+        case elapsedMilliseconds, subtypeAlternatives
+    }
+}
+
+/// What makes a garment recognisable as itself: the encoder's unit-length image embedding,
+/// tagged with the encoder that produced it. Embeddings from different encoders are never
+/// compared; a model change makes stored identities stale and they are recomputed lazily.
+struct GarmentVisualIdentity: Codable, Hashable, Sendable {
+    let modelID: String
+    let vector: [Float]
+
+    init?(modelID: String, vector: [Float]) {
+        let norm = vector.reduce(Float(0)) { $0 + $1 * $1 }.squareRoot()
+        guard !modelID.isEmpty, !vector.isEmpty, norm.isFinite, norm > 1e-6 else { return nil }
+        self.modelID = modelID
+        self.vector = vector.map { $0 / norm }
+    }
+
+    /// Restores a stored identity; nil for missing, foreign or corrupt bytes.
+    init?(modelID: String?, data: Data?) {
+        guard let modelID, let data, !data.isEmpty, data.count % MemoryLayout<Float>.size == 0 else { return nil }
+        let count = data.count / MemoryLayout<Float>.size
+        // Stored bytes carry no alignment guarantee.
+        let floats = data.withUnsafeBytes { raw in
+            (0..<count).map { raw.loadUnaligned(fromByteOffset: $0 * MemoryLayout<Float>.size, as: Float.self) }
+        }
+        self.init(modelID: modelID, vector: floats)
+    }
+
+    /// Little-endian Float32, as every Apple platform stores it natively (~2 KB for 512-d).
+    var data: Data { vector.withUnsafeBufferPointer { Data(buffer: $0) } }
+
+    /// Cosine similarity; nil when the identities come from different encoders.
+    func similarity(to other: GarmentVisualIdentity) -> Float? {
+        guard modelID == other.modelID, vector.count == other.vector.count else { return nil }
+        return zip(vector, other.vector).reduce(Float(0)) { $0 + $1.0 * $1.1 }
+    }
+}
+
+/// Produces the visual identity of a garment image. Implementations must not throw:
+/// nil means "no identity available" and must never block saving a garment.
+protocol GarmentIdentityProviding: Sendable {
+    func identity(for imageData: Data) async -> GarmentVisualIdentity?
 }
 
 protocol GarmentMetadataAnalyzing: Sendable {
@@ -84,6 +133,7 @@ struct AutoMetadataService: GarmentMetadataAnalyzing {
             result.subtype = semantic.subtype
             result.length = semantic.length
             result.subtypeAlternatives = semantic.subtypeAlternatives
+            result.identity = semantic.identity
             result.modelID = semantic.modelID
             result.semanticStatus = semantic.semanticStatus
             // The embedding names colour under indoor light where pixel thresholds read

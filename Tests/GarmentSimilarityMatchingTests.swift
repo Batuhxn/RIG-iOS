@@ -1,11 +1,10 @@
 import XCTest
 @testable import RIG
 
-/// Pure logic only: banding, ranking and candidate-set construction. None of
-/// this touches `VNGenerateImageFeaturePrintRequest` — `VisionFeaturePrintSimilarityMatcher`
-/// itself is unverified (it has never run), the same caveat class as
-/// `VisionBackgroundRemover`, but everything it delegates to for ordering and
-/// thresholds lives here and is fully testable without Vision.
+/// Pure logic only: banding, ranking and candidate-set construction. The
+/// Vision feature-print matcher these thresholds were written for was retired
+/// in v0.4 (see `EmbeddingSimilarityMatcher`); the shared ranking and
+/// candidate-set helpers are still exercised here.
 final class GarmentSimilarityMatchingTests: XCTestCase {
     // MARK: - SimilarityThresholds.band(forDistance:)
 

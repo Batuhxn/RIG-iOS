@@ -20,12 +20,15 @@ struct RIGServices: Sendable {
     /// Production wiring. Note the compatibility provider: v0.1 passes none, so
     /// the engine runs on rules alone.
     static func live() throws -> RIGServices {
-        RIGServices(
+        // One encoder instance: it loads the model once and serves both suggestions and
+        // wardrobe identity (v0.4 retired the separate Vision feature-print matcher).
+        let encoder = CoreMLGarmentClassifier()
+        return RIGServices(
             imageStore: try GarmentImageStore.applicationSupport(),
             backgroundRemover: VisionBackgroundRemover(),
             engine: OutfitEngine(configuration: .default, compatibilityProvider: nil),
-            similarityMatcher: VisionFeaturePrintSimilarityMatcher(),
-            metadataAnalyzer: AutoMetadataService(classifier: CoreMLGarmentClassifier())
+            similarityMatcher: EmbeddingSimilarityMatcher(provider: encoder),
+            metadataAnalyzer: AutoMetadataService(classifier: encoder)
         )
     }
 

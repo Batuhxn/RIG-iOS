@@ -45,18 +45,50 @@ actor CoreMLGarmentClassifier: GarmentSemanticClassifying {
     }
 
     func classify(cutout: Data) async throws -> AutoMetadataResult {
+        let (vector, manifest) = try await embed(cutout)
+        var result = GarmentEmbeddingDecision.decide(image: vector, manifest: manifest)
+        result.identity = GarmentVisualIdentity(modelID: manifest.modelID, vector: vector.map(Float.init))
+        if let identity = result.identity { remember(cutout, identity) }
+        return result
+    }
+
+    private func embed(_ data: Data) async throws -> ([Double], Manifest) {
         try Task.checkCancellation()
         let (model, manifest) = try load()
-        let input = try Self.tensor(cutout)
+        let input = try Self.tensor(data)
         let features = try MLDictionaryFeatureProvider(dictionary: ["image": MLFeatureValue(multiArray: input)])
         let prediction = try await model.prediction(from: features)
         try Task.checkCancellation()
         guard let output = prediction.featureValue(for: "embedding")?.multiArrayValue else {
             throw AutoMetadataError.invalidContract
         }
-        let vector = (0..<output.count).map { output[$0].doubleValue }
-        return GarmentEmbeddingDecision.decide(image: vector, manifest: manifest)
+        return ((0..<output.count).map { output[$0].doubleValue }, manifest)
     }
+
+    // The duplicate check at Save usually compares the very cutout that import analysis just
+    // embedded; a few recent results spare that second inference.
+    private var recent: [(data: Data, identity: GarmentVisualIdentity)] = []
+
+    private func remember(_ data: Data, _ identity: GarmentVisualIdentity) {
+        recent.removeAll { $0.data == data }
+        recent.append((data, identity))
+        if recent.count > 4 { recent.removeFirst() }
+    }
+}
+
+extension CoreMLGarmentClassifier: GarmentIdentityProviding {
+    func identity(for imageData: Data) async -> GarmentVisualIdentity? {
+        if let hit = recent.first(where: { $0.data == imageData }) { return hit.identity }
+        guard let embedded = try? await embed(imageData),
+              let identity = GarmentVisualIdentity(modelID: embedded.1.modelID, vector: embedded.0.map(Float.init)) else {
+            return nil
+        }
+        remember(imageData, identity)
+        return identity
+    }
+}
+
+extension CoreMLGarmentClassifier {
 
     /// Explicit export contract: white letterbox, 224 square, RGB CHW, CLIP mean/std.
     /// The same aspect-fit policy must be used by the offline evaluation harness.

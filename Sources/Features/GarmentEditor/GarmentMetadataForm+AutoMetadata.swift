@@ -79,6 +79,8 @@ extension GarmentMetadataFields {
         if item.secondaryColorRaw == nil { clean.secondaryColor = nil }
         clean.discardStaleConfidence()
         item.autoMetadataJSON = clean.autoMetadata.flatMap { try? JSONEncoder().encode($0) }
+        // Identity describes the photo, not the fields, so user edits never invalidate it.
+        if let identity = autoMetadata?.identity { item.visualIdentity = identity }
     }
 }
 

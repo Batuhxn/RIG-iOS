@@ -61,7 +61,10 @@ struct SimilarityThresholds: Sendable, Equatable {
 struct WardrobeSimilarityCandidateItem: Sendable, Equatable {
     let garmentID: UUID
     let category: GarmentCategory
+    /// May be empty when `identity` is stored; the embedding matcher then never reads the photo.
     let imageData: Data
+    /// The garment's stored visual identity, when it has one (v0.4+).
+    var identity: GarmentVisualIdentity? = nil
 }
 
 /// One ranked result: an existing item, and how similar RIG judges it.

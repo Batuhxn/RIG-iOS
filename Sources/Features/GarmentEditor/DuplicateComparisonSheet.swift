@@ -29,7 +29,9 @@ struct DuplicateComparisonSheet: View {
 
     var body: some View {
         VStack(spacing: RIGTheme.Spacing.m) {
-            Text("RIG found something similar")
+            // v0.4 policy: one suggestion, no score or band, two choices. Shown only when the
+            // wardrobe identity is close enough that a false prompt is rare (~0.5% measured).
+            Text("Is this already in your wardrobe?")
                 .font(.headline)
                 .padding(.top, RIGTheme.Spacing.m)
 
@@ -37,31 +39,15 @@ struct DuplicateComparisonSheet: View {
                 comparison(for: match)
                     .padding(.horizontal, RIGTheme.Spacing.m)
 
-                HStack(spacing: RIGTheme.Spacing.s) {
-                    Text(candidateCategory.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    SimilarityBadge(band: match.band)
-                }
-
-                Text("Comparing your own photos, on this device. RIG does not know these are the same garment — you do.")
-                    .font(.footnote)
+                Text(candidateCategory.displayName)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, RIGTheme.Spacing.l)
 
                 VStack(spacing: RIGTheme.Spacing.s) {
-                    Button("Use this existing item") { onUseExisting(match.garmentID) }
+                    Button("Same item") { onUseExisting(match.garmentID) }
                         .buttonStyle(RIGPrimaryButtonStyle())
-                    Button("Add as new item", action: onAddAsNew)
+                    Button("Add as new", action: onAddAsNew)
                         .buttonStyle(RIGSecondaryButtonStyle())
-                    if state.hasAnother {
-                        Button("Not a match — show another", action: onShowAnother)
-                            .font(.footnote)
-                    }
-                    Button("Discard this photo", role: .destructive, action: onSkip)
-                        .font(.footnote)
-                        .padding(.top, RIGTheme.Spacing.xs)
                 }
                 .padding(.horizontal, RIGTheme.Spacing.m)
                 .padding(.bottom, RIGTheme.Spacing.l)
