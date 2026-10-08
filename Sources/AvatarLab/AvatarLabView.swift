@@ -90,7 +90,9 @@ struct AvatarLabView: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, RIGTheme.Spacing.m)
-            Text("Approximate preview, not a size or fit guide.")
+            Text(model.mode == .flat2D
+                 ? "Approximate preview, not a size or fit guide."
+                 : "Experimental 3D: garments are stretched at the sides and do not drape. Not a fit guide.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.top, RIGTheme.Spacing.s)

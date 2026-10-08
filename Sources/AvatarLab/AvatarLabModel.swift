@@ -17,9 +17,9 @@ enum AvatarPreviewMode: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .photo3D: return "3D photo"
+        case .flat2D: return "Photo"
+        case .photo3D: return "3D (experimental)"
         case .colour3D: return "3D colour"
-        case .flat2D: return "2D"
         }
     }
 }

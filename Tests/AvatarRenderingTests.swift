@@ -62,9 +62,9 @@ final class AvatarRenderingTests: XCTestCase {
         XCTAssertGreaterThan(c.width(atRow: hipRow), n.width(atRow: hipRow) + 2, "wider hips are visible in pixels")
         let s = try XCTUnwrap(PixelStats(side))
         XCTAssertNotEqual(s.nonBackgroundFraction, n.nonBackgroundFraction, accuracy: 0.002, "the side view differs from the front")
-        emit("neutral-front", neutral)
-        emit("neutral-side", side)
-        emit("hips-front", curvy)
+        attach("neutral-front", neutral)
+        attach("neutral-side", side)
+        attach("hips-front", curvy)
     }
 
     func testGarmentPhotoIsDrawnOnTheBody() throws {
@@ -82,10 +82,10 @@ final class AvatarRenderingTests: XCTestCase {
         curvy[.waist] = -0.6
         curvy[.bust] = 0.8
         let dressed = render(try content(shape: curvy, cuts: [.dress(length: .knee), .shoes], texture: stripes), mode: .photo3D)
-        emit("outfit-photo", photo)
-        emit("outfit-colour", colour)
-        emit("dress-curvy", dressed)
-        emit("outfit-side", render(outfit, mode: .photo3D, yaw: .pi / 2))
+        attach("outfit-photo", photo)
+        attach("outfit-colour", colour)
+        attach("dress-curvy", dressed)
+        attach("outfit-side", render(outfit, mode: .photo3D, yaw: .pi / 2))
     }
 
     /// The same outfit in all three preview modes, for the product comparison.
@@ -115,7 +115,86 @@ final class AvatarRenderingTests: XCTestCase {
         emit("mode-3d-photo-turned", render(outfit, mode: .photo3D, yaw: 0.6, size: size))
     }
 
+    /// The product review grid: rows are body shapes, columns are the 2D
+    /// preview and the 3D view from the front, three-quarter and side. Striped
+    /// garments show whether the warp breaks lines or tears edges.
+    func testComparisonGridAcrossSilhouettesAndAngles() throws {
+        let tee = Self.stripedTeeCutout()
+        let jeans = Self.trousersCutout()
+        let dress = Self.stripedDressCutout()
+        var curvy = AvatarBodyShape.neutral
+        curvy[.hips] = 1
+        curvy[.waist] = -0.7
+        curvy[.bust] = 0.8
+        let rows: [(AvatarBodyShape, [(AvatarGarmentCut, UIImage)])] = AvatarStartingSilhouette.all.map {
+            ($0.shape, [(.trousers, jeans), (.top(sleeve: .short), tee)])
+        } + [(curvy, [(.dress(length: .knee), dress)])]
+        let tile = CGSize(width: 200, height: 400)
+        var tiles: [[UIImage]] = []
+        for (shape, garments) in rows {
+            let outfit = try content(shape: shape, garments: garments.map { ($0.0, AvatarGarmentTexture.prepare($0.1).image) } + [(.shoes, nil)])
+            let base = render(try content(shape: shape, garments: []), mode: .flat2D, size: tile)
+            let projection = AvatarFrontProjection(viewWidth: tile.width, viewHeight: tile.height, visibleHeight: 1.9, centreY: 0.88)
+            let flat = UIGraphicsImageRenderer(size: tile).image { _ in
+                base.draw(at: .zero)
+                for (layer, photo) in zip(outfit.garments, garments.map(\.1)) {
+                    if let bands = projection.warpBands(for: layer.mesh) { AvatarGarmentTexture.drawWarped(photo, into: bands) }
+                }
+            }
+            tiles.append([flat] + [0, 0.75, Float.pi / 2].map { render(outfit, mode: .photo3D, yaw: $0, size: tile) })
+        }
+        let cell = CGSize(width: 90, height: 180)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let grid = UIGraphicsImageRenderer(size: CGSize(width: cell.width * 4, height: cell.height * CGFloat(tiles.count)), format: format).image { _ in
+            for (r, row) in tiles.enumerated() {
+                for (c, image) in row.enumerated() {
+                    image.draw(in: CGRect(x: CGFloat(c) * cell.width, y: CGFloat(r) * cell.height, width: cell.width, height: cell.height))
+                }
+            }
+        }
+        emit("grid", grid, width: Int(cell.width * 4), height: Int(cell.height * CGFloat(tiles.count)), quality: 0.6)
+    }
+
     // MARK: Helpers
+
+    /// A flat-lay tee in red and white horizontal stripes.
+    private static func stripedTeeCutout() -> UIImage {
+        let size = CGSize(width: 300, height: 300)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            teePath().addClip()
+            for i in 0..<15 {
+                (i.isMultiple(of: 2) ? UIColor(red: 0.8, green: 0.1, blue: 0.15, alpha: 1) : .white).setFill()
+                context.fill(CGRect(x: 0, y: CGFloat(i) * 20, width: 300, height: 20))
+            }
+        }
+    }
+
+    /// A flat-lay sleeveless dress with vertical navy and yellow stripes.
+    private static func stripedDressCutout() -> UIImage {
+        let size = CGSize(width: 240, height: 420)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: 70, y: 5)); path.addLine(to: CGPoint(x: 170, y: 5))
+            path.addLine(to: CGPoint(x: 185, y: 150)); path.addLine(to: CGPoint(x: 235, y: 415))
+            path.addLine(to: CGPoint(x: 5, y: 415)); path.addLine(to: CGPoint(x: 55, y: 150)); path.close()
+            path.addClip()
+            for i in 0..<12 {
+                (i.isMultiple(of: 2) ? UIColor(red: 0.1, green: 0.15, blue: 0.4, alpha: 1) : UIColor(red: 0.95, green: 0.8, blue: 0.2, alpha: 1)).setFill()
+                context.fill(CGRect(x: CGFloat(i) * 20, y: 0, width: 20, height: 420))
+            }
+        }
+    }
+
+    private static func teePath() -> UIBezierPath {
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: 110, y: 10)); path.addLine(to: CGPoint(x: 190, y: 10))
+        path.addLine(to: CGPoint(x: 290, y: 60)); path.addLine(to: CGPoint(x: 260, y: 120))
+        path.addLine(to: CGPoint(x: 230, y: 100)); path.addLine(to: CGPoint(x: 230, y: 295))
+        path.addLine(to: CGPoint(x: 70, y: 295)); path.addLine(to: CGPoint(x: 70, y: 100))
+        path.addLine(to: CGPoint(x: 40, y: 120)); path.addLine(to: CGPoint(x: 10, y: 60)); path.close()
+        return path
+    }
 
     /// A flat-lay T-shirt cutout: navy, white chest stripe, transparent background.
     private static func teeCutout() -> UIImage {
@@ -161,19 +240,27 @@ final class AvatarRenderingTests: XCTestCase {
         return AvatarGarmentTexture.prepare(image).image
     }
 
+    /// Keeps an image in the result bundle only (the log carries the mode and grid images).
+    private func attach(_ name: String, _ image: UIImage) {
+        let attachment = XCTAttachment(image: image)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     /// Prints a small PNG as base64 so CI logs and annotations carry it.
-    private func emit(_ name: String, _ image: UIImage) {
+    private func emit(_ name: String, _ image: UIImage, width: Int = 120, height: Int = 240, quality: CGFloat = 0.5) {
         let attachment = XCTAttachment(image: image)
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
-        let small = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 240), format: format).image { _ in
-            image.draw(in: CGRect(x: 0, y: 0, width: 120, height: 240))
+        let small = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { _ in
+            image.draw(in: CGRect(x: 0, y: 0, width: width, height: height))
         }
         // Annotations hold about 4 KB of text, so the JPEG goes out in numbered chunks.
-        if let data = small.jpegData(compressionQuality: 0.5) {
+        if let data = small.jpegData(compressionQuality: quality) {
             let text = data.base64EncodedString()
             var start = text.startIndex
             var part = 0
