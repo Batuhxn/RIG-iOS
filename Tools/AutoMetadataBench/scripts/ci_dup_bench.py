@@ -136,9 +136,19 @@ def main():
 
     # (a) Vision FeaturePrint
     fp_gal, fp_obs = zip(*[feature_print(p) for p in gallery_png])
+    missing = sum(v is None for v in fp_gal)
+    if missing:
+        raise RuntimeError(f"FeaturePrint failed for {missing} gallery cutouts")
     fp_q = [(i, feature_print(p)) for i, p in queries_png]
     # check that Euclidean distance on the raw vectors equals Vision's computeDistance
-    ok, d_api, _ = fp_obs[0].computeDistance_toFeaturePrintObservation_error_(None, fp_obs[1], None)
+    try:
+        res = fp_obs[0].computeDistance_toFeaturePrintObservation_error_(None, fp_obs[1], None)
+        # pyobjc returns (ok, distance) on some versions and (ok, distance, error) on others.
+        floats = [x for x in (res if isinstance(res, tuple) else (res,)) if isinstance(x, float)]
+        d_api = floats[0] if floats else float("nan")
+    except Exception as exc:  # pyobjc out-pointer bridging differs across versions
+        print(f"::warning title=computeDistance unavailable::{exc!r}")
+        d_api = float("nan")
     d_np = float(np.linalg.norm(fp_gal[0] - fp_gal[1]))
     print(f"FeaturePrint distance check: API {d_api:.4f} vs numpy {d_np:.4f}", flush=True)
     fpg = np.stack(fp_gal)
