@@ -126,22 +126,34 @@ final class AvatarRenderingTests: XCTestCase {
         curvy[.hips] = 1
         curvy[.waist] = -0.7
         curvy[.bust] = 0.8
-        let rows: [(AvatarBodyShape, [(AvatarGarmentCut, UIImage)])] = AvatarStartingSilhouette.all.map {
-            ($0.shape, [(.trousers, jeans), (.top(sleeve: .short), tee)])
-        } + [(curvy, [(.dress(length: .knee), dress)])]
+        let separates: [(AvatarGarmentCut, UIImage)] = [(AvatarGarmentCut.trousers, jeans), (AvatarGarmentCut.top(sleeve: .short), tee)]
+        var rows: [(AvatarBodyShape, [(AvatarGarmentCut, UIImage)])] = []
+        for silhouette in AvatarStartingSilhouette.all {
+            rows.append((silhouette.shape, separates))
+        }
+        rows.append((curvy, [(AvatarGarmentCut.dress(length: .knee), dress)]))
         let tile = CGSize(width: 200, height: 400)
         var tiles: [[UIImage]] = []
         for (shape, garments) in rows {
-            let outfit = try content(shape: shape, garments: garments.map { ($0.0, AvatarGarmentTexture.prepare($0.1).image) } + [(.shoes, nil)])
+            var dressed: [(AvatarGarmentCut, UIImage?)] = garments.map { garment -> (AvatarGarmentCut, UIImage?) in
+                (garment.0, AvatarGarmentTexture.prepare(garment.1).image)
+            }
+            dressed.append((AvatarGarmentCut.shoes, nil))
+            let outfit = try content(shape: shape, garments: dressed)
             let base = render(try content(shape: shape, garments: []), mode: .flat2D, size: tile)
             let projection = AvatarFrontProjection(viewWidth: tile.width, viewHeight: tile.height, visibleHeight: 1.9, centreY: 0.88)
             let flat = UIGraphicsImageRenderer(size: tile).image { _ in
                 base.draw(at: .zero)
-                for (layer, photo) in zip(outfit.garments, garments.map(\.1)) {
+                for (layer, garment) in zip(outfit.garments, garments) {
+                    let photo: UIImage = garment.1
                     if let bands = projection.warpBands(for: layer.mesh) { AvatarGarmentTexture.drawWarped(photo, into: bands) }
                 }
             }
-            tiles.append([flat] + [0, 0.75, Float.pi / 2].map { render(outfit, mode: .photo3D, yaw: $0, size: tile) })
+            var row: [UIImage] = [flat]
+            for yaw: Float in [0, 0.75, Float.pi / 2] {
+                row.append(render(outfit, mode: .photo3D, yaw: yaw, size: tile))
+            }
+            tiles.append(row)
         }
         let cell = CGSize(width: 90, height: 180)
         let format = UIGraphicsImageRendererFormat()

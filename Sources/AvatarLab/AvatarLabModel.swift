@@ -263,8 +263,8 @@ final class AvatarLabModel {
             let layers = zip(garments, geometry.1).map { garment, mesh in
                 AvatarGarmentLayer(id: garment.id, cut: garment.cut, mesh: mesh,
                                    texture: self.textures[garment.id]?.image,
-                                   colour: self.textures[garment.id]?.colour ?? .gray,
-                                   photo: self.textures[garment.id]?.photo)
+                                   photo: self.textures[garment.id]?.photo,
+                                   colour: self.textures[garment.id]?.colour ?? .gray)
             }
             self.content = AvatarStageContent(body: geometry.0, garments: layers,
                                               computeMilliseconds: Int(Date().timeIntervalSince(started) * 1000))
@@ -315,7 +315,7 @@ enum AvatarGarmentTexture {
             context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
             return true
         }
-        guard drawn else { return Array(repeating: 0...CGFloat(cg.width), count: bands) }
+        guard drawn else { return [ClosedRange<CGFloat>?](repeating: 0...CGFloat(cg.width), count: bands) }
         let toSource = CGFloat(cg.width) / CGFloat(width)
         return (0..<bands).map { band in
             var lo = Int.max, hi = Int.min
