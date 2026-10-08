@@ -138,9 +138,39 @@ protocol GarmentSimilarityMatching: Sendable {
         among items: [WardrobeSimilarityCandidateItem],
         thresholds: SimilarityThresholds
     ) async -> [WardrobeSimilarityMatch]
+
+    /// The same ranking, plus any identities the matcher had to compute for `items` that
+    /// had none stored (or one from another encoder), so the caller can keep them.
+    func rankSimilarItemsReportingIdentities(
+        to candidateImageData: Data,
+        among items: [WardrobeSimilarityCandidateItem],
+        thresholds: SimilarityThresholds
+    ) async -> WardrobeSimilarityOutcome
+
+    /// The encoder whose stored identities this matcher can use without the photo, or nil
+    /// when it does not use stored identities at all.
+    func identityModelID() async -> String?
+}
+
+/// A ranking and the identities computed while producing it (v0.4 lazy backfill).
+struct WardrobeSimilarityOutcome: Sendable, Equatable {
+    var matches: [WardrobeSimilarityMatch]
+    var computedIdentities: [UUID: GarmentVisualIdentity] = [:]
 }
 
 extension GarmentSimilarityMatching {
+    func identityModelID() async -> String? { nil }
+
+    func rankSimilarItemsReportingIdentities(
+        to candidateImageData: Data,
+        among items: [WardrobeSimilarityCandidateItem],
+        thresholds: SimilarityThresholds
+    ) async -> WardrobeSimilarityOutcome {
+        WardrobeSimilarityOutcome(
+            matches: await rankSimilarItems(to: candidateImageData, among: items, thresholds: thresholds)
+        )
+    }
+
     func rankSimilarItems(
         to candidateImageData: Data,
         among items: [WardrobeSimilarityCandidateItem]

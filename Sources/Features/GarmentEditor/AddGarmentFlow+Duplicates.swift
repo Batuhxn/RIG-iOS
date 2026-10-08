@@ -69,7 +69,7 @@ extension AddGarmentFlow {
         isCheckingForDuplicates = true
         Task { @MainActor in
             defer { isCheckingForDuplicates = false }
-            let outcome = await GarmentDuplicateCheck.evaluate(
+            let (outcome, computed) = await GarmentDuplicateCheck.evaluateReportingIdentities(
                 result: importResult,
                 choice: imageChoice,
                 category: category,
@@ -77,6 +77,7 @@ extension AddGarmentFlow {
                 store: services.imageStore,
                 matcher: services.similarityMatcher
             )
+            WardrobeIdentityBackfill.store(computed, on: wardrobeItems, in: modelContext)
             switch outcome {
             case .save:
                 commitSave()

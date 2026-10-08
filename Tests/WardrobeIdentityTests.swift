@@ -59,6 +59,7 @@ final class WardrobeIdentityTests: XCTestCase {
             calls.append(imageData)
             return answers[imageData]
         }
+        func currentModelID() async -> String? { "m1" }
     }
 
     func testMatcherUsesStoredIdentitiesAndEmbedsOnlyOlderItems() async {
@@ -91,5 +92,39 @@ final class WardrobeIdentityTests: XCTestCase {
         let json = try XCTUnwrap(String(data: JSONEncoder().encode(result), encoding: .utf8))
         XCTAssertFalse(json.contains("identity"))
         XCTAssertFalse(json.contains("vector"))
+    }
+
+    func testIdentitiesComputedForOlderItemsAreReportedForBackfill() async {
+        let candidatePhoto = Data([1]), oldPhoto = Data([2]), stalePhoto = Data([3])
+        let stored = UUID(), old = UUID(), stale = UUID()
+        let fresh = identity([0.2, 0.98])
+        let provider = FakeProvider([candidatePhoto: identity([1, 0]), oldPhoto: identity([0.99, 0.141]),
+                                     stalePhoto: fresh])
+        let matcher = EmbeddingSimilarityMatcher(provider: provider)
+        let items = [
+            WardrobeSimilarityCandidateItem(garmentID: stored, category: .top, imageData: Data(),
+                                            identity: identity([0.6, 0.8])),
+            WardrobeSimilarityCandidateItem(garmentID: old, category: .top, imageData: oldPhoto),
+            WardrobeSimilarityCandidateItem(garmentID: stale, category: .top, imageData: stalePhoto,
+                                            identity: identity([1, 0], model: "m0")),
+        ]
+        let ranking = await matcher.rankSimilarItemsReportingIdentities(
+            to: candidatePhoto, among: items, thresholds: .conservativeDefault)
+        XCTAssertEqual(ranking.matches.map(\.garmentID), [old])
+        XCTAssertEqual(Set(ranking.computedIdentities.keys), [old, stale], "current stored identities are not re-reported")
+        XCTAssertEqual(ranking.computedIdentities[stale], fresh, "an identity from another encoder is replaced")
+        let identityModelID = await matcher.identityModelID()
+        XCTAssertEqual(identityModelID, "m1")
+    }
+
+    func testComputedIdentitiesAreReportedEvenWithoutASuggestion() async {
+        let provider = FakeProvider([Data([1]): identity([1, 0]), Data([2]): identity([0, 1])])
+        let old = UUID()
+        let ranking = await EmbeddingSimilarityMatcher(provider: provider).rankSimilarItemsReportingIdentities(
+            to: Data([1]),
+            among: [WardrobeSimilarityCandidateItem(garmentID: old, category: .top, imageData: Data([2]))],
+            thresholds: .conservativeDefault)
+        XCTAssertTrue(ranking.matches.isEmpty)
+        XCTAssertEqual(Array(ranking.computedIdentities.keys), [old])
     }
 }

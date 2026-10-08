@@ -77,6 +77,10 @@ actor CoreMLGarmentClassifier: GarmentSemanticClassifying {
 }
 
 extension CoreMLGarmentClassifier: GarmentIdentityProviding {
+    func currentModelID() async -> String? {
+        (try? load())?.1.modelID
+    }
+
     func identity(for imageData: Data) async -> GarmentVisualIdentity? {
         if let hit = recent.first(where: { $0.data == imageData }) { return hit.identity }
         guard let embedded = try? await embed(imageData),

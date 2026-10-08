@@ -25,7 +25,7 @@ struct BulkImportFlow: View {
     /// The photographs the user chose, in the order they chose them.
     let items: [PhotosPickerItem]
 
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.modelContext) var modelContext
     @Environment(\.rigServices) var services
     @Environment(\.dismiss) private var dismiss
     @Query(sort: [SortDescriptor(\ClothingItem.createdAt, order: .reverse)])

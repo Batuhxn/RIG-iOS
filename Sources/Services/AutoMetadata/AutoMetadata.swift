@@ -76,6 +76,8 @@ struct GarmentVisualIdentity: Codable, Hashable, Sendable {
 /// nil means "no identity available" and must never block saving a garment.
 protocol GarmentIdentityProviding: Sendable {
     func identity(for imageData: Data) async -> GarmentVisualIdentity?
+    /// The model ID new identities carry, or nil when no encoder is available.
+    func currentModelID() async -> String?
 }
 
 protocol GarmentMetadataAnalyzing: Sendable {

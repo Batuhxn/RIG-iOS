@@ -5,10 +5,16 @@ import XCTest
 final class GarmentDuplicateCheckTests: XCTestCase {
     private actor RecordingMatcher: GarmentSimilarityMatching {
         let answer: [WardrobeSimilarityMatch]
+        let modelID: String?
         private(set) var candidate: Data?
         private(set) var compared: [WardrobeSimilarityCandidateItem] = []
 
-        init(answer: [WardrobeSimilarityMatch] = []) { self.answer = answer }
+        init(answer: [WardrobeSimilarityMatch] = [], modelID: String? = nil) {
+            self.answer = answer
+            self.modelID = modelID
+        }
+
+        func identityModelID() async -> String? { modelID }
 
         func rankSimilarItems(
             to candidateImageData: Data,
@@ -180,5 +186,25 @@ final class GarmentDuplicateCheckTests: XCTestCase {
         XCTAssertEqual(outcome, .save)
         let observed = await matcher.observation()
         XCTAssertNil(observed.0)
+    }
+
+    func testPhotosAreReadOnlyForGarmentsWithoutACurrentIdentity() async throws {
+        let store = try store()
+        let candidate = try result(UUID(), store: store)
+        var current = try source(UUID(), category: .top, store: store)
+        current.identity = GarmentVisualIdentity(modelID: "m1", vector: [1, 0])
+        var stale = try source(UUID(), category: .top, store: store)
+        stale.identity = GarmentVisualIdentity(modelID: "m0", vector: [1, 0])
+        let missing = try source(UUID(), category: .top, store: store)
+        let matcher = RecordingMatcher(modelID: "m1")
+        _ = await GarmentDuplicateCheck.evaluateReportingIdentities(
+            result: candidate, choice: .original, category: .top,
+            sources: [current, stale, missing], store: store, matcher: matcher
+        )
+        let compared = await matcher.observation().1
+        let photoBytes = Dictionary(uniqueKeysWithValues: compared.map { ($0.garmentID, $0.imageData.count) })
+        XCTAssertEqual(photoBytes[current.garmentID], 0)
+        XCTAssertEqual(photoBytes[stale.garmentID], 1)
+        XCTAssertEqual(photoBytes[missing.garmentID], 1)
     }
 }

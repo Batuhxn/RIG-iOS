@@ -10,8 +10,10 @@
   two buttons, "Same item" and "Add as new", with no score.
 - The Vision feature-print matcher is deleted. No second model, nothing paid, no
   photo leaves the device.
-- Older garments without a stored identity are embedded on demand when a check needs
-  them. They are not persisted back yet.
+- Older garments without a current identity (saved before v0.4, or under another
+  encoder) are embedded the first time a check needs them, and the identity is then
+  stored on the garment (lazy backfill). A failed save is rolled back and never blocks
+  adding the garment.
 
 ## Threshold: 0.93, provisional
 
@@ -63,6 +65,5 @@ app stores them.
 
 - iPhone multi-view gate: 20+ of Batuhan's own garments photographed twice on different
   days, plus his own look-alike items, to confirm 0.93 before it stops being provisional.
-- Persist identities computed on demand for older items (lazy backfill).
 - Remove the TEMPORARY push triggers in `automd-e2e.yml` and `automd-dup-bench.yml`
   before any merge.

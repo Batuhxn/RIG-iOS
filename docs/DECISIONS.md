@@ -110,8 +110,9 @@ only switches matching off for older items until they are embedded again.
 - Vision feature-print, the previous matcher, was worse at every operating point:
   its shipped 0.75 cutoff would have prompted on about half of all new garments.
   It is deleted.
-- Items saved before v0.4 have no stored vector and are embedded when a check
-  needs them. Nothing leaves the device.
+- Items saved before v0.4 (or under another encoder) are embedded the first
+  time a check needs them, and that vector is then stored, best effort: a failed
+  save changes nothing the user sees. Nothing leaves the device.
 
 ## A compatibility signal can never exceed 15% of a score
 

@@ -54,7 +54,7 @@ extension BulkImportFlow {
         isCheckingForDuplicates = true
         Task { @MainActor in
             defer { isCheckingForDuplicates = false }
-            let outcome = await GarmentDuplicateCheck.evaluate(
+            let (outcome, computed) = await GarmentDuplicateCheck.evaluateReportingIdentities(
                 result: result,
                 choice: choice,
                 category: category,
@@ -62,6 +62,7 @@ extension BulkImportFlow {
                 store: services.imageStore,
                 matcher: services.similarityMatcher
             )
+            WardrobeIdentityBackfill.store(computed, on: wardrobeItems, in: modelContext)
             guard queue.current?.id == item.id else { return }
             switch outcome {
             case .save:

@@ -40,29 +40,47 @@ enum WardrobeIdentityMatching {
 /// The wardrobe-identity matcher behind the existing `GarmentSimilarityMatching` seam.
 /// It replaces Vision feature prints: one encoder, the same embedding v0.3 computes on import.
 /// Items saved before v0.4, or under another encoder, are embedded from their stored photo
-/// on demand. Any failure means "no suggestion", never a blocked save.
+/// on demand and reported back so the caller can store them. Any failure means
+/// "no suggestion", never a blocked save.
 struct EmbeddingSimilarityMatcher: GarmentSimilarityMatching {
     let provider: any GarmentIdentityProviding
     var threshold: Float = WardrobeIdentityPolicy.threshold
+
+    func identityModelID() async -> String? {
+        await provider.currentModelID()
+    }
 
     func rankSimilarItems(
         to candidateImageData: Data,
         among items: [WardrobeSimilarityCandidateItem],
         thresholds: SimilarityThresholds
     ) async -> [WardrobeSimilarityMatch] {
-        guard !items.isEmpty, let candidate = await provider.identity(for: candidateImageData) else { return [] }
+        await rankSimilarItemsReportingIdentities(to: candidateImageData, among: items, thresholds: thresholds).matches
+    }
+
+    func rankSimilarItemsReportingIdentities(
+        to candidateImageData: Data,
+        among items: [WardrobeSimilarityCandidateItem],
+        thresholds: SimilarityThresholds
+    ) async -> WardrobeSimilarityOutcome {
+        guard !items.isEmpty, let candidate = await provider.identity(for: candidateImageData) else {
+            return WardrobeSimilarityOutcome(matches: [])
+        }
         var known: [(garmentID: UUID, identity: GarmentVisualIdentity)] = []
+        var computed: [UUID: GarmentVisualIdentity] = [:]
         for item in items {
             if let stored = item.identity, stored.modelID == candidate.modelID {
                 known.append((item.garmentID, stored))
             } else if !item.imageData.isEmpty, let fresh = await provider.identity(for: item.imageData) {
                 known.append((item.garmentID, fresh))
+                computed[item.garmentID] = fresh
             }
         }
         guard let best = WardrobeIdentityMatching.best(candidate: candidate, among: known, threshold: threshold) else {
-            return []
+            return WardrobeSimilarityOutcome(matches: [], computedIdentities: computed)
         }
         // The band is no longer shown; `distance` keeps ordering semantics for callers and tests.
-        return [WardrobeSimilarityMatch(garmentID: best.garmentID, band: .verySimilar, distance: 1 - best.similarity)]
+        let match = WardrobeSimilarityMatch(garmentID: best.garmentID, band: .verySimilar, distance: 1 - best.similarity)
+        return WardrobeSimilarityOutcome(matches: [match], computedIdentities: computed)
     }
 }

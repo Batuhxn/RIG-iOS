@@ -5,7 +5,7 @@ struct GarmentDuplicateSource: Sendable {
     let garmentID: UUID
     let category: GarmentCategory
     let imagePath: String
-    /// Stored visual identity; when present the photo is not even read for comparison.
+    /// Stored visual identity; when it is from the current encoder the photo is not even read.
     var identity: GarmentVisualIdentity? = nil
 }
 
@@ -26,14 +26,32 @@ enum GarmentDuplicateCheck {
         store: GarmentImageStore,
         matcher: any GarmentSimilarityMatching
     ) async -> Outcome {
+        await evaluateReportingIdentities(
+            result: result, choice: choice, category: category, sources: sources, store: store, matcher: matcher
+        ).outcome
+    }
+
+    /// `evaluate`, plus the identities computed for existing garments that had none stored
+    /// (or one from another encoder), keyed by garment, for the caller to persist.
+    static func evaluateReportingIdentities(
+        result: GarmentImportResult,
+        choice: GarmentImageChoice,
+        category: GarmentCategory,
+        sources: [GarmentDuplicateSource],
+        store: GarmentImageStore,
+        matcher: any GarmentSimilarityMatching
+    ) async -> (outcome: Outcome, computedIdentities: [UUID: GarmentVisualIdentity]) {
         guard let imageData = store.data(atRelativePath: choice.relativePath(in: result)) else {
-            return .save
+            return (.save, [:])
         }
+        let currentModelID = await matcher.identityModelID()
         let candidates = sources.compactMap { source -> WardrobeSimilarityCandidateItem? in
             guard source.category == category, source.garmentID != result.garmentID else { return nil }
-            // A stored identity makes the photo unnecessary; only older items are read from disk.
-            let data = source.identity == nil ? store.data(atRelativePath: source.imagePath) : Data()
-            guard let data, source.identity != nil || !data.isEmpty else { return nil }
+            // A current stored identity makes the photo unnecessary; only items without one, or
+            // with one from another encoder, are read from disk (and re-embedded by the matcher).
+            let isCurrent = source.identity != nil && (currentModelID == nil || source.identity?.modelID == currentModelID)
+            let data = isCurrent ? Data() : store.data(atRelativePath: source.imagePath)
+            guard let data, isCurrent || !data.isEmpty else { return nil }
             return WardrobeSimilarityCandidateItem(
                 garmentID: source.garmentID,
                 category: source.category,
@@ -41,15 +59,17 @@ enum GarmentDuplicateCheck {
                 identity: source.identity
             )
         }
-        let matches = await matcher.rankSimilarItems(
+        let ranking = await matcher.rankSimilarItemsReportingIdentities(
             to: imageData,
             among: WardrobeSimilarityQuery.candidates(
                 from: candidates,
                 category: category,
                 excluding: result.garmentID
-            )
+            ),
+            thresholds: .conservativeDefault
         )
-        let review = DuplicateReviewState(matches: matches)
-        return review.isExhausted ? .save : .review(candidateImageData: imageData, state: review)
+        let review = DuplicateReviewState(matches: ranking.matches)
+        let outcome: Outcome = review.isExhausted ? .save : .review(candidateImageData: imageData, state: review)
+        return (outcome, ranking.computedIdentities)
     }
 }
