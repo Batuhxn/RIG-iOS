@@ -1,0 +1,122 @@
+# Auto Metadata: publish the garment encoder as a versioned GitHub Release asset.
+#
+# Chain (ChatGPT/product rule, 2026-10-08): pinned FashionCLIP revision -> pinned
+# conversion toolchain -> export -> Core ML parity gate -> the EXACT gated bytes ->
+# Release asset. Export is not byte-deterministic, so nothing is re-exported after
+# the gate. An existing tag is never overwritten; a changed model gets a new tag.
+# Free: public repository, standard runner, GitHub Releases. No secrets beyond the
+# job's own token.
+
+name: Auto Metadata publish model
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (never overwritten)
+        required: true
+        default: automd-model-v1
+  # TEMPORARY (no gh auth on the maintainer machine): a push that changes the
+  # request file publishes the tag named in it. Remove after publishing.
+  push:
+    branches: [feat/v0.3-auto-metadata-fashionclip]
+    paths:
+      - "Tools/AutoMetadataBench/publish-request.txt"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automd-publish-model
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Export, gate, publish
+    runs-on: macos-15
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Resolve tag and refuse to overwrite
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="${INPUT_TAG:-$(head -n1 Tools/AutoMetadataBench/publish-request.txt | tr -d '[:space:]')}"
+          [[ "$tag" =~ ^automd-model-v[0-9]+$ ]] || { echo "invalid tag '$tag'" >&2; exit 1; }
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release $tag already exists; refusing to overwrite" >&2; exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#automd-model-}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned toolchain
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.5.0 transformers==4.48.3 coremltools==8.3.0 \
+            pillow==11.0.0 numpy==1.26.4 pyarrow==19.0.1 huggingface_hub==0.27.1 safetensors==0.5.2
+
+      - name: Export and gate (nn-int8 must pass)
+        working-directory: Tools/AutoMetadataBench/scripts
+        env:
+          RIG_VARIANTS: nn-int8
+          RIG_REQUIRE_PASS: nn-int8/ALL
+          PYTHONUNBUFFERED: "1"
+        run: python ci_parity.py
+
+      - name: Stage the exact gated bytes
+        id: stage
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          a=Tools/AutoMetadataBench/artifacts
+          mkdir -p release
+          cp "$a/RIGGarmentEncoder.mlmodel" "release/RIGGarmentEncoder-$VERSION.mlmodel"
+          cp "$a/RIGGarmentPrompts.json" "release/RIGGarmentPrompts-$VERSION.json"
+          cp Tools/AutoMetadataBench/results/coreml_parity.json "release/coreml-parity-$VERSION.json"
+          python - "$TAG" "$VERSION" <<'EOF'
+          import hashlib, json, os, sys
+          tag, version = sys.argv[1], sys.argv[2]
+          files = sorted(os.listdir("release"))
+          sha = {f: hashlib.sha256(open(f"release/{f}", "rb").read()).hexdigest() for f in files}
+          prompts = json.load(open(f"release/RIGGarmentPrompts-{version}.json"))
+          parity = json.load(open(f"release/coreml-parity-{version}.json"))
+          gate = parity["variants"]["nn-int8/ALL"]
+          manifest = {"tag": tag, "modelID": prompts["modelID"], "sha256": sha,
+                      "bytes": {f: os.path.getsize(f"release/{f}") for f in files},
+                      "hf_revision": "patrickjohncyh/fashion-clip@7e3ba62ce16b379a1ab479346b66f192e76f51b7",
+                      "toolchain": {"coremltools": parity["coremltools"], "torch": parity["torch"]},
+                      "host": parity["host"], "commit": os.environ["GITHUB_SHA"],
+                      "run": f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+                      "gate": {k: gate[k] for k in ("gate_passed", "cosine_median", "cosine_p5", "cosine_min",
+                                                    "items_changed", "prefill_change_kinds", "precision_drop_vs_fp32")}}
+          json.dump(manifest, open(f"release/SHA256-MANIFEST-{version}.json", "w"), indent=1)
+          print(json.dumps(manifest, indent=1))
+          print(f"::notice title=Publish::{tag} model sha256={sha[f'RIGGarmentEncoder-{version}.mlmodel']} prompts sha256={sha[f'RIGGarmentPrompts-{version}.json']} modelID={prompts['modelID']}")
+          EOF
+
+      - name: Create the release (gate passed)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" release/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "RiG Auto Metadata encoder $VERSION (FashionCLIP 2.0, nn-int8)" \
+            --notes "On-device garment encoder for RiG Auto Metadata. FashionCLIP 2.0 image tower (MIT; see docs/FASHIONCLIP_LEGAL_RISK.md), Core ML neural network, 8-bit weights. These are the exact bytes that passed the Core ML parity gate in this workflow run; see SHA256-MANIFEST and coreml-parity. Not for general reuse; attribution: Patrick John Chia et al., FashionCLIP."
+          echo "::notice title=Released::$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"

@@ -31,7 +31,7 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
 PREFILLED = ("category", "subtype", "length", "primaryColor")
-VARIANTS = ["nn-int8", "nn-fp32", "mlprogram-int8", "mlprogram-fp16"]
+VARIANTS = os.environ.get("RIG_VARIANTS", "nn-int8,nn-fp32,mlprogram-int8,mlprogram-fp16").split(",")
 
 
 def sha256(path):
@@ -217,7 +217,8 @@ def main():
     ra = report["reference_accuracy"]
     print("::notice title=fp32 reference accuracy::" + " | ".join(
         f"{s}: " + " ".join(f"{f}={x['correct']}/{x['prefilled']}" for f, x in ra[s].items()) for s in ra))
-    sys.exit(0 if passing else 1)
+    required = os.environ.get("RIG_REQUIRE_PASS")  # e.g. "nn-int8/ALL" for the publish job
+    sys.exit(0 if (required in passing if required else passing) else 1)
 
 
 if __name__ == "__main__":

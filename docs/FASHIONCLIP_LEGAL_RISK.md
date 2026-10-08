@@ -29,7 +29,21 @@ training data ship. Inference is on-device; no image leaves the phone.
 
 ## Measured alternative
 
-*Pending*: FashionCLIP 1.0 vs 2.0 on the same 311-item benchmark and the CC0 phone set.
+Same prompts, the app's exact decision rule (gate 0.7), each model with its own text
+vectors (`Tools/AutoMetadataBench`, 2026-10-08). Precision / recall of prefilled values:
+
+| Field | 2.0 (LAION base, shipped) catalogue | 1.0 (OpenAI base) catalogue | 2.0 phone | 1.0 phone |
+|---|---|---|---|---|
+| Category | 99.3% / 97.6% | 95.6% / 89.1% | 100% / 94% | 100% / 82% |
+| Kind | 96.4% / 88.3% | 89.7% / 73.0% | 92% / 80% | 80% / 53% |
+| Length | 93.1% / 80.6% | 90.6% / 43.3% | — | — |
+| Colour | 96.2% / 89.4% | 92.8% / 73.9% | 89% / 73% | 86% / 55% |
+
+Moving off the LAION lineage costs about 4–7 points of precision and 15–37 points of
+recall. It would miss the kind ≥ 80% product target on phone photos, and wrong
+prefills would roughly double. Recommendation: keep 2.0 with the C2 note unless a
+lawyer rates C2 a blocker. In that case the clean path is a RiG-owned fine-tune
+(item 3), not 1.0.
 
 ## Required actions before TestFlight
 

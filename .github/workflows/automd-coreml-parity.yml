@@ -15,6 +15,7 @@ on:
     branches: [feat/v0.3-auto-metadata-fashionclip]
     paths:
       - "Tools/AutoMetadataBench/**"
+      - "!Tools/AutoMetadataBench/publish-request.txt"
       - ".github/workflows/automd-coreml-parity.yml"
 
 permissions:
