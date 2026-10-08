@@ -1,13 +1,17 @@
 {
-    "file":  "RIGGarmentEncoder.mlmodel",
-    "sha256":  "b2cbfb44ac47e10c89592b849a28ea5850df2c064ff26de029f9494ed98f8dfa",
-    "bytes":  88786688,
-    "modelID":  "fashion-clip:7e3ba62ce16b:prompts-3b82f6ce2c0c06a7:letterbox-v1:int8",
-    "prompts":  "RIGGarmentPrompts.json",
-    "source":  "huggingface.co/patrickjohncyh/fashion-clip@7e3ba62ce16b379a1ab479346b66f192e76f51b7",
-    "license":  "MIT (FashionCLIP weights; OpenAI CLIP architecture)",
-    "format":  "Core ML neural network (iOS 14+ spec), 8-bit linear weights on linear/conv layers",
-    "generator":  "AutoMetadataBench/scripts/export_fashionclip.py",
-    "url":  "",
-    "coremlRuntimeParity":  "UNVERIFIED: requires macOS"
+ "file": "RIGGarmentEncoder.mlmodel",
+ "sha256": "acbb62c69c448d52b24f30edc2a010ace06f16fd36ab05699c1a2433bac77992",
+ "bytes": 88786674,
+ "modelID": "fashion-clip:7e3ba62ce16b:prompts-3b82f6ce2c0c06a7:letterbox-v1:nn-int8",
+ "prompts": "RIGGarmentPrompts.json",
+ "source": "huggingface.co/patrickjohncyh/fashion-clip@7e3ba62ce16b379a1ab479346b66f192e76f51b7",
+ "license": "MIT (FashionCLIP 2.0 weights, fine-tuned from laion/CLIP-ViT-B-32-laion2B, MIT). Provenance notes: docs/FASHIONCLIP_LEGAL_RISK.md",
+ "generator": "Tools/AutoMetadataBench/scripts/export_fashionclip.py --variant=nn-int8 via .github/workflows/automd-publish-model.yml",
+ "url": "https://github.com/Batuhxn/RIG-iOS/releases/download/automd-model-v1/RIGGarmentEncoder-v1.mlmodel",
+ "coremlRuntimeParity": "PASSED on macOS 15 arm64 (run 37757956663): 0 prefill value flips, cosine p5 0.9932",
+ "version": "v1",
+ "tag": "automd-model-v1",
+ "promptsSha256": "3a0eb85e4973d0afcc9311d4b6ad6d6f4ea39cdf6990f0ce2c0de68c3dff09d9",
+ "provenance": "https://github.com/Batuhxn/RIG-iOS/actions/runs/37757956663 (Core ML parity gate passed)",
+ "format": "Core ML neural network (iOS 14+ spec), 8-bit linear weights on linear/conv layers"
 }
