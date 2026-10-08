@@ -26,7 +26,7 @@ Output (little-endian), read by GarmentTemplateLibrary.swift:
     "RIGGARM1" | u32 templateCount
     per template:
       32-byte name | u32 version | u32 V
-      V × (u32 a, u32 b, u32 c,  f32 wb, f32 wc,  f32 dn, f32 t1, f32 t2,  f32 u, f32 v,  u32 canonical)
+      V × (u32 a, u32 b, u32 c,  f32 wb, f32 wc,  f32 dn, f32 t1, f32 t2,  f32 u, f32 v,  u32 canonical)  = 44 bytes
       u32 nFront | u32 × nFront      (triangle indices into the template's vertices)
       u32 nBack  | u32 × nBack
       u32 nHidden | u32 × nHidden    (indices of body triangles, i.e. body triangle list / 3)

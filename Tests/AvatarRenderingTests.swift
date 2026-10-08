@@ -11,9 +11,9 @@ import XCTest
 /// run can be inspected without downloading artifacts.
 @MainActor
 final class AvatarRenderingTests: XCTestCase {
-    private static var asset: AvatarBodyAsset?
+    static var asset: AvatarBodyAsset?
 
-    private func loadAsset() throws -> AvatarBodyAsset {
+    func loadAsset() throws -> AvatarBodyAsset {
         if let asset = Self.asset { return asset }
         let started = Date()
         let asset = try AvatarBodyAsset.bundled(in: AvatarTestBundle.bundle)
@@ -22,11 +22,11 @@ final class AvatarRenderingTests: XCTestCase {
         return asset
     }
 
-    private func content(shape: AvatarBodyShape, cuts: [AvatarGarmentCut], texture: UIImage?) throws -> AvatarStageContent {
+    func content(shape: AvatarBodyShape, cuts: [AvatarGarmentCut], texture: UIImage?) throws -> AvatarStageContent {
         try content(shape: shape, garments: cuts.map { ($0, texture) })
     }
 
-    private func content(shape: AvatarBodyShape, garments: [(AvatarGarmentCut, UIImage?)]) throws -> AvatarStageContent {
+    func content(shape: AvatarBodyShape, garments: [(AvatarGarmentCut, UIImage?)]) throws -> AvatarStageContent {
         let asset = try loadAsset()
         let started = Date()
         let engine = AvatarMorphEngine(asset: asset)
@@ -41,7 +41,7 @@ final class AvatarRenderingTests: XCTestCase {
                                   computeMilliseconds: Int(Date().timeIntervalSince(started) * 1000))
     }
 
-    private func render(_ content: AvatarStageContent, mode: AvatarPreviewMode, yaw: Float = 0, size: CGSize = CGSize(width: 240, height: 480)) -> UIImage {
+    func render(_ content: AvatarStageContent, mode: AvatarPreviewMode, yaw: Float = 0, size: CGSize = CGSize(width: 240, height: 480)) -> UIImage {
         let coordinator = AvatarStageCoordinator()
         coordinator.show(content, mode: mode)
         return coordinator.snapshot(size: size, yaw: yaw)
@@ -168,85 +168,10 @@ final class AvatarRenderingTests: XCTestCase {
         attach("grid", grid)
     }
 
-    /// Garment Engine v1 review: the same striped garments as before, old 2D and old 3D
-    /// photo next to the new engine (front, three-quarter, side), on silhouettes 1-3 and one
-    /// deliberately extreme but valid body. Failures are kept in the grid, not filtered out.
-    func testGarmentEngineComparisonGrid() throws {
-        let asset = try loadAsset()
-        let library = try GarmentTemplateLibrary.bundled(in: AvatarTestBundle.bundle, for: asset)
-        let engine = AvatarOutfitBuilder(asset: asset, templates: library)
-        var extreme = AvatarBodyShape.neutral
-        extreme[.hips] = 1
-        extreme[.waist] = -1
-        extreme[.bust] = 1
-        extreme[.shoulders] = 1
-        extreme[.overall] = 0.8
-        var shapes: [AvatarBodyShape] = AvatarStartingSilhouette.all.map(\.shape)
-        shapes.append(extreme)
-        let tee = Self.stripedTeeCutout(), jeans = Self.trousersCutout(), dress = Self.stripedDressCutout()
-        let outfits: [(String, [(AvatarGarmentCut, UIImage)])] = [
-            ("engine-separates", [(AvatarGarmentCut.trousers, jeans), (AvatarGarmentCut.top(sleeve: .short), tee)]),
-            ("engine-skirt-dress", []),
-        ]
-        let tile = CGSize(width: 180, height: 360)
-        let projection = AvatarFrontProjection(viewWidth: tile.width, viewHeight: tile.height, visibleHeight: 1.9, centreY: 0.88)
-        var lastMs = 0
-        for (name, separates) in outfits {
-            var rows: [[UIImage]] = []
-            for (index, shape) in shapes.enumerated() {
-                // The second grid alternates skirt and dress rows over the same shapes.
-                let garments: [(AvatarGarmentCut, UIImage)] = separates.isEmpty
-                    ? (index.isMultiple(of: 2) ? [(AvatarGarmentCut.skirt(length: .knee), dress), (AvatarGarmentCut.top(sleeve: .short), tee)]
-                                               : [(AvatarGarmentCut.dress(length: .knee), dress)])
-                    : separates
-                let textured: [(AvatarGarmentCut, UIImage?)] = garments.map { ($0.0, AvatarGarmentTexture.prepare($0.1).image) }
-                let old = try content(shape: shape, garments: textured)
-                let started = Date()
-                guard let built = engine.build(shape: shape, cuts: garments.map(\.0)) else { return XCTFail("cancelled") }
-                lastMs = Int(Date().timeIntervalSince(started) * 1000)
-                let layers = zip(garments, built.garments).map { garment, built -> AvatarGarmentLayer in
-                    var mesh = built
-                    if !mesh.backTriangles.isEmpty {
-                        mesh.uvs = GarmentPhotoMapping.uvs(for: mesh, photoSpans: AvatarGarmentTexture.photoSpans(of: garment.1))
-                    }
-                    return AvatarGarmentLayer(id: UUID(), cut: garment.0, mesh: mesh,
-                                       texture: AvatarGarmentTexture.prepare(garment.1).image,
-                                       colour: AvatarGarmentTexture.averageColour(of: garment.1))
-                }
-                let new = AvatarStageContent(body: built.body, bareBody: built.bareBody, garments: layers, computeMilliseconds: lastMs)
-                let base = render(try content(shape: shape, garments: []), mode: .flat2D, size: tile)
-                let flat = UIGraphicsImageRenderer(size: tile).image { _ in
-                    base.draw(at: .zero)
-                    for (layer, garment) in zip(old.garments, garments).sorted(by: { $0.0.cut.layer < $1.0.cut.layer }) {
-                        if let bands = projection.warpBands(for: layer.mesh) { AvatarGarmentTexture.drawWarped(garment.1, into: bands) }
-                    }
-                }
-                var row: [UIImage] = [flat, render(old, mode: .photo3D, size: tile)]
-                for yaw: Float in [0, 0.75, Float.pi / 2] {
-                    row.append(render(new, mode: .photo3D, yaw: yaw, size: tile))
-                }
-                rows.append(row)
-            }
-            let cell = CGSize(width: 72, height: 144)
-            let format = UIGraphicsImageRendererFormat()
-            format.scale = 1
-            let size = CGSize(width: cell.width * 5, height: cell.height * CGFloat(rows.count))
-            let grid = UIGraphicsImageRenderer(size: size, format: format).image { _ in
-                for (r, row) in rows.enumerated() {
-                    for (c, image) in row.enumerated() {
-                        image.draw(in: CGRect(x: CGFloat(c) * cell.width, y: CGFloat(r) * cell.height, width: cell.width, height: cell.height))
-                    }
-                }
-            }
-            emit(name, grid, width: Int(size.width), height: Int(size.height), quality: 0.6)
-        }
-        print("AVATAR_METRIC engine_build_ms_last=\(lastMs)")
-    }
-
     // MARK: Helpers
 
     /// A flat-lay tee in red and white horizontal stripes.
-    private static func stripedTeeCutout() -> UIImage {
+    static func stripedTeeCutout() -> UIImage {
         let size = CGSize(width: 300, height: 300)
         return UIGraphicsImageRenderer(size: size).image { context in
             teePath().addClip()
@@ -258,7 +183,7 @@ final class AvatarRenderingTests: XCTestCase {
     }
 
     /// A flat-lay sleeveless dress with vertical navy and yellow stripes.
-    private static func stripedDressCutout() -> UIImage {
+    static func stripedDressCutout() -> UIImage {
         let size = CGSize(width: 240, height: 420)
         return UIGraphicsImageRenderer(size: size).image { context in
             let path = UIBezierPath()
@@ -273,7 +198,7 @@ final class AvatarRenderingTests: XCTestCase {
         }
     }
 
-    private static func teePath() -> UIBezierPath {
+    static func teePath() -> UIBezierPath {
         let path = UIBezierPath()
         path.move(to: CGPoint(x: 110, y: 10)); path.addLine(to: CGPoint(x: 190, y: 10))
         path.addLine(to: CGPoint(x: 290, y: 60)); path.addLine(to: CGPoint(x: 260, y: 120))
@@ -284,7 +209,7 @@ final class AvatarRenderingTests: XCTestCase {
     }
 
     /// A flat-lay T-shirt cutout: navy, white chest stripe, transparent background.
-    private static func teeCutout() -> UIImage {
+    static func teeCutout() -> UIImage {
         let size = CGSize(width: 300, height: 300)
         return UIGraphicsImageRenderer(size: size).image { context in
             let path = UIBezierPath()
@@ -302,7 +227,7 @@ final class AvatarRenderingTests: XCTestCase {
     }
 
     /// A flat-lay trousers cutout in denim blue.
-    private static func trousersCutout() -> UIImage {
+    static func trousersCutout() -> UIImage {
         let size = CGSize(width: 200, height: 400)
         return UIGraphicsImageRenderer(size: size).image { _ in
             let path = UIBezierPath()
@@ -316,7 +241,7 @@ final class AvatarRenderingTests: XCTestCase {
     }
 
     /// A synthetic "garment photo": red and blue stripes, transparent corners.
-    private static func stripedGarment() -> UIImage {
+    static func stripedGarment() -> UIImage {
         let size = CGSize(width: 200, height: 240)
         let image = UIGraphicsImageRenderer(size: size).image { context in
             for i in 0..<12 {
@@ -328,7 +253,7 @@ final class AvatarRenderingTests: XCTestCase {
     }
 
     /// Keeps an image in the result bundle only (the log carries the mode and grid images).
-    private func attach(_ name: String, _ image: UIImage) {
+    func attach(_ name: String, _ image: UIImage) {
         let attachment = XCTAttachment(image: image)
         attachment.name = name
         attachment.lifetime = .keepAlways
@@ -336,7 +261,7 @@ final class AvatarRenderingTests: XCTestCase {
     }
 
     /// Prints a small PNG as base64 so CI logs and annotations carry it.
-    private func emit(_ name: String, _ image: UIImage, width: Int = 120, height: Int = 240, quality: CGFloat = 0.5) {
+    func emit(_ name: String, _ image: UIImage, width: Int = 120, height: Int = 240, quality: CGFloat = 0.5) {
         let attachment = XCTAttachment(image: image)
         attachment.name = name
         attachment.lifetime = .keepAlways
@@ -382,7 +307,7 @@ private struct PixelStats {
         pixels = buffer
     }
 
-    private func isBackground(_ i: Int) -> Bool { pixels[i] > 245 && pixels[i + 1] > 245 && pixels[i + 2] > 245 }
+    func isBackground(_ i: Int) -> Bool { pixels[i] > 245 && pixels[i + 1] > 245 && pixels[i + 2] > 245 }
 
     var nonBackgroundFraction: Double { fraction { r, g, b in !(r > 245 && g > 245 && b > 245) } }
 

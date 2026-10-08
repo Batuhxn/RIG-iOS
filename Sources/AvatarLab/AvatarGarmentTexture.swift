@@ -78,7 +78,7 @@ enum AvatarGarmentTexture {
     }
 
     static func prepare(_ image: UIImage) -> (image: UIImage, colour: UIColor) {
-        let colour = averageColour(of: image)
+        let colour = dominantColour(of: image) ?? averageColour(of: image)
         let maxSide: CGFloat = 1024
         let scale = min(1, maxSide / max(image.size.width, image.size.height, 1))
         let size = CGSize(width: max(1, image.size.width * scale), height: max(1, image.size.height * scale))
@@ -118,6 +118,39 @@ enum AvatarGarmentTexture {
     }
 
     /// Alpha-weighted mean colour, from an 8×8 downsample.
+    /// The fabric's main colour: the most frequent quantised colour among garment pixels
+    /// near the outline (the outer 8% of each row), where prints, logos and plackets
+    /// rarely are. A mean would mix a red-and-white stripe into pink. nil without pixels.
+    static func dominantColour(of image: UIImage) -> UIColor? {
+        guard let cg = image.cgImage else { return nil }
+        let width = min(cg.width, 128), height = min(cg.height, 128)
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+        var bins: [Int: (count: Int, r: Int, g: Int, b: Int)] = [:]
+        for y in 0..<height {
+            let row = (0..<width).filter { pixels[(y * width + $0) * 4 + 3] > 200 }
+            guard let lo = row.first, let hi = row.last else { continue }
+            let margin = max(1, (hi - lo) * 8 / 100)
+            for x in row where x <= lo + margin || x >= hi - margin {
+                let i = (y * width + x) * 4
+                let r = Int(pixels[i]), g = Int(pixels[i + 1]), b = Int(pixels[i + 2])
+                let key = (r >> 4) << 8 | (g >> 4) << 4 | (b >> 4)
+                let old = bins[key] ?? (0, 0, 0, 0)
+                bins[key] = (old.count + 1, old.r + r, old.g + g, old.b + b)
+            }
+        }
+        guard let best = bins.values.max(by: { $0.count < $1.count }), best.count > 0 else { return nil }
+        let n = CGFloat(best.count) * 255
+        return UIColor(red: CGFloat(best.r) / n, green: CGFloat(best.g) / n, blue: CGFloat(best.b) / n, alpha: 1)
+    }
+
     static func averageColour(of image: UIImage) -> UIColor {
         guard let cg = image.cgImage else { return .gray }
         let side = 8

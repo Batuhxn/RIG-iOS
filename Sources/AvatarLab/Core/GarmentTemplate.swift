@@ -55,7 +55,7 @@ struct GarmentTemplateLibrary: Sendable {
             let name = try r.name()
             let version = Int(try r.u32())
             let n = Int(try r.u32())
-            try r.require(n, bytesEach: 48)
+            try r.require(n, bytesEach: 44)  // 3 × u32, 7 × f32, 1 × u32
             var bindings: [GarmentTemplate.Binding] = []
             var uvs: [SIMD2<Float>] = []
             var canonical: [Int32] = []
