@@ -343,6 +343,9 @@ enum AvatarGarmentTexture {
         let maxSide: CGFloat = 1024
         let scale = min(1, maxSide / max(image.size.width, image.size.height, 1))
         let size = CGSize(width: max(1, image.size.width * scale), height: max(1, image.size.height * scale))
+        if let padded = padded(image, size: size) {
+            return (padded, colour)
+        }
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = true
@@ -352,6 +355,27 @@ enum AvatarGarmentTexture {
             image.draw(in: CGRect(origin: .zero, size: size))
         }
         return (filled, colour)
+    }
+
+    /// The cutout with its transparent pixels edge-padded (`AvatarTexturePadding`).
+    private static func padded(_ image: UIImage, size: CGSize) -> UIImage? {
+        guard let cg = image.cgImage else { return nil }
+        let width = Int(size.width), height = Int(size.height)
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let space = CGColorSpaceCreateDeviceRGB()
+        let info = CGImageAlphaInfo.premultipliedLast.rawValue
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: space, bitmapInfo: info) else { return false }
+            context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn, AvatarTexturePadding.pad(&pixels, width: width, height: height) else { return nil }
+        let result: CGImage? = pixels.withUnsafeMutableBytes { buffer in
+            CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                      bytesPerRow: width * 4, space: space, bitmapInfo: info)?.makeImage()
+        }
+        return result.map { UIImage(cgImage: $0) }
     }
 
     /// Alpha-weighted mean colour, from an 8×8 downsample.

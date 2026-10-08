@@ -205,6 +205,25 @@ final class AvatarLabTests: XCTestCase {
         XCTAssertGreaterThan(wide.prefix(5).map(\.width).max() ?? 0, (narrow.prefix(5).map(\.width).max() ?? 0) + 2, "the 2D skirt widens at the hips")
     }
 
+    func testTexturePaddingContinuesTheNearestGarmentColour() {
+        // 4×3: row 0 empty; row 1 red at x=1, blue at x=3; row 2 empty.
+        var p = [UInt8](repeating: 0, count: 4 * 3 * 4)
+        func set(_ x: Int, _ y: Int, _ r: UInt8, _ g: UInt8, _ b: UInt8) {
+            let i = (y * 4 + x) * 4
+            p[i] = r; p[i + 1] = g; p[i + 2] = b; p[i + 3] = 255
+        }
+        set(1, 1, 255, 0, 0)
+        set(3, 1, 0, 0, 255)
+        XCTAssertTrue(AvatarTexturePadding.pad(&p, width: 4, height: 3))
+        func pixel(_ x: Int, _ y: Int) -> [UInt8] { Array(p[((y * 4 + x) * 4)..<((y * 4 + x) * 4 + 4)]) }
+        XCTAssertEqual(pixel(0, 1), [255, 0, 0, 255], "left margin takes the red")
+        XCTAssertEqual(pixel(2, 1), [255, 0, 0, 255], "a gap takes its nearest neighbour (tie goes left)")
+        XCTAssertEqual(pixel(0, 0), [255, 0, 0, 255], "empty rows copy the nearest garment row")
+        XCTAssertEqual(pixel(3, 2), [0, 0, 255, 255])
+        var empty = [UInt8](repeating: 0, count: 16)
+        XCTAssertFalse(AvatarTexturePadding.pad(&empty, width: 2, height: 2))
+    }
+
     func testMorphingIsFastEnoughForASlider() throws {
         let asset = try asset()
         let engine = AvatarMorphEngine(asset: asset)
