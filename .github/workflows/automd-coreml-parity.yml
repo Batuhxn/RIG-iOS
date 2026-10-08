@@ -16,6 +16,7 @@ on:
     paths:
       - "Tools/AutoMetadataBench/**"
       - "!Tools/AutoMetadataBench/publish-request.txt"
+      - "!Tools/AutoMetadataBench/scripts/e2e.py"
       - ".github/workflows/automd-coreml-parity.yml"
 
 permissions:

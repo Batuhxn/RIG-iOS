@@ -35,12 +35,18 @@ final class AutoMetadataBenchmarkTests: XCTestCase {
             XCTAssertNotEqual(result.semanticStatus, "unavailable", "Benchmark requires the real model")
             let values: [String: String?] = ["category": result.category?.value.rawValue,
                 "subtype": result.subtype?.value, "length": result.length?.value.rawValue,
-                "primaryColor": result.primaryColor?.value.rawValue, "secondaryColor": result.secondaryColor?.value.rawValue]
+                "primaryColor": result.primaryColor?.value.rawValue, "secondaryColor": result.secondaryColor?.value.rawValue,
+                "subtypeAlternatives": result.subtypeAlternatives?.joined(separator: ",")]
             rows.append(Observation(id: fixture.id, expected: fixture.expected,
                 predicted: values.compactMapValues { $0 }, milliseconds: result.elapsedMilliseconds,
                 modelID: result.modelID, semanticStatus: result.semanticStatus, cold: index == 0))
         }
-        let attachment = XCTAttachment(data: try JSONEncoder().encode(rows), uniformTypeIdentifier: "public.json")
+        let encoded = try JSONEncoder().encode(rows)
+        // CI reads observations from the host file system; the attachment stays for Xcode.
+        if let output = ProcessInfo.processInfo.environment["RIG_METADATA_OUTPUT"] {
+            try encoded.write(to: URL(fileURLWithPath: output))
+        }
+        let attachment = XCTAttachment(data: encoded, uniformTypeIdentifier: "public.json")
         attachment.name = "auto-metadata-observations.json"
         attachment.lifetime = .keepAlways
         add(attachment)

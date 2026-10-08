@@ -1,0 +1,72 @@
+# Auto Metadata end to end: fetch the pinned model from its Release asset, build the
+# app with it bundled, and run the app's own Swift pipeline (UIKit letterbox ->
+# Core ML -> decision) on 311 fixtures in the simulator. Compares with the same model
+# run from Python and with reviewed ground truth. No secrets, no signing, no publishing.
+
+name: Auto Metadata end to end
+
+on:
+  workflow_dispatch:
+  # TEMPORARY (v0.3 review): run on pushes to the Auto Metadata branch. Public
+  # repository, standard runner. Remove before merging.
+  push:
+    branches: [feat/v0.3-auto-metadata-fashionclip]
+    paths:
+      - "Sources/**"
+      - "Tests/**"
+      - "Resources/Models/**"
+      - "scripts/fetch_metadata_model.sh"
+      - "Tools/AutoMetadataBench/scripts/e2e.py"
+      - ".github/workflows/automd-e2e.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automd-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Swift pipeline with the pinned model
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          PREFERRED="/Applications/Xcode_16.4.app"
+          if [ -d "$PREFERRED" ]; then SELECTED="$PREFERRED"
+          else SELECTED="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1 || true)"; fi
+          [ -n "${SELECTED:-}" ] && [ -d "$SELECTED" ] || { echo "No Xcode 16.x" >&2; exit 1; }
+          sudo xcode-select --switch "$SELECTED/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Fetch the pinned model, required as in a release build
+        run: bash scripts/fetch_metadata_model.sh --require-model
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prepare fixtures and the Python Core ML reference
+        run: |
+          set -euo pipefail
+          python -m pip install torch==2.5.0 coremltools==8.3.0 pillow==11.0.0 numpy==1.26.4 pyarrow==19.0.1
+          python Tools/AutoMetadataBench/scripts/e2e.py prepare "$RUNNER_TEMP/automd-e2e"
+
+      - name: Build and test with the model bundled
+        env:
+          TEST_RUNNER_RIG_METADATA_FIXTURES: ${{ runner.temp }}/automd-e2e/manifest.json
+          TEST_RUNNER_RIG_METADATA_OUTPUT: ${{ runner.temp }}/automd-e2e/observations.json
+        run: bash scripts/validate_macos.sh
+
+      - name: Compare Swift decisions
+        run: python Tools/AutoMetadataBench/scripts/e2e.py summarize "$RUNNER_TEMP/automd-e2e"
