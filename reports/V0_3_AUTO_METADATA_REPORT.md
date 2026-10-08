@@ -1,185 +1,99 @@
-# RiG v0.3 Auto Metadata — implementation and remaining gates
+# RiG v0.3 Auto Metadata — status report
 
-Date: 8 October 2026
+Date: 8 October 2026. Branch `feat/v0.3-auto-metadata-fashionclip` on Batuhxn/RIG-iOS
+(no PR, `main` untouched). Built by Claude (lead) on Codex's scaffold (`e6cd4bd`,
+`c9198d8`). Codex reviewed twice; all of its findings were fixed. Product decisions came
+from ChatGPT acting for Batuhan.
 
-Status: source implementation and measurement tooling prepared; **not a validated,
-working end-to-end classifier or a TestFlight-ready release**. No model weights are
-bundled. Colours are wired to run after successful background removal; category,
-subtype and length fall back to manual entry until a validated model is installed.
-Swift/iOS code has not been compiled or executed on this Windows host.
+## Status
 
-## Repository and baseline
+**Remote-verifiable work is done.** Only measurements that need Batuhan's physical
+iPhone remain, plus the TestFlight upload itself.
 
-- Repository: Batuhxn/RIG-iOS.
-- Current upstream main inspected: `2b0013f` (TestFlight release diagnostics).
-- Local original checkout was `design/nocturne-ios`, `8eef6b6`. It is a different,
-  older design branch. Its files were not overwritten.
-- Work is in an isolated checkout under this chat's `work/RIG-iOS` directory.
-- Branch: `feat/v0.3-auto-metadata-main`, based on upstream main.
-- Commits: `e6cd4bd` spike/export/measurement tools; `c9198d8` editable integration.
-- No remote branch push, PR, TestFlight upload, signing or deployment performed.
+- The real Core ML runtime was validated on GitHub macOS runners against the fp32
+  reference, at product-decision level.
+- The model is published as Release `automd-model-v1`: the exact bytes that passed
+  the gate. It is fetched and SHA-256 verified at build time; Release builds fail
+  without it.
+- End to end, the app's own Swift pipeline ran with the fetched model in the
+  simulator on 311 labelled items: 0 value flips against Python Core ML.
+- The Xcode build and the full XCTest suite are green.
 
-## Existing architecture inspected
+## What the user experiences
 
-SwiftUI screens, SwiftData persistence and XcodeGen (`project.yml`). iOS deployment
-target remains **17.0**, Swift language mode 5, targeted strict concurrency.
+Photo → background removal → analysis (model prewarmed when Add Item opens) → the
+form opens prefilled with a one-line summary such as "Skirt · Mini · Black" and an
+auto-name ("Black mini skirt"). Season defaults to All year. When the kind is
+uncertain: "Is it [Skirt] [Shorts]". Every field stays editable. A typed name is
+never overwritten. There is no confidence number and no confirmation screen.
+Without the model (development builds) the form is simply manual.
 
-On current main, AddGarmentFlow receives camera or Photos bytes, runs
-GarmentImportService, and displays image review with the metadata form. Unlike the
-older design branch, current main has no crop step in this flow. BulkImportFlow
-processes one queue item at a time and shares GarmentMetadataForm. Duplicate checks
-run before saving. Original/cutout choice remains independent of metadata analysis.
+## How it works
 
-ClothingItem already persisted category, free-text subtype, primary colour and
-season, with image paths instead of image bytes. GarmentSnapshot supplies category
-and primary colour to the outfit engine. No ranking changes were made.
+- `GarmentSemanticClassifying` / `GarmentMetadataAnalyzing`: the UI never sees the model.
+- `CoreMLGarmentClassifier` (actor, loads once): white letterbox 224 → FashionCLIP 2.0
+  image tower (Core ML NN, 8-bit weights, 88.8 MB) → embedding.
+- `GarmentEmbeddingDecision` (Foundation-only): a softmax over prompt-ensemble text
+  vectors. Category = sum over its kinds. Prefill at ≥ 0.7, else abstain. Uncertain
+  kinds offer their top 2.
+- Colour comes from the same embedding. Black/navy, white/beige and black/gray need
+  ≥ 0.95. Pixels supply a secondary colour only when they agree with the primary.
+- Prompts are versioned separately (`promptsID`). `modelID` must equal the encoder's
+  `rigModelID` or the classifier refuses to run.
 
-GarmentImageProcessing normalizes orientation and caps originals/cutouts/thumbnails
-at 1600/1200/400 pixels. VisionBackgroundRemover uses the iOS 17 foreground instance
-mask request, combines all detected foreground instances, and emits an alpha PNG.
-That is a foreground mask, not a clothes-only semantic segmentation mask. The v0.3
-scope assumes one garment; worn outfits, skin, hangers and multiple garments remain
-important evaluation cases. Removal failure continues with the original image.
+## Measured accuracy (precision / recall of what is prefilled)
 
-## Implemented behaviour
+| Split | Category | Kind | Length | Colour |
+|---|---|---|---|---|
+| Catalogue, 294 verified Polyvore cutouts | 99.3 / 97.6 | 96.5 / 89.4 | 93.0 / 79.1 | 96.3 / 81.4 |
+| Phone, 17 CC0 photos | 100 / 94 | 100 / 80 | — | 100 / 64 |
+| Realistic, 218 CC0 amateur photos (verified) | 99.5 / 96.8 | 95.1 / 87.6 | 100 / 67 | 90.1 / 56.1 |
+| Realistic hard subset (40) | 39/40 | 19/20 | — | 14/17 |
+| Swift app in simulator, catalogue (CI e2e) | 99.0 | 95.7 | 94.9 | 96.4 |
 
-- Optional category, subtype, mini/midi/maxi length, primary/secondary colour,
-  per-field score, model identifier, availability state and duration.
-- Length only for `bottom/skirt` and `dress/dress`; no skirt length for trousers,
-  footwear or jumpsuits. Changing category clears dependent subtype and length.
-- Fixed, independent category/subtype/length prompt groups. Existing category raw
-  values remain stable. Subtype remains editable free text for compatibility.
-- Semantic ranking normalizes image/text vectors, uses cosine similarity, rejects
-  nonfinite/zero/dimension-mismatched embeddings, and abstains on insufficient
-  score or top-two separation. Provisional thresholds: cosine 0.20, margin 0.025.
-  These have **not** been calibrated on garment data.
-- Colour extraction reads only a successful cutout, samples at <=192 pixels,
-  converts to sRGB RGBA8, ignores alpha <230/255 and unpremultiplies retained RGB.
-  Fixed HSV bins produce a deterministic histogram; fewer than 32 valid pixels
-  abstain. Secondary colour requires >=15% of accepted mask area. Metallic remains
-  manual. Colour score is pixel area share, not probability of correctness.
-- Existing required name/category/primary-colour/season validation remains. No
-  season or garment name is invented. All predicted values remain editable.
-- Explicitly cleared fields remain cleared on a later merge. Manual edits discard
-  that field's stale confidence. Incompatible length and repeated primary/secondary
-  colours cannot be persisted by the metadata writer.
-- Optional SwiftData `lengthRaw`, `secondaryColorRaw`, `autoMetadataJSON` preserve
-  old rows' absence of metadata. Failed edits restore these fields too. A real
-  v0.2 on-disk store migration is still an unexecuted validation gate.
-- Model failure does not discard deterministic colours or block manual saving.
-  A generation guard rejects late single-import results; cancellation/cursor checks
-  prevent applying bulk results to another item.
+Targets: category ≥ 90% and kind ≥ 80% are met on every split. Colour ≥ 95% is met
+on catalogue photos. On amateur photos colour reaches 90% precision. The remaining
+gap is mostly black vs navy under cool indoor light, and the ambiguous-pair rule
+leaves those cases for the user (a product decision).
 
-## Backend and licensing assessment
+## Gates and where they run
 
-MobileCLIP is technically relevant: Apple's example performs on-device zero-shot
-classification and offers Core ML models. However its demo requires iOS 17.2,
-whereas RiG targets 17.0. Demo requirements do not prove the minimum requirement
-of every exported model; inspect the chosen artifact's specification instead.
-[Official iOS demo](https://github.com/apple-aiml-research/ml-mobileclip/tree/main/ios_app)
-
-The currently published LICENSE_MODELS grants research-only use and explicitly
-excludes product development/commercial products. The older Core ML model card
-points to a differently named weight/data license. Do not infer checkpoint rights
-from the code license or apply one version's license to all older artifacts.
-No MobileCLIP weights were downloaded or redistributed.
-[Current model terms](https://raw.githubusercontent.com/apple/ml-mobileclip/main/LICENSE_MODELS),
-[Core ML model card](https://huggingface.co/apple/coreml-mobileclip)
-
-At the user's request, the alternative evaluated is **OpenAI CLIP ViT-B/32** using
-the official distribution and its MIT license. Preserve the MIT notice with any
-redistribution and archive the exact checkpoint/source provenance. The model card
-also warns that deployment needs task-specific evaluation and fine-grained classes
-can be unreliable; this is not a claim of garment accuracy or vendor endorsement.
-[MIT license](https://github.com/openai/CLIP/blob/main/LICENSE),
-[Model card](https://github.com/openai/CLIP/blob/main/model-card.md)
-
-The exporter prepares a Core ML image encoder plus precomputed text vectors,
-avoiding an on-device text encoder/tokenizer. It records checkpoint and prompt
-hashes in a shared identifier checked at runtime. Input is float32 RGB CHW
-1x3x224x224 with a white aspect-fit canvas and CLIP mean/std; this differs from
-CLIP's usual image crop and requires garment validation. Export requests iOS 17.
-
-ViT-B/32 is expected to have a larger device footprint than MobileCLIP-S0; no local
-device size, memory or latency measurements justify a stronger comparison.
-Conversion/runtime compatibility remains unverified. Export parity checks one
-synthetic tensor; this is only a conversion smoke test, not image preprocessing or
-accuracy validation. Real-photo parity must be added before activation.
-
-## Files changed
-
-| Area | Files |
+| Gate | Result |
 |---|---|
-| Analysis | `Sources/Services/AutoMetadata/AutoMetadata.swift`, `CoreMLGarmentClassifier.swift`, `MaskedColorExtractor.swift` |
-| Import wiring | `Sources/App/RIGServices.swift`, `Sources/Services/ImageStorage/GarmentImportService.swift` |
-| Form and flows | `GarmentMetadataForm.swift`, new `GarmentMetadataForm+AutoMetadata.swift`, `AddGarmentFlow.swift`, `AddGarmentFlow+Duplicates.swift`, `BulkImportFlow.swift` under `Sources/Features/GarmentEditor` |
-| Persistence | `Sources/Models/ClothingItem.swift`, `Sources/Features/GarmentEditor/GarmentMutations.swift` |
-| Tests | `Tests/AutoMetadataTests.swift`, `AutoMetadataServiceTests.swift`, `AutoMetadataPersistenceTests.swift`, `AutoMetadataBenchmarkTests.swift` |
-| Tooling | `scripts/export_metadata_clip.py`, `metadata_metrics.py`, `test_metadata_metrics.py`, narrowly scoped Core ML permission in `static_audit.py` |
-| Documentation | `docs/AUTO_METADATA_PLAN.md`, this report |
+| Core ML runtime parity (`automd-coreml-parity.yml`, macOS 15) | nn-fp32 identical to torch (cos 1.000). nn-int8: 0 prefill value flips, cos median 0.9954 / p5 0.9932 / min 0.9912, precision drop ≤ 0.74 pp. mlprogram-int8 rejected (one wrong category on a phone photo). |
+| Publish gated bytes (`automd-publish-model.yml`) | `automd-model-v1`; refuses an existing tag or Release; atomic tag creation |
+| Swift end to end with the fetched model (`automd-e2e.yml`) | 0 value flips, worst precision drop 0.77 pp, complete coverage enforced |
+| Release-configuration packaging | encoder, prompts and acknowledgements in the app; MODEL_LOCK.json kept out |
+| Gate A (Xcode build + XCTest) | green (run as part of e2e) |
+| Swift = Python decision logic (WSL Swift 6.3) | exact on 529 embeddings |
+| Static audit | allows only the pinned, untracked model file |
 
-## Test evidence and benchmark results
+## Proxy performance (not iPhone)
 
-| Check | Result |
-|---|---|
-| Existing static audit, including new Swift sources | PASS: 67 source files, 22 test files, 229 test functions discovered |
-| New Python measurement tests | PASS: 6/6 |
-| Python export/metrics syntax compilation | PASS |
-| Git whitespace check | PASS |
-| Added Swift tests | 15 unit tests + 1 opt-in benchmark authored; NOT RUN |
-| Existing general Python suite | NOT GREEN on Windows: 22 tests, 19 error records and 1 failure; unavailable bash executable and POSIX-vs-Windows path assertion; initial temp permission issue resolved by using workspace temp |
-| Xcode build / Swift unit suite / UI / store migration | NOT RUN: no Apple runtime or Swift compiler available |
-| Core ML conversion parity | NOT RUN: no macOS Core ML runtime, torch/clip/coremltools absent |
-| Garment accuracy / coverage / correction rate | NO RESULT: no model and no labelled garment evaluation set |
-| iPhone cold/warm p50/p95, peak memory, bundle size | NO RESULT: no iPhone run |
+- Core ML on a CPU-only macOS VM: p50 275 ms, p95 300 ms.
+- Swift `analyze()` in the simulator: cold 1.4 s (now hidden by prewarm), warm p50 385 ms.
+- Simulator memory: see the e2e annotation "simulator memory proxy".
 
-Static audit is not compilation. Test discovery is not test execution. Synthetic
-ranking/colour cases are not a garment benchmark. No vendor latency numbers are
-reported as RiG measurements.
+The iPhone has a Neural Engine; these numbers say nothing reliable about it.
 
-## Completing validation and activation
+## Privacy and licences
 
-1. On a Mac, use the delivered source or apply the patch on `2b0013f`; run the
-   existing `scripts/validate_macos.sh` to compile and execute the tests first.
-2. In an isolated Python environment install OpenAI CLIP from a pinned source
-   revision plus compatible pinned torch/coremltools; retain dependency versions
-   and MIT notice. Run `python scripts/export_metadata_clip.py --output build/metadata-model`.
-   The exporter records versions and the checkpoint hash but dependencies have not
-   been resolved/pinned in this session.
-3. Validate real-photo tensor orientation, colour space, aspect-fit and conversion
-   parity. The proposed exported assets are **not installed in Sources automatically**.
-4. For a development benchmark, add the generated model package and prompt JSON
-   as resources so the app contains `RIGGarmentEncoder.mlmodelc` and
-   `RIGGarmentPrompts.json`. The existing static audit intentionally still rejects
-   model binaries: activation requires a targeted checksum/provenance allowlist,
-   not removing the general binary guard. This gate remains unfinished.
-5. Supply a consented, labelled set with train/validation/test separation by garment,
-   not photo. Cover all category/subtype classes, colours, skirt/dress lengths,
-   backgrounds, lighting, partial views and difficult masks. Tune thresholds only
-   on validation; freeze taxonomy/thresholds before held-out evaluation.
-6. Benchmark fixture JSON format:
+- Everything runs on device; the static audit forbids networking APIs in app sources.
+  The model is fetched at build time, never at run time.
+- FashionCLIP weights and code are MIT. The training-data provenance (Farfetch, and
+  the LAION base model) is reviewed in `docs/FASHIONCLIP_LEGAL_RISK.md`: one item is
+  rated *unresolved* and none a *blocker*. The measured alternative (FashionCLIP 1.0)
+  is clearly worse.
+- MIT notices ship in iOS Settings → RIG → Acknowledgements (tested).
 
-   ```json
-   [{"id":"skirt-001","cutout":"skirt-001.png","expected":{
-     "category":"bottom","subtype":"skirt","length":"mini","primaryColor":"black"
-   }}]
-   ```
+## Open items
 
-   Set `RIG_METADATA_FIXTURES` in the test host environment to the device/simulator-
-   accessible fixture manifest. Absent expected keys are unlabelled, not correct
-   abstentions. The harness attaches `auto-metadata-observations.json` to xcresult;
-   run `python scripts/metadata_metrics.py <observations.json>` after extraction.
-   It reports all-sample accuracy, suggested-only accuracy, coverage, correction
-   proxy, and cold versus warm timing. It rejects missing-model observations.
-   This times metadata only, not the full Vision/import pipeline. Profile total
-   import latency and peak memory separately with Instruments on the oldest
-   supported device. Benchmarking is skipped explicitly when fixtures are absent.
-7. Check live UI overrides, cancellation, duplicate checks, failed removal,
-   original/cutout choice, multi-import and reopening an actual v0.2 store.
-   Check no-confidence/low-confidence cases and secondary-colour false positives.
-8. Only after results justify activation, permit the exact model artifacts and
-   update release metadata to v0.3. Marketing version remains 0.2 in this patch
-   because a verified v0.3 release was not produced.
-
-The pending work needs a Mac/iPhone execution environment and representative labelled
-photos. It cannot be replaced by host static checks or fabricated benchmark numbers.
+1. **Needs Batuhan's iPhone:** real-device p50/p95, peak memory, thermal behaviour,
+   Vision cutout quality on his wardrobe, 30+ of his own photos.
+2. **Before merging:** remove the temporary branch push triggers in
+   `automd-coreml-parity.yml` and `automd-e2e.yml` (manual dispatch stays).
+3. **TestFlight:** `scripts/release_testflight.sh` now requires the pinned model; the
+   rest of the release flow is unchanged.
+4. **Later (not v0.3):** colour beyond 90% on amateur photos needs a dedicated colour
+   head or fine-tune. Strings are English on `main`; the Turkish pass lives on
+   `design/nocturne-ios`.
