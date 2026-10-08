@@ -58,7 +58,13 @@ extension GarmentMetadataFields {
     }
 
     mutating func discardStaleConfidence() {
-        if editedFields.contains(.category) || autoMetadata?.category?.value != category { autoMetadata?.category = nil }
+        if editedFields.contains(.category) || autoMetadata?.category?.value != category {
+            autoMetadata?.category = nil
+            autoMetadata?.subtypeAlternatives = nil
+        }
+        if editedFields.contains(.subtype) || !subtype.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            autoMetadata?.subtypeAlternatives = nil
+        }
         if editedFields.contains(.subtype) || autoMetadata?.subtype?.value != subtype { autoMetadata?.subtype = nil }
         if editedFields.contains(.length) || autoMetadata?.length?.value != length { autoMetadata?.length = nil }
         if editedFields.contains(.primaryColor) || autoMetadata?.primaryColor?.value != colorFamily { autoMetadata?.primaryColor = nil }
@@ -126,6 +132,7 @@ extension GarmentMetadataForm {
                         .accessibilityLabel("From the photo: \(fields.summaryLine)")
                 }
                 if let alternatives = metadata.subtypeAlternatives, fields.subtype.isEmpty,
+                   metadata.category?.value == fields.category, metadata.category != nil,
                    !fields.editedFields.contains(.subtype) {
                     HStack(spacing: RIGTheme.Spacing.s) {
                         Text("Is it")

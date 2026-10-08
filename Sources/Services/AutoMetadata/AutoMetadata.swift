@@ -4,7 +4,8 @@ enum GarmentLength: String, CaseIterable, Codable, Sendable {
     case mini, midi, maxi
 
     static func applies(category: GarmentCategory?, subtype: String) -> Bool {
-        (category == .dress && subtype.lowercased() == "dress") || (category == .bottom && subtype.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "skirt")
+        let kind = subtype.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return (category == .dress && kind == "dress") || (category == .bottom && kind == "skirt")
     }
 }
 
@@ -76,6 +77,11 @@ struct AutoMetadataService: GarmentMetadataAnalyzing {
             if let semanticColor = semantic.primaryColor {
                 if result.primaryColor?.value != semanticColor.value { result.secondaryColor = nil }
                 result.primaryColor = semanticColor
+            } else {
+                // A working classifier explicitly abstained on colour. Do not
+                // bypass its gate with the lower-precision pixel primary.
+                result.primaryColor = nil
+                result.secondaryColor = nil
             }
         } catch {
             result.semanticStatus = "unavailable"

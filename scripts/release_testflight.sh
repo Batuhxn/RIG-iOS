@@ -96,6 +96,13 @@ for directory in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Libra
   cp "$secret_dir/profile.mobileprovision" "$target" 2>> "$secret_dir/profile-errors.log" || fail 'Failed to install profile'
 done
 
+# Fetch before XcodeGen enumerates resources. Signed Auto Metadata releases may
+# not silently degrade to the model-absent validation build.
+bash scripts/fetch_metadata_model.sh --require-model > "$secret_dir/model.log" 2>&1 \
+  || fail 'Pinned garment encoder is required for the Auto Metadata release'
+python3 scripts/static_audit.py > "$secret_dir/model-audit.log" 2>&1 \
+  || fail 'Static audit failed before archive'
+
 echo '[7/13] Generate Xcode project'
 xcodegen generate > "$secret_dir/generation.log" 2>&1 || fail 'Failed to generate Xcode project'
 echo generation >> "$secret_dir/completed"

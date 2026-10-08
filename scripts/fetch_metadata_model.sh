@@ -7,6 +7,13 @@
 # absent one leaves the app to build with Auto Metadata off.
 set -euo pipefail
 
+require_model=false
+case "${1:-}" in
+  "") ;;
+  --require-model) require_model=true ;;
+  *) echo "model: unknown argument" >&2; exit 2 ;;
+esac
+
 root="$(cd "$(dirname "$0")/.." && pwd)"
 lock="$root/Resources/Models/MODEL_LOCK.json"
 read -r file sha url < <(python3 -c 'import json,sys; l=json.load(open(sys.argv[1])); print(l["file"], l["sha256"], l.get("url") or "-")' "$lock")
@@ -19,6 +26,10 @@ if [ -f "$target" ]; then
   echo "model: $file does not match MODEL_LOCK.json" >&2; exit 1
 fi
 if [ "$url" = "-" ]; then
+  if [ "$require_model" = true ]; then
+    echo "model: the Auto Metadata release requires the pinned encoder; provide matching bytes or pin its URL" >&2
+    exit 1
+  fi
   echo "model: no URL pinned yet; building without Auto Metadata classification"; exit 0
 fi
 tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
