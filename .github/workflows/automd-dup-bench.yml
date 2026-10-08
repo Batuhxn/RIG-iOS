@@ -1,0 +1,50 @@
+# v0.4 duplicate-garment benchmark on macOS with Apple Vision cutouts and feature prints.
+# No secrets, no signing, no publishing.
+
+name: Wardrobe identity duplicate benchmark
+
+on:
+  workflow_dispatch:
+  # TEMPORARY (v0.4 work): run on pushes to the v0.4 branch. Public repository,
+  # standard runner. Remove before merging.
+  push:
+    branches: [feat/v0.4-wardrobe-identity]
+    paths:
+      - "Tools/AutoMetadataBench/scripts/ci_dup_bench.py"
+      - "Tools/AutoMetadataBench/scripts/dup_bench.py"
+      - ".github/workflows/automd-dup-bench.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automd-dup-bench-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    name: Duplicate benchmark (Vision vs FashionCLIP)
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned toolchain
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.5.0 transformers==4.48.3 pillow==11.0.0 numpy==1.26.4 \
+            pyarrow==19.0.1 huggingface_hub==0.27.1 safetensors==0.5.2 \
+            pyobjc-core pyobjc-framework-Vision pyobjc-framework-Quartz
+
+      - name: Run the benchmark
+        working-directory: Tools/AutoMetadataBench/scripts
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python ci_dup_bench.py
