@@ -71,6 +71,20 @@ final class GarmentEmbeddingDecisionTests: XCTestCase {
         XCTAssertNil(torn.primaryColor, "black versus navy at even odds must be left to the user")
     }
 
+    func testAmbiguousColourPairNeedsAStricterBar() {
+        // 3-d toy space: black and navy close together, red far away.
+        let colours: [(String, [Double])] = [("black", [1, 0, 0]), ("navy", [0.995, 0.0999, 0]), ("red", [0, 0, 1])]
+        // Clearly black but navy is the runner-up at ~0.9: prefilled under the plain gate, not here.
+        let m = manifest(["color": colours], scale: 100, threshold: 0.7)
+        let torn = GarmentEmbeddingDecision.decide(image: [1, -0.12, 0], manifest: m)
+        XCTAssertNil(torn.primaryColor, "black/navy below 0.95 is left to the user")
+        let sure = GarmentEmbeddingDecision.decide(image: [1, -0.5, 0], manifest: m)
+        XCTAssertEqual(sure.primaryColor?.value, .black)
+        // A non-ambiguous runner-up keeps the ordinary 0.7 gate.
+        let other = manifest(["color": [("black", [1, 0, 0]), ("red", [0.995, 0.0999, 0])]], scale: 100, threshold: 0.7)
+        XCTAssertEqual(GarmentEmbeddingDecision.decide(image: [1, -0.12, 0], manifest: other).primaryColor?.value, .black)
+    }
+
     func testMismatchedVectorsAbstainInsteadOfCrashing() {
         let m = manifest(["flat": [("top/t-shirt", [1, 0]), ("bottom/skirt", [0, 1, 0])],
                           "color": [("black", [1])]])

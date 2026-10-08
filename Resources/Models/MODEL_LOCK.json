@@ -11,7 +11,9 @@
  "coremlRuntimeParity": "PASSED on macOS 15 arm64 (run 37757956663): 0 prefill value flips, cosine p5 0.9932",
  "version": "v1",
  "tag": "automd-model-v1",
- "promptsSha256": "3a0eb85e4973d0afcc9311d4b6ad6d6f4ea39cdf6990f0ce2c0de68c3dff09d9",
+ "promptsSha256": "76e6a03a9e348f0f55f66ddaada224ece69c94fc8956bf8f0da0f5642187d138",
  "provenance": "https://github.com/Batuhxn/RIG-iOS/actions/runs/37757956663 (Core ML parity gate passed)",
- "format": "Core ML neural network (iOS 14+ spec), 8-bit linear weights on linear/conv layers"
+ "format": "Core ML neural network (iOS 14+ spec), 8-bit linear weights on linear/conv layers",
+ "promptsID": "ensemble-v2-gemini-r1:7ffdb68299474cdd",
+ "promptsNote": "Prompt vectors are versioned separately (Tools/AutoMetadataBench/scripts/build_prompts.py); modelID names the encoder."
 }

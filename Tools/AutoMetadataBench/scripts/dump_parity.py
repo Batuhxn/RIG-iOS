@@ -10,6 +10,11 @@ import os
 import numpy as np
 
 
+# Mirrors GarmentEmbeddingDecision (product decision 2026-10-08, measured on 218 CC0 photos).
+AMBIGUOUS_COLOR_PAIRS = [{"black", "navy"}, {"white", "beige"}, {"black", "gray"}]
+AMBIGUOUS_COLOR_THRESHOLD = 0.95
+
+
 def softmax(image, entries, scale):
     img = np.asarray(image) / np.linalg.norm(image)
     vecs = np.array([e["vector"] for e in entries])
@@ -25,7 +30,8 @@ def decide(image, m):
     thr, s, g = m["threshold"], m["logitScale"], m["groups"]
     out = {}
     c = softmax(image, g["color"], s)
-    if c[0][1] >= thr:
+    ambiguous = len(c) > 1 and {c[0][0], c[1][0]} in AMBIGUOUS_COLOR_PAIRS
+    if c[0][1] >= thr and (not ambiguous or c[0][1] >= AMBIGUOUS_COLOR_THRESHOLD):
         out["primaryColor"] = c[0][0]
     flat = softmax(image, g["flat"], s)
     cat_p, order = {}, []

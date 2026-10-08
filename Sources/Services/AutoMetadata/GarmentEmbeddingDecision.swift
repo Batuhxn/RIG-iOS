@@ -10,7 +10,10 @@ import Foundation
 /// - `color`: one entry per `ColorFamily` raw value the model can see (never multicolor).
 struct GarmentPromptManifest: Codable, Sendable {
     let version: Int
+    /// Must equal the encoder's `rigModelID`; text vectors are only valid for that encoder.
     let modelID: String
+    /// Versions the prompt set independently, so prompts can improve without a new model.
+    var promptsID: String? = nil
     let logitScale: Double
     let threshold: Double
     let groups: [String: [TextEmbedding]]
@@ -45,12 +48,22 @@ enum GarmentEmbeddingDecision {
             .sorted { $0.probability == $1.probability ? $0.label < $1.label : $0.probability > $1.probability }
     }
 
+    /// Colour pairs that amateur photos confuse (218 CC0 phone photos: black fabric in cool
+    /// indoor light reads navy). When the top two colours are such a pair, the colour is only
+    /// prefilled above a stricter bar; otherwise it is left for the user. Product decision
+    /// 2026-10-08: realistic colour precision 83% -> 90% at the cost of recall 64% -> 56%.
+    static let ambiguousColorPairs: [Set<String>] = [["black", "navy"], ["white", "beige"], ["black", "gray"]]
+    static let ambiguousColorThreshold = 0.95
+
     static func decide(image: [Double], manifest: GarmentPromptManifest) -> AutoMetadataResult {
         var result = AutoMetadataResult(modelID: manifest.modelID, semanticStatus: "abstained")
         let threshold = manifest.threshold
         if let colors = softmax(image: image, candidates: manifest.groups["color"] ?? [], logitScale: manifest.logitScale),
            let best = colors.first, best.probability >= threshold, let family = ColorFamily(rawValue: best.label) {
-            result.primaryColor = MetadataSuggestion(value: family, score: best.probability)
+            let ambiguous = colors.count > 1 && ambiguousColorPairs.contains([best.label, colors[1].label])
+            if !ambiguous || best.probability >= ambiguousColorThreshold {
+                result.primaryColor = MetadataSuggestion(value: family, score: best.probability)
+            }
         }
         guard let flat = softmax(image: image, candidates: manifest.groups["flat"] ?? [], logitScale: manifest.logitScale) else {
             return result

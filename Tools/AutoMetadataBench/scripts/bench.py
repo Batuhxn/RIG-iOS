@@ -278,6 +278,22 @@ ENSEMBLE = {
     "accessory": {"hat": ["a hat"], "scarf": ["a scarf"], "belt": ["a belt"], "sunglasses": ["sunglasses"],
                   "jewelry": ["jewelry", "a necklace"], "watch": ["a watch"]},
 }
+# Gemini round 1 (data/gemini_round1.md), adopted 2026-10-08 after measurement: kind +3 catalog,
+# +2 realistic, phone 12/12; no precision drop on any split. Hard negatives and letterbox/padding
+# changes were measured and rejected.
+ENSEMBLE["top"]["sweater"] = [x for x in ENSEMBLE["top"]["sweater"] if x != "a sweatshirt"] + [
+    "a chunky knit wool pullover", "a ribbed crewneck sweater"]
+ENSEMBLE["outerwear"]["coat"] += ["a long tailored overcoat", "an outerwear trench coat"]
+ENSEMBLE["shoes"]["heels"] = [x for x in ENSEMBLE["shoes"]["heels"] if x != "high heels"] + [
+    "pointed stiletto pumps", "open high heel sandals"]
+ENSEMBLE["shoes"]["boots"] += ["tall shaft boots", "ankle boots covering the ankle"]
+ENSEMBLE["shoes"]["flats"] += ["flat slip-on loafers", "zero-heel ballet flats"]
+ENSEMBLE["top"]["blouse"] = [x for x in ENSEMBLE["top"]["blouse"] if x != "a blouse"] + [
+    "a dressy woven buttoned blouse", "a silk work blouse"]
+ENSEMBLE["top"]["t-shirt"] += ["a casual cotton jersey tee"]
+ENSEMBLE["dress"]["dress"] += ["a one-piece full-body dress", "a dress with connected bodice and skirt"]
+PROMPTS_ID = "ensemble-v2-gemini-r1"
+
 LENGTH_ENSEMBLE = {
     "skirt": {"mini": ["a mini skirt", "a short mini skirt", "a skirt well above the knee"],
               "midi": ["a midi skirt", "a mid-calf length skirt", "a below-the-knee skirt"],
