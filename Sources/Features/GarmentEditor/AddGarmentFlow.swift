@@ -98,6 +98,10 @@ struct AddGarmentFlow: View {
             .task {
                 guard !didBootstrap else { return }
                 didBootstrap = true
+                if let analyzer = services.metadataAnalyzer {
+                    // Load the encoder while the user picks a photo, off the main actor.
+                    Task.detached(priority: .utility) { await analyzer.prewarm() }
+                }
                 if let initialSelection {
                     await loadFromPhotos(initialSelection)
                 } else if startsWithCamera, CameraPicker.isAvailable {

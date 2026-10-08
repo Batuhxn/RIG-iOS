@@ -38,6 +38,12 @@ actor CoreMLGarmentClassifier: GarmentSemanticClassifying {
         return (model, manifest)
     }
 
+    /// The 89 MB encoder loads once per process; doing it when Add Item opens keeps the cold
+    /// load (~1.3 s on the simulator proxy) off the first photo. A failure is retried on classify.
+    func prewarm() async {
+        _ = try? load()
+    }
+
     func classify(cutout: Data) async throws -> AutoMetadataResult {
         try Task.checkCancellation()
         let (model, manifest) = try load()

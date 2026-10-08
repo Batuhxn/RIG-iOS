@@ -31,10 +31,21 @@ struct AutoMetadataResult: Codable, Hashable, Sendable {
 
 protocol GarmentMetadataAnalyzing: Sendable {
     func analyze(cutout: Data?) async -> AutoMetadataResult
+    /// Loads model assets ahead of the first photo. Never throws; failure surfaces on analyze.
+    func prewarm() async
 }
 
 protocol GarmentSemanticClassifying: Sendable {
     func classify(cutout: Data) async throws -> AutoMetadataResult
+    func prewarm() async
+}
+
+extension GarmentMetadataAnalyzing {
+    func prewarm() async {}
+}
+
+extension GarmentSemanticClassifying {
+    func prewarm() async {}
 }
 
 enum AutoMetadataError: Error {
@@ -53,6 +64,10 @@ struct AutoMetadataService: GarmentMetadataAnalyzing {
 
     init(classifier: any GarmentSemanticClassifying = UnavailableGarmentClassifier()) {
         self.classifier = classifier
+    }
+
+    func prewarm() async {
+        await classifier.prewarm()
     }
 
     func analyze(cutout: Data?) async -> AutoMetadataResult {
