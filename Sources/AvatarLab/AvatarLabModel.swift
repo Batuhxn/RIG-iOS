@@ -292,7 +292,14 @@ enum AvatarGarmentTexture {
     /// onto the body.
     static func drawWarped(_ photo: UIImage, into bands: [CGRect]) {
         guard let cg = photo.cgImage, !bands.isEmpty else { return }
-        let spans = opaqueSpans(of: cg, bands: bands.count)
+        let raw = opaqueSpans(of: cg, bands: bands.count)
+        // Smooth the photo's outline the same way as the body's, skipping empty rows.
+        let present = raw.compactMap { $0 }.map { (lo: $0.lowerBound, hi: $0.upperBound) }
+        var smoothed = AvatarFrontProjection.smooth(present).makeIterator()
+        let spans: [ClosedRange<CGFloat>?] = raw.map { span in
+            guard span != nil, let s = smoothed.next() else { return nil }
+            return s.lo...max(s.lo + 1, s.hi)
+        }
         let rowHeight = CGFloat(cg.height) / CGFloat(bands.count)
         for (k, rect) in bands.enumerated() {
             guard let span = spans[k] else { continue }

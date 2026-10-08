@@ -27,7 +27,7 @@ struct AvatarFrontProjection: Equatable, Sendable {
     /// is stretched to the shell's front width at that height. The photo keeps
     /// its print and colour but follows the body's shoulders, waist and hips.
     /// Bands where the shell has no vertex take their neighbour's width.
-    func warpBands(for shell: AvatarMesh, bands: Int = 16) -> [CGRect]? {
+    func warpBands(for shell: AvatarMesh, bands: Int = 48) -> [CGRect]? {
         guard bands > 0, let bounds = shell.frontBounds, bounds.max.y > bounds.min.y else { return nil }
         let height = (bounds.max.y - bounds.min.y) / Float(bands)
         var spans = [(lo: Float, hi: Float)?](repeating: nil, count: bands)
@@ -46,11 +46,22 @@ struct AvatarFrontProjection: Equatable, Sendable {
                 spans[i] = next
             }
         }
-        return spans.enumerated().compactMap { i, span in
-            guard let span else { return nil }
+        let smoothed = Self.smooth(spans.compactMap { $0 }.map { ($0.lo, $0.hi) })
+        guard smoothed.count == bands else { return nil }
+        return smoothed.enumerated().map { i, span in
             let top = point(x: span.lo, y: bounds.max.y - Float(i) * height)
             let bottom = point(x: span.hi, y: bounds.max.y - Float(i + 1) * height)
             return CGRect(x: top.x, y: top.y, width: max(bottom.x - top.x, 1), height: bottom.y - top.y)
+        }
+    }
+
+    /// Moving average over neighbouring bands, so outlines step gently instead
+    /// of jumping (a stair-step edge reads as a torn garment).
+    static func smooth<T: BinaryFloatingPoint>(_ spans: [(lo: T, hi: T)], radius: Int = 2) -> [(lo: T, hi: T)] {
+        spans.indices.map { i in
+            let window = spans[max(0, i - radius)...min(spans.count - 1, i + radius)]
+            let n = T(window.count)
+            return (window.reduce(T(0)) { $0 + $1.lo } / n, window.reduce(T(0)) { $0 + $1.hi } / n)
         }
     }
 
