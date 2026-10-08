@@ -61,7 +61,10 @@ struct AvatarGarmentLayer: Identifiable {
     let id: UUID
     let cut: AvatarGarmentCut
     let mesh: AvatarMesh
+    /// The cutout with its gaps filled in the garment's colour, for 3D shells.
     let texture: UIImage?
+    /// The cutout as photographed, transparency kept, for the 2D overlay.
+    var photo: UIImage? = nil
     let colour: UIColor
 }
 
@@ -94,7 +97,7 @@ final class AvatarLabModel {
 
     private var asset: AvatarBodyAsset?
     private var builder: AvatarGarmentShellBuilder?
-    private var textures: [UUID: (image: UIImage?, colour: UIColor)] = [:]
+    private var textures: [UUID: (image: UIImage?, photo: UIImage?, colour: UIColor)] = [:]
     private var updateTask: Task<Void, Never>?
     private let store: AvatarProfileStore?
     private let imageStore: GarmentImageStore
@@ -242,10 +245,11 @@ final class AvatarLabModel {
         updateTask = Task { [weak self] in
             let started = Date()
             async let loaded = Task.detached(priority: .userInitiated) {
-                missing.map { garment -> (UUID, UIImage?, UIColor) in
+                missing.map { garment -> (UUID, UIImage?, UIImage?, UIColor) in
                     let data = garment.imageRelativePath.flatMap { imageStore.data(atRelativePath: $0) }
-                    let prepared = data.flatMap(UIImage.init(data:)).map(AvatarGarmentTexture.prepare)
-                    return (garment.id, prepared?.image, prepared?.colour ?? .gray)
+                    let photo = data.flatMap(UIImage.init(data:)).map { AvatarGarmentTexture.downscaled($0, maxSide: 1024) }
+                    let prepared = photo.map(AvatarGarmentTexture.prepare)
+                    return (garment.id, prepared?.image, photo, prepared?.colour ?? .gray)
                 }
             }.value
             let geometry = await Task.detached(priority: .userInitiated) { () -> (AvatarMesh, [AvatarMesh]) in
@@ -255,11 +259,12 @@ final class AvatarLabModel {
             }.value
             let newTextures = await loaded
             guard let self, !Task.isCancelled else { return }
-            for (id, image, colour) in newTextures { self.textures[id] = (image, colour) }
+            for (id, image, photo, colour) in newTextures { self.textures[id] = (image, photo, colour) }
             let layers = zip(garments, geometry.1).map { garment, mesh in
                 AvatarGarmentLayer(id: garment.id, cut: garment.cut, mesh: mesh,
                                    texture: self.textures[garment.id]?.image,
-                                   colour: self.textures[garment.id]?.colour ?? .gray)
+                                   colour: self.textures[garment.id]?.colour ?? .gray,
+                                   photo: self.textures[garment.id]?.photo)
             }
             self.content = AvatarStageContent(body: geometry.0, garments: layers,
                                               computeMilliseconds: Int(Date().timeIntervalSince(started) * 1000))
@@ -271,6 +276,61 @@ final class AvatarLabModel {
 /// (between sleeves and body in a flat photo) are filled with the garment's own
 /// average colour, so the shell never shows holes.
 enum AvatarGarmentTexture {
+    /// A copy no larger than `maxSide` on its long edge, at scale 1.
+    static func downscaled(_ image: UIImage, maxSide: CGFloat) -> UIImage {
+        let scale = min(1, maxSide / max(image.size.width, image.size.height, 1))
+        guard scale < 1 else { return image }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+    }
+
+    /// Draws `photo` warped into `bands` (see `AvatarFrontProjection.warpBands`).
+    /// Each horizontal strip of the photo is first cropped to the garment's own
+    /// opaque pixels in that strip, so transparent margins are never stretched
+    /// onto the body.
+    static func drawWarped(_ photo: UIImage, into bands: [CGRect]) {
+        guard let cg = photo.cgImage, !bands.isEmpty else { return }
+        let spans = opaqueSpans(of: cg, bands: bands.count)
+        let rowHeight = CGFloat(cg.height) / CGFloat(bands.count)
+        for (k, rect) in bands.enumerated() {
+            guard let span = spans[k] else { continue }
+            let source = CGRect(x: span.lowerBound, y: (CGFloat(k) * rowHeight).rounded(.down),
+                                width: max(1, span.upperBound - span.lowerBound), height: rowHeight.rounded(.up) + 1)
+            if let strip = cg.cropping(to: source) {
+                UIImage(cgImage: strip).draw(in: rect.insetBy(dx: 0, dy: -0.5))
+            }
+        }
+    }
+
+    /// For each horizontal band of the image, the x range holding opaque pixels.
+    static func opaqueSpans(of cg: CGImage, bands: Int) -> [ClosedRange<CGFloat>?] {
+        let width = min(cg.width, 256)
+        let height = max(bands * 4, min(cg.height, 512))
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                                          space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return Array(repeating: 0...CGFloat(cg.width), count: bands) }
+        let toSource = CGFloat(cg.width) / CGFloat(width)
+        return (0..<bands).map { band in
+            var lo = Int.max, hi = Int.min
+            // A bitmap context's memory starts at the image's top row, like band 0.
+            for row in (band * height / bands)..<((band + 1) * height / bands) {
+                for x in 0..<width where pixels[(row * width + x) * 4 + 3] > 40 {
+                    lo = min(lo, x)
+                    hi = max(hi, x)
+                }
+            }
+            guard lo <= hi else { return nil }
+            return CGFloat(lo) * toSource...CGFloat(hi + 1) * toSource
+        }
+    }
+
     static func prepare(_ image: UIImage) -> (image: UIImage, colour: UIColor) {
         let colour = averageColour(of: image)
         let maxSide: CGFloat = 1024

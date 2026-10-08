@@ -120,8 +120,8 @@ private struct AvatarStage: View {
                 AvatarStageView(content: model.content, mode: model.mode, flatProjection: model.mode == .flat2D ? projection : nil)
                 if model.mode == .flat2D, let content = model.content {
                     ForEach(content.garments) { layer in
-                        if let texture = layer.texture, let bands = projection.warpBands(for: layer.mesh) {
-                            AvatarWarpedPhoto(texture: texture, bands: bands)
+                        if let photo = layer.photo, let bands = projection.warpBands(for: layer.mesh) {
+                            AvatarWarpedPhoto(photo: photo, bands: bands, size: proxy.size)
                         }
                     }
                 }
@@ -307,20 +307,14 @@ private struct AvatarOnboardingView: View {
 /// The 2D overlay: a garment photo drawn strip by strip into `bands`, so it
 /// follows the avatar's outline while keeping the photo's own pixels.
 private struct AvatarWarpedPhoto: View {
-    let texture: UIImage
+    let photo: UIImage
     let bands: [CGRect]
+    let size: CGSize
 
     var body: some View {
-        Canvas { context, _ in
-            guard let cg = texture.cgImage, !bands.isEmpty else { return }
-            let rowHeight = CGFloat(cg.height) / CGFloat(bands.count)
-            for (i, rect) in bands.enumerated() {
-                // A little overlap hides seams between strips.
-                let source = CGRect(x: 0, y: (CGFloat(i) * rowHeight).rounded(.down), width: CGFloat(cg.width), height: rowHeight.rounded(.up) + 1)
-                guard let strip = cg.cropping(to: source) else { continue }
-                context.draw(Image(decorative: strip, scale: 1), in: rect.insetBy(dx: 0, dy: -0.5))
-            }
-        }
+        Image(uiImage: UIGraphicsImageRenderer(size: size).image { _ in
+            AvatarGarmentTexture.drawWarped(photo, into: bands)
+        })
         .allowsHitTesting(false)
     }
 }

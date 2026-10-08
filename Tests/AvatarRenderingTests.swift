@@ -104,13 +104,8 @@ final class AvatarRenderingTests: XCTestCase {
             base.draw(at: .zero)
             // Innermost first, as the app draws them: trousers under the tee.
             for (layer, photo) in zip(outfit.garments, [tee, jeans]).sorted(by: { $0.0.cut.layer < $1.0.cut.layer }) {
-                guard let cg = photo.cgImage, let bands = projection.warpBands(for: layer.mesh) else { continue }
-                let rowHeight = CGFloat(cg.height) / CGFloat(bands.count)
-                for (k, rect) in bands.enumerated() {
-                    let source = CGRect(x: 0, y: (CGFloat(k) * rowHeight).rounded(.down), width: CGFloat(cg.width), height: rowHeight.rounded(.up) + 1)
-                    if let strip = cg.cropping(to: source) {
-                        UIImage(cgImage: strip).draw(in: rect.insetBy(dx: 0, dy: -0.5))
-                    }
+                if let bands = projection.warpBands(for: layer.mesh) {
+                    AvatarGarmentTexture.drawWarped(photo, into: bands)
                 }
             }
         }
