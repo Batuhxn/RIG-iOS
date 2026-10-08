@@ -15,11 +15,6 @@ name: iOS validation
 
 on:
   workflow_dispatch:
-  # TEMPORARY (v0.3 Auto Metadata review): build and test this one feature
-  # branch on push. The repository is public, so standard runners are not
-  # metered. Remove before merging.
-  push:
-    branches: [feat/v0.3-auto-metadata-fashionclip]
   # push:
   #   branches: [main]
   # pull_request:
@@ -118,19 +113,7 @@ jobs:
       - name: Gate A — generate, build, test
         # One script, the same one a developer runs locally. It fails closed,
         # so a non-zero exit here fails the job.
-        # TEMPORARY (v0.3 review): surface compiler and test failures as public
-        # annotations, since job logs need a signed-in viewer. Remove before merging.
-        run: |
-          mkdir -p build
-          set +e
-          bash scripts/validate_macos.sh 2>&1 | tee build/gate-a.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            grep -E "error:|: failed|Test Case .* failed|XCTAssert|Testing failed|BUILD FAILED|\*\* TEST FAILED" build/gate-a.log \
-              | grep -v "^::" | sort -u | head -n 40 | sed 's/^/::error::/'
-            tail -n 25 build/gate-a.log | sed 's/^/::warning::tail| /'
-          fi
-          exit "$status"
+        run: bash scripts/validate_macos.sh
 
       - name: Upload test results
         if: always()
