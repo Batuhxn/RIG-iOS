@@ -65,5 +65,17 @@ app stores them.
 
 - iPhone multi-view gate: 20+ of Batuhan's own garments photographed twice on different
   days, plus his own look-alike items, to confirm 0.93 before it stops being provisional.
-- Remove the TEMPORARY push triggers in `automd-e2e.yml` and `automd-dup-bench.yml`
-  before any merge.
+
+## Codex review (closed 2026-10-09)
+
+The three P2 findings are fixed in `7be0db8`, and CI run 37858049418 passed:
+
+- A truncated stored identity is no longer treated as current. Identities must
+  match the encoder's dimension, and wrong-length vectors are re-embedded.
+- Matching always uses the identity image (the cutout, or the original when
+  there is none). The Original/Cutout choice only affects what the review sheet
+  shows.
+- The backfill writes through its own ModelContext, so it never commits or
+  rolls back another screen's pending edits.
+
+The temporary push triggers are removed. Both workflows are manual dispatch only.

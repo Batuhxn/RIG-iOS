@@ -5,14 +5,6 @@ name: Wardrobe identity duplicate benchmark
 
 on:
   workflow_dispatch:
-  # TEMPORARY (v0.4 work): run on pushes to the v0.4 branch. Public repository,
-  # standard runner. Remove before merging.
-  push:
-    branches: [feat/v0.4-wardrobe-identity]
-    paths:
-      - "Tools/AutoMetadataBench/scripts/ci_dup_bench.py"
-      - "Tools/AutoMetadataBench/scripts/dup_bench.py"
-      - ".github/workflows/automd-dup-bench.yml"
 
 permissions:
   contents: read
