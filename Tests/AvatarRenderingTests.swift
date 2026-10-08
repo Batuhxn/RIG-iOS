@@ -204,8 +204,12 @@ final class AvatarRenderingTests: XCTestCase {
                 let started = Date()
                 guard let built = engine.build(shape: shape, cuts: garments.map(\.0)) else { return XCTFail("cancelled") }
                 lastMs = Int(Date().timeIntervalSince(started) * 1000)
-                let layers = zip(garments, built.garments).map { garment, mesh in
-                    AvatarGarmentLayer(id: UUID(), cut: garment.0, mesh: mesh,
+                let layers = zip(garments, built.garments).map { garment, built -> AvatarGarmentLayer in
+                    var mesh = built
+                    if !mesh.backTriangles.isEmpty {
+                        mesh.uvs = GarmentPhotoMapping.uvs(for: mesh, photoSpans: AvatarGarmentTexture.photoSpans(of: garment.1))
+                    }
+                    return AvatarGarmentLayer(id: UUID(), cut: garment.0, mesh: mesh,
                                        texture: AvatarGarmentTexture.prepare(garment.1).image,
                                        colour: AvatarGarmentTexture.averageColour(of: garment.1))
                 }

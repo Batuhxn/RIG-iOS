@@ -100,7 +100,7 @@ final class AvatarLabModel {
 
     private var asset: AvatarBodyAsset?
     private var builder: AvatarOutfitBuilder?
-    private var textures: [UUID: (image: UIImage?, photo: UIImage?, colour: UIColor)] = [:]
+    private var textures: [UUID: (image: UIImage?, photo: UIImage?, colour: UIColor, spans: [ClosedRange<Float>?])] = [:]
     private var updateTask: Task<Void, Never>?
     private let store: AvatarProfileStore?
     private let imageStore: GarmentImageStore
@@ -252,14 +252,15 @@ final class AvatarLabModel {
     // MARK: Recompute
 
     /// Off the main actor; stops between garments once cancelled.
-    nonisolated private static func loadTextures(_ garments: [AvatarWornGarment], from imageStore: GarmentImageStore) async -> [(UUID, UIImage?, UIImage?, UIColor)] {
-        var out: [(UUID, UIImage?, UIImage?, UIColor)] = []
+    nonisolated private static func loadTextures(_ garments: [AvatarWornGarment], from imageStore: GarmentImageStore) async -> [(UUID, UIImage?, UIImage?, UIColor, [ClosedRange<Float>?])] {
+        var out: [(UUID, UIImage?, UIImage?, UIColor, [ClosedRange<Float>?])] = []
         for garment in garments {
             if Task.isCancelled { break }
             let data = garment.imageRelativePath.flatMap { imageStore.data(atRelativePath: $0) }
             let photo = data.flatMap(UIImage.init(data:)).map { AvatarGarmentTexture.downscaled($0, maxSide: 1024) }
             let prepared = photo.map(AvatarGarmentTexture.prepare)
-            out.append((garment.id, prepared?.image, photo, prepared?.colour ?? .gray))
+            let spans = photo.map { AvatarGarmentTexture.photoSpans(of: $0) } ?? []
+            out.append((garment.id, prepared?.image, photo, prepared?.colour ?? .gray, spans))
         }
         return out
     }
@@ -289,9 +290,14 @@ final class AvatarLabModel {
             async let geometryJob = Self.buildGeometry(builder: builder, shape: shape, cuts: garments.map(\.cut))
             let (newTextures, built) = await (loaded, geometryJob)
             guard let self, !Task.isCancelled, let geometry = built else { return }
-            for (id, image, photo, colour) in newTextures { self.textures[id] = (image, photo, colour) }
-            let layers = zip(garments, geometry.garments).map { garment, mesh in
-                AvatarGarmentLayer(id: garment.id, cut: garment.cut, mesh: mesh,
+            for (id, image, photo, colour, spans) in newTextures { self.textures[id] = (image, photo, colour, spans) }
+            let layers = zip(garments, geometry.garments).map { garment, built -> AvatarGarmentLayer in
+                var mesh = built
+                // Template garments map the photo's outline onto the front panel's outline.
+                if !mesh.backTriangles.isEmpty, let spans = self.textures[garment.id]?.spans, !spans.isEmpty {
+                    mesh.uvs = GarmentPhotoMapping.uvs(for: mesh, photoSpans: spans)
+                }
+                return AvatarGarmentLayer(id: garment.id, cut: garment.cut, mesh: mesh,
                                    texture: self.textures[garment.id]?.image,
                                    photo: self.textures[garment.id]?.photo,
                                    colour: self.textures[garment.id]?.colour ?? .gray)

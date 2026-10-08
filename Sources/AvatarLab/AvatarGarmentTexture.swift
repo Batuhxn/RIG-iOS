@@ -40,6 +40,16 @@ enum AvatarGarmentTexture {
         }
     }
 
+    /// The garment's horizontal extent per row, normalised to 0...1, for
+    /// `GarmentPhotoMapping`.
+    static func photoSpans(of image: UIImage, rows: Int = 64) -> [ClosedRange<Float>?] {
+        guard let cg = image.cgImage, cg.width > 0 else { return [] }
+        let width = CGFloat(cg.width)
+        return opaqueSpans(of: cg, bands: rows).map { span in
+            span.map { Float($0.lowerBound / width)...Float(min($0.upperBound / width, 1)) }
+        }
+    }
+
     /// For each horizontal band of the image, the x range holding opaque pixels.
     static func opaqueSpans(of cg: CGImage, bands: Int) -> [ClosedRange<CGFloat>?] {
         let width = min(cg.width, 256)

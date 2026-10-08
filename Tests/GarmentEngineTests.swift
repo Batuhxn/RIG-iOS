@@ -140,6 +140,28 @@ final class GarmentEngineTests: XCTestCase {
         }
     }
 
+    // MARK: Photo mapping
+
+    func testPhotoOutlineIsMappedOntoTheFrontPanelOutline() throws {
+        let (skirt, _, _) = try garment("skirt")
+        // A trapezoid photo: narrow at the waist (0.3...0.7), full width at the hem.
+        let spans: [ClosedRange<Float>?] = (0..<64).map { r in
+            let t = Float(r) / 63
+            return (0.3 - 0.3 * t)...(0.7 + 0.3 * t)
+        }
+        let uvs = GarmentPhotoMapping.uvs(for: skirt, photoSpans: spans)
+        let front = Set(skirt.triangles.map(Int.init))
+        for i in front {
+            let row = min(63, Int(uvs[i].y * 64))
+            let span = try XCTUnwrap(spans[row])
+            XCTAssertGreaterThanOrEqual(uvs[i].x, span.lowerBound - 0.06, "front vertices sample the garment, not its transparent margin")
+            XCTAssertLessThanOrEqual(uvs[i].x, span.upperBound + 0.06)
+        }
+        let top = front.filter { uvs[$0].y < 0.1 }.map { uvs[$0].x }
+        XCTAssertGreaterThan(top.min() ?? 0, 0.2, "at the waist only the photo's narrow waistband is used")
+        XCTAssertEqual(GarmentPhotoMapping.uvs(for: skirt, photoSpans: [nil, nil]), skirt.uvs, "an empty photo changes nothing")
+    }
+
     // MARK: Outfit building
 
     func testCoveredSkinIsHiddenAndRepeatedBuildsAreStable() throws {
