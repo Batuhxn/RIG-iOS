@@ -181,4 +181,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        import traceback
+        # Job logs need a signed-in viewer; annotations are public.
+        tb = traceback.format_exc().strip().splitlines()
+        print("::error title=ci_dup_bench crashed::" + " | ".join(tb[-8:]))
+        raise
