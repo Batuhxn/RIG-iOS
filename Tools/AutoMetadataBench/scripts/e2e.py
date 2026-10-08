@@ -108,6 +108,11 @@ def summarize(out):
     cold = next(o["milliseconds"] for o in obs if o["cold"])
     print(f"::notice title=E2E simulator proxy (not iPhone)::cold first garment {cold:.0f} ms; warm p50 "
           f"{ms[len(ms) // 2]:.0f} ms p95 {ms[int(0.95 * len(ms)) - 1]:.0f} ms (bg-removal excluded; analyze() only)")
+    memory_path = out / "observations.json.memory.json"
+    if memory_path.exists():
+        m = json.loads(memory_path.read_text())
+        print(f"::notice title=E2E simulator memory proxy (not iPhone)::baseline {m['baselineMB']:.0f} MB, after first "
+              f"garment {m['afterFirstGarmentMB']:.0f} MB, peak {m['peakMB']:.0f} MB over {len(obs)} garments")
     print(f"::notice title=E2E Swift vs Python Core ML::{len(obs)} items, value flips {len(flips)}, "
           f"suggest/abstain moves {moves}, worst catalog precision drop {worst_drop:.4f}")
     for f in flips[:10]:
