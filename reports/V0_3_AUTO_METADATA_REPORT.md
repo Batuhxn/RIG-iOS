@@ -72,7 +72,9 @@ leaves those cases for the user (a product decision).
 
 - Core ML on a CPU-only macOS VM: p50 275 ms, p95 300 ms.
 - Swift `analyze()` in the simulator: cold 1.4 s (now hidden by prewarm), warm p50 385 ms.
-- Simulator memory: see the e2e annotation "simulator memory proxy".
+- Simulator memory (process footprint): 46 MB baseline, 67 MB after the first garment
+  (model load), 69 MB peak over 311 garments, so no growth across repeated analyses.
+- Release app size: 94.3 MB, of which the compiled encoder is 88.1 MB.
 
 The iPhone has a Neural Engine; these numbers say nothing reliable about it.
 
