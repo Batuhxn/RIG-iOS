@@ -27,8 +27,47 @@ struct GarmentTemplate: Sendable {
     let backTriangles: [UInt32]
     /// Body triangles (indices into the body's triangle list / 3) the garment covers.
     let hiddenBodyTriangles: [Int32]
+    /// Neighbours of each canonical vertex, and whether it lies on an open edge (hem,
+    /// neckline, sleeve opening). Derived from the triangles at load.
+    let neighbours: [[Int32]]
+    let isBoundary: [Bool]
 
     var vertexCount: Int { bindings.count }
+
+    init(name: String, version: Int, bindings: [Binding], uvs: [SIMD2<Float>], canonical: [Int32],
+         frontTriangles: [UInt32], backTriangles: [UInt32], hiddenBodyTriangles: [Int32]) {
+        self.name = name
+        self.version = version
+        self.bindings = bindings
+        self.uvs = uvs
+        self.canonical = canonical
+        self.frontTriangles = frontTriangles
+        self.backTriangles = backTriangles
+        self.hiddenBodyTriangles = hiddenBodyTriangles
+        var sets = [Set<Int32>](repeating: [], count: bindings.count)
+        var edgeUse: [UInt64: Int] = [:]
+        for list in [frontTriangles, backTriangles] {
+            var t = 0
+            while t + 2 < list.count {
+                let tri = (0..<3).map { canonical[Int(list[t + $0])] }
+                for k in 0..<3 {
+                    let a = tri[k], b = tri[(k + 1) % 3]
+                    sets[Int(a)].insert(b)
+                    sets[Int(b)].insert(a)
+                    let key = UInt64(UInt32(min(a, b))) << 32 | UInt64(UInt32(max(a, b)))
+                    edgeUse[key, default: 0] += 1
+                }
+                t += 3
+            }
+        }
+        var boundary = [Bool](repeating: false, count: bindings.count)
+        for (key, uses) in edgeUse where uses == 1 {
+            boundary[Int(key >> 32)] = true
+            boundary[Int(key & 0xFFFF_FFFF)] = true
+        }
+        neighbours = sets.map { Array($0) }
+        isBoundary = boundary
+    }
 }
 
 /// Loads `RIGGarments.rigarm`.
@@ -98,7 +137,8 @@ enum GarmentDeformer {
     /// - Parameters:
     ///   - positions: the morphed avatar vertices.
     ///   - bodyNormals: unit vertex normals of the morphed body.
-    static func mesh(for template: GarmentTemplate, positions: [SIMD3<Float>], bodyNormals: [SIMD3<Float>]) -> AvatarMesh {
+    static func mesh(for template: GarmentTemplate, positions: [SIMD3<Float>], bodyNormals: [SIMD3<Float>],
+                     smoothing: Int = 2) -> AvatarMesh {
         var out = [SIMD3<Float>](repeating: .zero, count: template.vertexCount)
         for (k, bind) in template.bindings.enumerated() {
             let ia = Int(bind.a), ib = Int(bind.b), ic = Int(bind.c)
@@ -112,6 +152,7 @@ enum GarmentDeformer {
             let e2 = avatarCross(n, e1)
             out[k] = q + bind.normal * n + bind.tangent1 * e1 + bind.tangent2 * e2
         }
+        smooth(&out, template, iterations: smoothing)
         // Normals over both panels, accumulated on the canonical vertex so the side
         // seams shade smoothly.
         var acc = [SIMD3<Float>](repeating: .zero, count: out.count)
@@ -133,6 +174,29 @@ enum GarmentDeformer {
         let normals = (0..<out.count).map { flip * normalized(acc[Int(template.canonical[$0])]) }
         return AvatarMesh(positions: out, normals: normals, uvs: template.uvs,
                           triangles: template.frontTriangles, backTriangles: template.backTriangles)
+    }
+
+    /// Two Taubin steps (shrink-free smoothing) over the garment, on canonical vertices,
+    /// leaving open edges where they are. Evens out the ripples that strong, combined
+    /// body morphs put into the fabric, which showed as wavy stripes.
+    static func smooth(_ p: inout [SIMD3<Float>], _ template: GarmentTemplate, iterations: Int = 2) {
+        let canonical = template.canonical
+        for _ in 0..<iterations {
+            for factor: Float in [0.5, -0.53] {
+                var moved = p
+                for k in p.indices where Int(canonical[k]) == k && !template.isBoundary[k] {
+                    let ring = template.neighbours[k]
+                    guard !ring.isEmpty else { continue }
+                    var centre = SIMD3<Float>.zero
+                    for j in ring { centre += p[Int(j)] }
+                    centre /= Float(ring.count)
+                    moved[k] = p[k] + factor * (centre - p[k])
+                }
+                // Seam duplicates follow their canonical vertex.
+                for k in p.indices where Int(canonical[k]) != k { moved[k] = moved[Int(canonical[k])] }
+                p = moved
+            }
+        }
     }
 
     private static func normalized(_ v: SIMD3<Float>) -> SIMD3<Float> {

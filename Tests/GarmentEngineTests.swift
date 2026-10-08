@@ -140,6 +140,39 @@ final class GarmentEngineTests: XCTestCase {
         }
     }
 
+    /// ChatGPT/visual review: stripes rippled on the tee at an extreme shape. Smoothing must
+    /// measurably even the surface out without moving hems or pushing fabric into the body.
+    func testSmoothingEvensOutRipplesAtExtremeShapes() throws {
+        let (asset, library) = try load()
+        let tee = try XCTUnwrap(library.templates["tee"])
+        var extreme = AvatarBodyShape.neutral
+        extreme[.bust] = 1
+        extreme[.waist] = -1
+        extreme[.shoulders] = 1
+        extreme[.overall] = 1
+        let positions = AvatarMorphEngine(asset: asset).positions(for: extreme)
+        let normals = AvatarMorphEngine.normals(positions: positions, triangles: asset.submeshes["body"] ?? [])
+        func roughness(_ m: AvatarMesh) -> Float {
+            var total: Float = 0, n = 0
+            for k in m.positions.indices where Int(tee.canonical[k]) == k && !tee.isBoundary[k] {
+                let ring = tee.neighbours[k]
+                guard !ring.isEmpty else { continue }
+                let centre = ring.reduce(SIMD3<Float>.zero) { $0 + m.positions[Int($1)] } / Float(ring.count)
+                let d = m.positions[k] - centre
+                total += (d * d).sum().squareRoot()
+                n += 1
+            }
+            return total / Float(max(n, 1))
+        }
+        let raw = GarmentDeformer.mesh(for: tee, positions: positions, bodyNormals: normals, smoothing: 0)
+        let smoothed = GarmentDeformer.mesh(for: tee, positions: positions, bodyNormals: normals)
+        print("AVATAR_METRIC tee_roughness_mm_raw=\(Int(roughness(raw) * 10000)) smoothed=\(Int(roughness(smoothed) * 10000))")
+        XCTAssertLessThan(roughness(smoothed), roughness(raw) * 0.9)
+        for k in raw.positions.indices where tee.isBoundary[Int(tee.canonical[k])] {
+            XCTAssertEqual(raw.positions[k], smoothed.positions[k], "hems and openings stay put")
+        }
+    }
+
     // MARK: Photo mapping
 
     func testPhotoOutlineIsMappedOntoTheFrontPanelOutline() throws {
