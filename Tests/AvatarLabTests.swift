@@ -36,6 +36,18 @@ final class AvatarLabTests: XCTestCase {
             forResource: AvatarBodyAsset.resourceName, withExtension: AvatarBodyAsset.resourceExtension)))
         XCTAssertThrowsError(try AvatarBodyAsset(data: Data("nope".utf8))) { XCTAssertEqual($0 as? AvatarBodyAsset.LoadError, .badMagic) }
         XCTAssertThrowsError(try AvatarBodyAsset(data: good.prefix(good.count / 2))) { XCTAssertEqual($0 as? AvatarBodyAsset.LoadError, .truncated) }
+
+        // A huge count must be rejected before it is allocated (Codex review, v0.5).
+        var huge = Data("RIGAVTR1".utf8)
+        huge.append(contentsOf: [0xFF, 0xFF, 0xFF, 0xFF])
+        XCTAssertThrowsError(try AvatarBodyAsset(data: huge)) { XCTAssertEqual($0 as? AvatarBodyAsset.LoadError, .truncated) }
+
+        // A NaN coordinate is rejected at load, not trapped on later.
+        var nan = Data("RIGAVTR1".utf8)
+        nan.append(contentsOf: [1, 0, 0, 0])
+        withUnsafeBytes(of: Float.nan.bitPattern.littleEndian) { nan.append(contentsOf: $0) }
+        nan.append(contentsOf: [UInt8](repeating: 0, count: 8))
+        XCTAssertThrowsError(try AvatarBodyAsset(data: nan)) { XCTAssertEqual($0 as? AvatarBodyAsset.LoadError, .invalidValue) }
     }
 
     // MARK: Shape

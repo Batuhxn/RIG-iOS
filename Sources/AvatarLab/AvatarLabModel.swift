@@ -170,13 +170,26 @@ final class AvatarLabModel {
         }
     }
 
+    /// Set when deleting the stored profile failed; the profile is then kept as is.
+    var deleteFailed = false
+
     /// Removes the stored profile entirely and returns to the neutral figure.
-    func deleteProfile() {
-        try? store?.delete()
+    /// Returns false, and changes nothing, when the file could not be removed:
+    /// the screen must never claim a deletion that did not happen.
+    @discardableResult
+    func deleteProfile() -> Bool {
+        do {
+            try store?.delete()
+        } catch {
+            deleteFailed = true
+            return false
+        }
+        deleteFailed = false
         profile = AvatarProfile()
         hasSavedProfile = false
         worn = [:]
         refresh()
+        return true
     }
 
     // MARK: Outfit
@@ -233,6 +246,30 @@ final class AvatarLabModel {
 
     // MARK: Recompute
 
+    /// Off the main actor; stops between garments once cancelled.
+    nonisolated private static func loadTextures(_ garments: [AvatarWornGarment], from imageStore: GarmentImageStore) async -> [(UUID, UIImage?, UIImage?, UIColor)] {
+        var out: [(UUID, UIImage?, UIImage?, UIColor)] = []
+        for garment in garments {
+            if Task.isCancelled { break }
+            let data = garment.imageRelativePath.flatMap { imageStore.data(atRelativePath: $0) }
+            let photo = data.flatMap(UIImage.init(data:)).map { AvatarGarmentTexture.downscaled($0, maxSide: 1024) }
+            let prepared = photo.map(AvatarGarmentTexture.prepare)
+            out.append((garment.id, prepared?.image, photo, prepared?.colour ?? .gray))
+        }
+        return out
+    }
+
+    /// Off the main actor; nil once cancelled.
+    nonisolated private static func buildGeometry(asset: AvatarBodyAsset, builder: AvatarGarmentShellBuilder,
+                                                  shape: AvatarBodyShape, cuts: [AvatarGarmentCut]) async -> (AvatarMesh, [AvatarMesh])? {
+        let engine = AvatarMorphEngine(asset: asset)
+        let positions = engine.positions(for: shape)
+        guard !Task.isCancelled else { return nil }
+        let body = engine.mesh(named: "body", positions: positions)
+        guard !Task.isCancelled else { return nil }
+        return (body, builder.shells(for: cuts, positions: positions))
+    }
+
     /// Morphs the body and rebuilds the garment shells off the main thread.
     /// A newer request cancels an older one, so dragging a slider never queues work.
     private func refresh() {
@@ -243,22 +280,15 @@ final class AvatarLabModel {
         let missing = garments.filter { textures[$0.id] == nil }
         let imageStore = imageStore
         updateTask = Task { [weak self] in
+            // Coalesce: while a slider is being dragged, only the last value is built.
+            try? await Task.sleep(nanoseconds: 25_000_000)
+            guard !Task.isCancelled else { return }
             let started = Date()
-            async let loaded = Task.detached(priority: .userInitiated) {
-                missing.map { garment -> (UUID, UIImage?, UIImage?, UIColor) in
-                    let data = garment.imageRelativePath.flatMap { imageStore.data(atRelativePath: $0) }
-                    let photo = data.flatMap(UIImage.init(data:)).map { AvatarGarmentTexture.downscaled($0, maxSide: 1024) }
-                    let prepared = photo.map(AvatarGarmentTexture.prepare)
-                    return (garment.id, prepared?.image, photo, prepared?.colour ?? .gray)
-                }
-            }.value
-            let geometry = await Task.detached(priority: .userInitiated) { () -> (AvatarMesh, [AvatarMesh]) in
-                let engine = AvatarMorphEngine(asset: asset)
-                let positions = engine.positions(for: shape)
-                return (engine.mesh(named: "body", positions: positions), builder.shells(for: garments.map(\.cut), positions: positions))
-            }.value
-            let newTextures = await loaded
-            guard let self, !Task.isCancelled else { return }
+            // Child tasks (not detached), so cancelling this refresh cancels them too.
+            async let loaded = Self.loadTextures(missing, from: imageStore)
+            async let geometryJob = Self.buildGeometry(asset: asset, builder: builder, shape: shape, cuts: garments.map(\.cut))
+            let (newTextures, built) = await (loaded, geometryJob)
+            guard let self, !Task.isCancelled, let geometry = built else { return }
             for (id, image, photo, colour) in newTextures { self.textures[id] = (image, photo, colour) }
             let layers = zip(garments, geometry.1).map { garment, mesh in
                 AvatarGarmentLayer(id: garment.id, cut: garment.cut, mesh: mesh,
@@ -269,135 +299,5 @@ final class AvatarLabModel {
             self.content = AvatarStageContent(body: geometry.0, garments: layers,
                                               computeMilliseconds: Int(Date().timeIntervalSince(started) * 1000))
         }
-    }
-}
-
-/// Turns a garment cutout into something a shell can wear: transparent areas
-/// (between sleeves and body in a flat photo) are filled with the garment's own
-/// average colour, so the shell never shows holes.
-enum AvatarGarmentTexture {
-    /// A copy no larger than `maxSide` on its long edge, at scale 1.
-    static func downscaled(_ image: UIImage, maxSide: CGFloat) -> UIImage {
-        let scale = min(1, maxSide / max(image.size.width, image.size.height, 1))
-        guard scale < 1 else { return image }
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-        return UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-    }
-
-    /// Draws `photo` warped into `bands` (see `AvatarFrontProjection.warpBands`).
-    /// Each horizontal strip of the photo is first cropped to the garment's own
-    /// opaque pixels in that strip, so transparent margins are never stretched
-    /// onto the body.
-    static func drawWarped(_ photo: UIImage, into bands: [CGRect]) {
-        guard let cg = photo.cgImage, !bands.isEmpty else { return }
-        let raw = opaqueSpans(of: cg, bands: bands.count)
-        // Smooth the photo's outline the same way as the body's, skipping empty rows.
-        let present = raw.compactMap { $0 }.map { (lo: $0.lowerBound, hi: $0.upperBound) }
-        var smoothed = AvatarFrontProjection.smooth(present).makeIterator()
-        let spans: [ClosedRange<CGFloat>?] = raw.map { span in
-            guard span != nil, let s = smoothed.next() else { return nil }
-            return s.lo...max(s.lo + 1, s.hi)
-        }
-        let rowHeight = CGFloat(cg.height) / CGFloat(bands.count)
-        for (k, rect) in bands.enumerated() {
-            guard let span = spans[k] else { continue }
-            let source = CGRect(x: span.lowerBound, y: (CGFloat(k) * rowHeight).rounded(.down),
-                                width: max(1, span.upperBound - span.lowerBound), height: rowHeight.rounded(.up) + 1)
-            if let strip = cg.cropping(to: source) {
-                UIImage(cgImage: strip).draw(in: rect.insetBy(dx: 0, dy: -0.5))
-            }
-        }
-    }
-
-    /// For each horizontal band of the image, the x range holding opaque pixels.
-    static func opaqueSpans(of cg: CGImage, bands: Int) -> [ClosedRange<CGFloat>?] {
-        let width = min(cg.width, 256)
-        let height = max(bands * 4, min(cg.height, 512))
-        var pixels = [UInt8](repeating: 0, count: width * height * 4)
-        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
-            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
-                                          space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
-            context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
-            return true
-        }
-        guard drawn else { return [ClosedRange<CGFloat>?](repeating: 0...CGFloat(cg.width), count: bands) }
-        let toSource = CGFloat(cg.width) / CGFloat(width)
-        return (0..<bands).map { band in
-            var lo = Int.max, hi = Int.min
-            // A bitmap context's memory starts at the image's top row, like band 0.
-            for row in (band * height / bands)..<((band + 1) * height / bands) {
-                for x in 0..<width where pixels[(row * width + x) * 4 + 3] > 40 {
-                    lo = min(lo, x)
-                    hi = max(hi, x)
-                }
-            }
-            guard lo <= hi else { return nil }
-            return CGFloat(lo) * toSource...CGFloat(hi + 1) * toSource
-        }
-    }
-
-    static func prepare(_ image: UIImage) -> (image: UIImage, colour: UIColor) {
-        let colour = averageColour(of: image)
-        let maxSide: CGFloat = 1024
-        let scale = min(1, maxSide / max(image.size.width, image.size.height, 1))
-        let size = CGSize(width: max(1, image.size.width * scale), height: max(1, image.size.height * scale))
-        if let padded = padded(image, size: size) {
-            return (padded, colour)
-        }
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        format.opaque = true
-        let filled = UIGraphicsImageRenderer(size: size, format: format).image { context in
-            colour.setFill()
-            context.fill(CGRect(origin: .zero, size: size))
-            image.draw(in: CGRect(origin: .zero, size: size))
-        }
-        return (filled, colour)
-    }
-
-    /// The cutout with its transparent pixels edge-padded (`AvatarTexturePadding`).
-    private static func padded(_ image: UIImage, size: CGSize) -> UIImage? {
-        guard let cg = image.cgImage else { return nil }
-        let width = Int(size.width), height = Int(size.height)
-        var pixels = [UInt8](repeating: 0, count: width * height * 4)
-        let space = CGColorSpaceCreateDeviceRGB()
-        let info = CGImageAlphaInfo.premultipliedLast.rawValue
-        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
-            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
-                                          bytesPerRow: width * 4, space: space, bitmapInfo: info) else { return false }
-            context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
-            return true
-        }
-        guard drawn, AvatarTexturePadding.pad(&pixels, width: width, height: height) else { return nil }
-        let result: CGImage? = pixels.withUnsafeMutableBytes { buffer in
-            CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
-                      bytesPerRow: width * 4, space: space, bitmapInfo: info)?.makeImage()
-        }
-        return result.map { UIImage(cgImage: $0) }
-    }
-
-    /// Alpha-weighted mean colour, from an 8×8 downsample.
-    static func averageColour(of image: UIImage) -> UIColor {
-        guard let cg = image.cgImage else { return .gray }
-        let side = 8
-        var pixels = [UInt8](repeating: 0, count: side * side * 4)
-        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
-            guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4,
-                                          space: CGColorSpaceCreateDeviceRGB(),
-                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
-            context.interpolationQuality = .medium
-            context.draw(cg, in: CGRect(x: 0, y: 0, width: side, height: side))
-            return true
-        }
-        guard drawn else { return .gray }
-        var r = 0.0, g = 0.0, b = 0.0, a = 0.0
-        for i in stride(from: 0, to: pixels.count, by: 4) {
-            r += Double(pixels[i]); g += Double(pixels[i + 1]); b += Double(pixels[i + 2]); a += Double(pixels[i + 3])
-        }
-        guard a > 0 else { return .gray }
-        // Premultiplied: the sums of colour over the sum of alpha give the mean.
-        return UIColor(red: r / a, green: g / a, blue: b / a, alpha: 1)
     }
 }

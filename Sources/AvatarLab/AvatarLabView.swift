@@ -62,11 +62,20 @@ struct AvatarLabView: View {
             }
             .confirmationDialog("Delete your avatar?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
                 Button("Delete avatar", role: .destructive) {
-                    model?.deleteProfile()
-                    isOnboarding = true
+                    if model?.deleteProfile() == true {
+                        isOnboarding = true
+                    }
                 }
             } message: {
                 Text("This removes the body shape and saved outfits from this device. Your wardrobe is not affected.")
+            }
+            .alert("Your avatar could not be deleted", isPresented: Binding(
+                get: { model?.deleteFailed ?? false },
+                set: { if !$0 { model?.deleteFailed = false } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Nothing was changed. Please try again.")
             }
         }
         .task {
@@ -74,6 +83,8 @@ struct AvatarLabView: View {
                 let created = AvatarLabModel(store: try? AvatarProfileStore.applicationSupport(), imageStore: services.imageStore)
                 model = created
                 await created.load()
+                // Put back the outfit that was on the avatar when it was last saved.
+                created.restore(created.profile.outfit, from: items)
                 isOnboarding = !created.hasSavedProfile
             }
         }

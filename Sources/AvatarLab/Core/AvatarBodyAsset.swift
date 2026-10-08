@@ -18,7 +18,11 @@ struct AvatarBodyAsset: Sendable {
         case indexOutOfRange
         case missingSubmesh(String)
         case missingResource
+        case invalidValue
     }
+
+    /// Nothing in a human-sized asset lies further than this from the origin (metres).
+    static let maxCoordinate: Float = 10
 
     static let resourceName = "RIGAvatarBody"
     static let resourceExtension = "rigavatar"
@@ -37,16 +41,23 @@ struct AvatarBodyAsset: Sendable {
             throw LoadError.badMagic
         }
         reader.offset = 8
+        // Every count is checked against the bytes left before anything is allocated,
+        // so a corrupt count is a thrown error, never a huge allocation.
         let count = Int(try reader.u32())
+        try reader.require(count, bytesEach: 12)
         var positions: [SIMD3<Float>] = []
         positions.reserveCapacity(count)
         for _ in 0..<count {
-            positions.append(SIMD3(try reader.f32(), try reader.f32(), try reader.f32()))
+            let p = SIMD3(try reader.f32(), try reader.f32(), try reader.f32())
+            guard p.x.isFinite, p.y.isFinite, p.z.isFinite,
+                  max(abs(p.x), abs(p.y), abs(p.z)) <= Self.maxCoordinate else { throw LoadError.invalidValue }
+            positions.append(p)
         }
         var submeshes: [String: [UInt32]] = [:]
         for _ in 0..<(try reader.u32()) {
             let name = try reader.name()
             let indexCount = Int(try reader.u32())
+            try reader.require(indexCount, bytesEach: 4)
             var indices: [UInt32] = []
             indices.reserveCapacity(indexCount)
             for _ in 0..<indexCount {
@@ -60,7 +71,10 @@ struct AvatarBodyAsset: Sendable {
         for _ in 0..<(try reader.u32()) {
             let name = try reader.name()
             let scale = try reader.f32()
+            // i16 × scale must stay inside the coordinate bound: |delta| ≤ 32767 × scale.
+            guard scale.isFinite, scale > 0, scale * 32767 <= Self.maxCoordinate else { throw LoadError.invalidValue }
             let entryCount = Int(try reader.u32())
+            try reader.require(entryCount, bytesEach: 10)
             var vertices: [Int32] = []
             vertices.reserveCapacity(entryCount)
             for _ in 0..<entryCount {
@@ -97,6 +111,11 @@ private struct Reader {
     var offset = 0
 
     init(bytes: [UInt8]) { self.bytes = bytes }
+
+    /// Throws `.truncated` unless `count` records of `bytesEach` bytes remain.
+    func require(_ count: Int, bytesEach: Int) throws {
+        guard count >= 0, count <= (bytes.count - offset) / bytesEach else { throw AvatarBodyAsset.LoadError.truncated }
+    }
 
     private mutating func take(_ n: Int) throws -> ArraySlice<UInt8> {
         guard offset + n <= bytes.count else { throw AvatarBodyAsset.LoadError.truncated }
