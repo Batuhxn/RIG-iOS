@@ -125,12 +125,14 @@ struct AvatarLabView: View {
 /// The 3D stage, or in 2D mode the front view with garment photos laid over it.
 private struct AvatarStage: View {
     let model: AvatarLabModel
+    @State private var seesBack = false
 
     var body: some View {
         GeometryReader { proxy in
             let projection = AvatarFrontProjection(viewWidth: proxy.size.width, viewHeight: proxy.size.height, visibleHeight: 1.95, centreY: 0.9)
             ZStack(alignment: .topLeading) {
-                AvatarStageView(content: model.content, mode: model.mode, flatProjection: model.mode == .flat2D ? projection : nil)
+                AvatarStageView(content: model.content, mode: model.mode, flatProjection: model.mode == .flat2D ? projection : nil,
+                                onBackViewChange: { seesBack = $0 })
                 if model.mode == .flat2D, let content = model.content {
                     ForEach(content.garments) { layer in
                         if let photo = layer.photo, let bands = projection.warpBands(for: layer.mesh) {
@@ -140,6 +142,16 @@ private struct AvatarStage: View {
                 }
                 if model.content == nil {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                if seesBack, model.mode != .flat2D, !(model.content?.garments.isEmpty ?? true) {
+                    Text("Approximate back view")
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(.thinMaterial, in: Capsule())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .padding(.bottom, RIGTheme.Spacing.s)
+                        .accessibilityHidden(true)
                 }
             }
         }

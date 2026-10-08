@@ -12,6 +12,8 @@ struct AvatarStageView: UIViewRepresentable {
     let mode: AvatarPreviewMode
     /// Front orthographic camera for the 2D overlay; must match `AvatarFrontProjection`.
     let flatProjection: AvatarFrontProjection?
+    /// Called (on the main queue) when the 3D camera turns to, or away from, the back.
+    var onBackViewChange: (Bool) -> Void = { _ in }
 
     func makeUIView(context: Context) -> SCNView {
         let view = SCNView()
@@ -21,6 +23,8 @@ struct AvatarStageView: UIViewRepresentable {
         view.scene = context.coordinator.scene
         view.pointOfView = context.coordinator.cameraNode
         view.accessibilityLabel = "Avatar preview"
+        context.coordinator.backWatcher.onChange = onBackViewChange
+        view.delegate = context.coordinator.backWatcher
         return view
     }
 
@@ -42,6 +46,7 @@ struct AvatarStageView: UIViewRepresentable {
 final class AvatarStageCoordinator {
     let scene = SCNScene()
     let cameraNode = SCNNode()
+    let backWatcher = AvatarBackViewWatcher()
     private let avatarNode = SCNNode()
     private var bodyNode: SCNNode?
     private var garmentNodes: [SCNNode] = []
@@ -179,7 +184,8 @@ final class AvatarStageCoordinator {
     static func unknownRegion(_ colour: UIColor) -> UIColor {
         var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard colour.getHue(&h, saturation: &s, brightness: &b, alpha: &a) else { return colour }
-        return UIColor(hue: h, saturation: s * 0.9, brightness: b * 0.88, alpha: 1)
+        // Only slightly shaded (product decision): it reads as plain fabric, not a hole.
+        return UIColor(hue: h, saturation: s * 0.95, brightness: b * 0.95, alpha: 1)
     }
 
     /// One geometry; the back panel, when there is one, is a second element with its
@@ -199,5 +205,29 @@ final class AvatarStageCoordinator {
         ], elements: elements)
         geometry.materials = Array(materials.prefix(elements.count))
         return SCNNode(geometry: geometry)
+    }
+}
+
+/// Watches the 3D camera from SceneKit's render loop and reports, only on change,
+/// whether the avatar is being seen from behind, where a single front photo shows
+/// nothing real ("Approximate back view").
+final class AvatarBackViewWatcher: NSObject, SCNSceneRendererDelegate, @unchecked Sendable {
+    private let lock = NSLock()
+    private var behind = false
+    var onChange: (Bool) -> Void = { _ in }
+
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        guard let eye = renderer.pointOfView?.presentation.worldPosition else { return }
+        // The avatar faces +z; beyond ~100° from the front the back dominates the view.
+        let angle = abs(atan2(Double(eye.x), Double(eye.z)))
+        let now = angle > 100 * Double.pi / 180
+        lock.lock()
+        let changed = now != behind
+        behind = now
+        let callback = onChange
+        lock.unlock()
+        if changed {
+            DispatchQueue.main.async { callback(now) }
+        }
     }
 }
