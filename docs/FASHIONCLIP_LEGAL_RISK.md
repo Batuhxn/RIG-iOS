@@ -51,6 +51,8 @@ lawyer rates C2 a blocker. In that case the clean path is a RiG-owned fine-tune
 
 ## Required actions before TestFlight
 
-- [ ] MIT notice for FashionCLIP (and the CLIP lineage) in an in-app Acknowledgements screen / `THIRD_PARTY_NOTICES`.
+- [x] MIT notices for FashionCLIP and OpenCLIP in iOS Settings → RIG → Acknowledgements
+      (`Support/Settings.bundle`, checked by `AcknowledgementsTests`) and `THIRD_PARTY_NOTICES.md`.
+      Product decision 2026-10-08: Settings.bundle now, About/Legal link if that screen is ever added.
 - [ ] Keep model names out of marketing copy.
 - [ ] Product/legal decision on C2: accept FashionCLIP 2.0 with this note, or switch to 1.0 if the measured cost is small.
