@@ -1,5 +1,8 @@
 # v0.5 Avatar Lab — overnight report (2026-10-09)
 
+**Status: experimental prototype.** The avatar works, its shape changes and
+it shows garments. The garments are not yet realistic.
+
 Branch `feat/v0.5-avatar-lab`, cut from `main` at `2b0013f`. Not merged, no PR,
 nothing spent. Design and limitations: `docs/AVATAR_LAB.md`.
 
@@ -59,6 +62,64 @@ upper bound. Physical-iPhone frame time, memory and thermals are **not measured*
     the anatomical mesh needed a mannequin form.
   - Not adopted tonight: GPU morphing with `SCNMorpher` (the release CPU path is
     4 ms) and authored loose garment meshes (a larger asset task).
+
+## Visual review: does it look worn, or pasted on?
+
+The review grid has four body shapes. Each is shown in the 2D preview and in
+the 3D view from the front, three-quarter and side. The garments are a striped
+tee with jeans, and a striped dress. Before:
+`reports/avatar_lab/review_grid_run37853004060.jpg`. After: the latest run's
+grid annotation.
+
+- **3D, front and three-quarter: closest to "worn".** Prints wrap the body and
+  sleeves sit right. But the garments hug the body like tights, with no volume
+  and no drape. The side view used to show flat average-colour patches where the
+  cutout was transparent. These are now edge-padded with the nearest garment
+  colour.
+- **2D: most faithful to the photo, but plainly a paper doll.** Horizontal
+  stripes hold up well. Vertical stripes stair-stepped at the edges until the
+  warp moved to 48 smoothed bands. Straight jeans read as wide-leg, because both
+  legs and the gap between them are stretched together.
+- **3D colour:** clean, but it reads as a painted mannequin, not clothing.
+
+**Verdict:** this is a useful preview of colour and pattern combinations. It
+is not yet a convincing "wearing it" view.
+
+## Why the next step is real 3D garment templates (RiG Garment Engine v1)
+
+The tights shell can only ever look sprayed on. It has no volume of its own:
+a skirt or dress cannot flare, trousers lose their leg shape, and a tee cannot
+hang loose. The direction (ChatGPT, 2026-10-09) is MakeHuman body + independent
+morph controls + real garment meshes. No cloth physics, no photoreal fitting.
+
+**How MakeHuman binds clothes (`.mhclo`).** Each vertex of a garment mesh stores:
+
+- the three body vertices of a triangle it is attached to;
+- barycentric weights on that triangle;
+- an offset from the skin.
+
+When the body morphs, every garment vertex is placed at the weighted point on
+its triangle plus the scaled offset. So an authored loose garment follows any
+body shape and keeps its own volume. A `delete_verts` list hides the body
+vertices the garment covers, which removes poke-through under clothes entirely.
+We would implement this binding ourselves; MPFB's GPL code is not used. The
+binding data travels with each CC0 garment, or with one we author.
+
+**First targets:**
+
+1. Straight T-shirt (loose torso, short sleeves).
+2. Straight trousers (keeps leg shape and hem).
+3. A-line skirt (flares from the hips).
+4. Simple shift dress.
+
+Each needs a low-poly mesh, its binding to the base mesh, and a UV layout that a
+garment photo can be projected into. The photo projection, edge padding and
+category → cut mapping built tonight carry over.
+
+**Asset licensing must be checked before any garment ships.** MakeHuman's
+bundled system clothes are CC0, like its other core assets. Community clothes
+vary (CC-BY, sometimes CC-BY-SA). Only verified-CC0 meshes, or meshes we author,
+may enter the app.
 
 ## Not done / open
 
