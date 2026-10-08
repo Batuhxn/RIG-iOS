@@ -102,7 +102,8 @@ final class AvatarRenderingTests: XCTestCase {
         let projection = AvatarFrontProjection(viewWidth: size.width, viewHeight: size.height, visibleHeight: 1.9, centreY: 0.88)
         let flat = UIGraphicsImageRenderer(size: size).image { _ in
             base.draw(at: .zero)
-            for (layer, photo) in zip(outfit.garments, [tee, jeans]) {
+            // Innermost first, as the app draws them: trousers under the tee.
+            for (layer, photo) in zip(outfit.garments, [tee, jeans]).sorted(by: { $0.0.cut.layer < $1.0.cut.layer }) {
                 if let rect = projection.overlayRect(for: layer.mesh, imageAspect: photo.size.width / photo.size.height) {
                     photo.draw(in: rect)
                 }
