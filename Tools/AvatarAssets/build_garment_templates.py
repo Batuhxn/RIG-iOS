@@ -340,6 +340,29 @@ def straighten_hems(new, tris, band=0.035, split_x=False, neckline=0.0):
     return new
 
 
+def straighten_sleeves(new, tris, axes, band=0.03):
+    """Sleeve openings: open-edge vertices near each sleeve's end are moved along
+    the arm axis to one axial position, so the opening is a clean ring."""
+    count = {}
+    for f in quads(tris):
+        loop = list(dict.fromkeys(f)) if len(f) == 3 else [f[0], f[1], f[2], f[5]]
+        for k in range(len(loop)):
+            e = tuple(sorted((loop[k], loop[(k + 1) % len(loop)])))
+            count[e] = count.get(e, 0) + 1
+    boundary = {v for e, c in count.items() if c == 1 for v in e if v in new}
+    for side, (c, a, u, w) in axes.items():
+        mine = [v for v in boundary if np.sign(new[v][0]) == side and abs(new[v][0]) > TORSO_X + 0.03]
+        if not mine:
+            continue
+        s = {v: float(np.dot(np.asarray(new[v]) - c, a)) for v in mine}
+        far = max(s.values())
+        ring = [v for v in mine if s[v] >= far - band]
+        target = float(np.mean([s[v] for v in ring]))
+        for v in ring:
+            new[v] = tuple(np.asarray(new[v]) + (target - s[v]) * a)
+    return new
+
+
 # --- binding ----------------------------------------------------------------
 
 def vertex_normals(P, tris):
@@ -551,6 +574,7 @@ def main():
     tee_ids = sorted(set(tee_tris))
     tee_new = straighten_hems(smooth_displacement(P, shape_top(P, tee_ids), tee_tris), tee_tris, neckline=0.025)
     axes = arm_axes(P, tee_ids)
+    tee_new = straighten_sleeves(tee_new, tee_tris, axes)
     templates.append(build_template(
         "tee", P, body, bn, tee_tris, tee_new, allowed_any,
         lambda p: 0.90 <= p[1] <= NECK - 0.04 and abs(p[0]) <= 0.27, axes))
