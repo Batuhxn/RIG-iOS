@@ -54,24 +54,48 @@ jobs:
           METRICS="$(grep -o 'AVATAR_METRIC [^ ]*' "$LOG" | sed 's/AVATAR_METRIC //' | sort -u | tr '\n' ' ')"
           echo "::notice title=avatar-metrics::${METRICS:-none}"
           # At most 10 annotations of a kind per step: snapshots go in the next steps.
-          grep -E "error:|failed \(" "$LOG" | grep -v "^$" | head -n 10 | while read -r line; do
+          grep -E "error: -\[|\*\* TEST FAILED|\*\* BUILD FAILED" "$LOG" | grep -v "^$" | head -n 10 | while read -r line; do
             echo "::warning title=test-failure::${line}"
           done
           tail -n 3 "$LOG"
 
-      - name: Snapshots (part 1)
+      - name: Snapshots (1)
         if: always()
         run: |
           [ -f build/avatar-lab.log ] || exit 0
-          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '1,9p' | while read -r _ name data; do
+          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '1,10p' | while read -r _ name data; do
             echo "::notice title=snap-${name}::${data}"
           done
 
-      - name: Snapshots (part 2)
+      - name: Snapshots (2)
         if: always()
         run: |
           [ -f build/avatar-lab.log ] || exit 0
-          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '10,18p' | while read -r _ name data; do
+          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '11,20p' | while read -r _ name data; do
+            echo "::notice title=snap-${name}::${data}"
+          done
+
+      - name: Snapshots (3)
+        if: always()
+        run: |
+          [ -f build/avatar-lab.log ] || exit 0
+          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '21,30p' | while read -r _ name data; do
+            echo "::notice title=snap-${name}::${data}"
+          done
+
+      - name: Snapshots (4)
+        if: always()
+        run: |
+          [ -f build/avatar-lab.log ] || exit 0
+          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '31,40p' | while read -r _ name data; do
+            echo "::notice title=snap-${name}::${data}"
+          done
+
+      - name: Snapshots (5)
+        if: always()
+        run: |
+          [ -f build/avatar-lab.log ] || exit 0
+          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '41,50p' | while read -r _ name data; do
             echo "::notice title=snap-${name}::${data}"
           done
 

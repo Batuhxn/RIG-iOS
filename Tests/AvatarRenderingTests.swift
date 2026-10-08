@@ -166,11 +166,22 @@ final class AvatarRenderingTests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
-        let small = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 240)).image { _ in
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let small = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 240), format: format).image { _ in
             image.draw(in: CGRect(x: 0, y: 0, width: 120, height: 240))
         }
-        if let data = small.jpegData(compressionQuality: 0.55) {
-            print("AVATAR_SNAPSHOT \(name) \(data.base64EncodedString())")
+        // Annotations hold about 4 KB of text, so the JPEG goes out in numbered chunks.
+        if let data = small.jpegData(compressionQuality: 0.5) {
+            let text = data.base64EncodedString()
+            var start = text.startIndex
+            var part = 0
+            while start < text.endIndex {
+                let end = text.index(start, offsetBy: 3800, limitedBy: text.endIndex) ?? text.endIndex
+                print("AVATAR_SNAPSHOT \(name).\(part) \(text[start..<end])")
+                start = end
+                part += 1
+            }
         }
     }
 }
