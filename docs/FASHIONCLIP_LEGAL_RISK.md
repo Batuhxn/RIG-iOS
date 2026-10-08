@@ -39,6 +39,10 @@ vectors (`Tools/AutoMetadataBench`, 2026-10-08). Precision / recall of prefilled
 | Length | 93.1% / 80.6% | 90.6% / 43.3% | — | — |
 | Colour | 96.2% / 89.4% | 92.8% / 73.9% | 89% / 73% | 86% / 55% |
 
+On 218 visually labelled CC0 amateur photos, 1.0 is again worse: category
+precision 96.1% vs 99.5%, kind 82.8% vs 95.0%, colour 73.6% vs 83.0% (before the
+ambiguous-pair rule).
+
 Moving off the LAION lineage costs about 4–7 points of precision and 15–37 points of
 recall. It would miss the kind ≥ 80% product target on phone photos, and wrong
 prefills would roughly double. Recommendation: keep 2.0 with the C2 note unless a
