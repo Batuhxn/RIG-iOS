@@ -92,8 +92,8 @@ The iPhone has a Neural Engine; these numbers say nothing reliable about it.
 
 1. **Needs Batuhan's iPhone:** real-device p50/p95, peak memory, thermal behaviour,
    Vision cutout quality on his wardrobe, 30+ of his own photos.
-2. **Before merging:** remove the temporary branch push triggers in
-   `automd-coreml-parity.yml` and `automd-e2e.yml` (manual dispatch stays).
+2. **CI:** the Auto Metadata workflows are manual-dispatch only (the temporary branch
+   push triggers were removed after the last green runs).
 3. **TestFlight:** `scripts/release_testflight.sh` now requires the pinned model; the
    rest of the release flow is unchanged.
 4. **Later (not v0.3):** colour beyond 90% on amateur photos needs a dedicated colour

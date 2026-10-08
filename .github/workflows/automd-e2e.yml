@@ -7,17 +7,6 @@ name: Auto Metadata end to end
 
 on:
   workflow_dispatch:
-  # TEMPORARY (v0.3 review): run on pushes to the Auto Metadata branch. Public
-  # repository, standard runner. Remove before merging.
-  push:
-    branches: [feat/v0.3-auto-metadata-fashionclip]
-    paths:
-      - "Sources/**"
-      - "Tests/**"
-      - "Resources/Models/**"
-      - "scripts/fetch_metadata_model.sh"
-      - "Tools/AutoMetadataBench/scripts/e2e.py"
-      - ".github/workflows/automd-e2e.yml"
 
 permissions:
   contents: read

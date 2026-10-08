@@ -9,15 +9,6 @@ name: Auto Metadata Core ML parity
 
 on:
   workflow_dispatch:
-  # TEMPORARY (v0.3 review): run on pushes to the Auto Metadata branch. The
-  # repository is public, so standard runners are not metered. Remove before merging.
-  push:
-    branches: [feat/v0.3-auto-metadata-fashionclip]
-    paths:
-      - "Tools/AutoMetadataBench/**"
-      - "!Tools/AutoMetadataBench/publish-request.txt"
-      - "!Tools/AutoMetadataBench/scripts/e2e.py"
-      - ".github/workflows/automd-coreml-parity.yml"
 
 permissions:
   contents: read
