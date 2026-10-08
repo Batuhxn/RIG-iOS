@@ -10,7 +10,7 @@ nothing spent. Design and limitations: `docs/AVATAR_LAB.md`.
 
 | Claim | Evidence |
 |---|---|
-| The app builds with the Avatar tab | Avatar Lab CI (GitHub `macos-15`, Xcode 16.4): runs 37848282999 and 37849262651 green |
+| The app builds with the Avatar tab | Avatar Lab CI (GitHub `macos-15`, Xcode 16.4): runs 37848282999, 37849262651, 37850482922, 37853004060, 37853966508 green; the final run is listed under "Final state" |
 | Every existing RIG test still passes | the same run executes the full `RIGTests` suite via `scripts/validate_macos.sh` |
 | The asset loads and carries every target the controls need | `AvatarLabTests.testBundledAssetLoadsWithEveryTargetTheControlsNeed` |
 | Hips change hips only, shoulders change shoulders only (≤ 1 mm elsewhere) | `testHipsChangeHipsOnlyAndShouldersChangeShouldersOnly` |
@@ -69,13 +69,14 @@ The review grid has four body shapes. Each is shown in the 2D preview and in
 the 3D view from the front, three-quarter and side. The garments are a striped
 tee with jeans, and a striped dress. Before:
 `reports/avatar_lab/review_grid_run37853004060.jpg`. After: the latest run's
-grid annotation.
+grid, `reports/avatar_lab/review_grid_run37855412900_after.jpg`.
 
 - **3D, front and three-quarter: closest to "worn".** Prints wrap the body and
   sleeves sit right. But the garments hug the body like tights, with no volume
   and no drape. The side view used to show flat average-colour patches where the
   cutout was transparent. These are now edge-padded with the nearest garment
-  colour.
+  colour. That fixed the tee's sides, but on the striped dress it extends the
+  edge stripe into solid blocks of yellow or navy. The fill is still a guess.
 - **2D: most faithful to the photo, but plainly a paper doll.** Horizontal
   stripes hold up well. Vertical stripes stair-stepped at the edges until the
   warp moved to 48 smoothed bands. Straight jeans read as wide-leg, because both
@@ -121,6 +122,32 @@ bundled system clothes are CC0, like its other core assets. Community clothes
 vary (CC-BY, sometimes CC-BY-SA). Only verified-CC0 meshes, or meshes we author,
 may enter the app.
 
+## Codex review (read-only, `2b0013f..0e0aa3f`)
+
+Five P2 findings, all fixed in `ec08781`:
+
+1. A corrupt count was allocated before it was checked (~64 GiB). Counts are now
+   bounded by the remaining bytes.
+2. NaN coordinates passed parsing and then trapped. Non-finite and out-of-range
+   values are now rejected.
+3. Cancelled refreshes kept computing. The work now runs as child tasks with
+   cancellation checks, and slider updates are coalesced.
+4. "Delete avatar" reset the screen even when the file stayed. It now resets
+   only after a real deletion, and shows an alert otherwise.
+5. The current outfit was not restored after relaunch. It now is.
+
+Codex found no data-leaving-device path and no cost risk. The temporary push
+trigger was flagged and is removed in the final commit.
+
+## Final state
+
+- Last CI: run 37855412900, green (build, full `RIGTests`, avatar and
+  rendering tests). Simulator debug: 315 ms asset load, 238 ms for body plus 3
+  garments.
+- The workflow is now manual dispatch only. The commit that removed the push
+  trigger did not start a run.
+- Branch `feat/v0.5-avatar-lab`: not merged, no PR. `main` was not touched.
+
 ## Not done / open
 
 - v0.4 Codex review findings (truncated identity, original-vs-cutout identity
@@ -130,4 +157,4 @@ may enter the app.
   (kind and length) is on another branch.
 - No real wardrobe photo has been seen on the avatar: CI uses synthetic cutouts.
   An iPhone run with Batuhan's garments is the real test.
-- The `avatar-lab.yml` push trigger is TEMPORARY. Remove it before any merge.
+- The `avatar-lab.yml` push trigger has been removed: the workflow is manual dispatch only.

@@ -2,15 +2,13 @@
 # avatar renders on an iPhone simulator. Runs on GitHub's standard macOS runner,
 # which is free for public repositories.
 #
-# TEMPORARY: the push trigger below exists only so the feature branch can be
-# verified without a Mac. Remove it before any merge; manual dispatch stays.
+# Manual dispatch only. (A temporary push trigger was used while the
+# feature branch was built overnight and has been removed.)
 
 name: Avatar Lab
 
 on:
   workflow_dispatch:
-  push: # TEMPORARY — remove before merge
-    branches: [feat/v0.5-avatar-lab]
 
 permissions:
   contents: read
