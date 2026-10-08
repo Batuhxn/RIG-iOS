@@ -1,3 +1,4 @@
+import Metal
 import SceneKit
 import UIKit
 import XCTest
@@ -22,14 +23,19 @@ final class AvatarRenderingTests: XCTestCase {
     }
 
     private func content(shape: AvatarBodyShape, cuts: [AvatarGarmentCut], texture: UIImage?) throws -> AvatarStageContent {
+        try content(shape: shape, garments: cuts.map { ($0, texture) })
+    }
+
+    private func content(shape: AvatarBodyShape, garments: [(AvatarGarmentCut, UIImage?)]) throws -> AvatarStageContent {
         let asset = try loadAsset()
         let started = Date()
         let engine = AvatarMorphEngine(asset: asset)
         let builder = AvatarGarmentShellBuilder(asset: asset)
         let positions = engine.positions(for: shape)
-        let shells = builder.shells(for: cuts, positions: positions)
-        let layers = zip(cuts, shells).map { cut, mesh in
-            AvatarGarmentLayer(id: UUID(), cut: cut, mesh: mesh, texture: texture, colour: .systemTeal)
+        let shells = builder.shells(for: garments.map(\.0), positions: positions)
+        let layers = zip(garments, shells).map { garment, mesh in
+            AvatarGarmentLayer(id: UUID(), cut: garment.0, mesh: mesh, texture: garment.1,
+                               colour: garment.1.map { AvatarGarmentTexture.averageColour(of: $0) } ?? .systemTeal)
         }
         return AvatarStageContent(body: engine.mesh(named: "body", positions: positions), garments: layers,
                                   computeMilliseconds: Int(Date().timeIntervalSince(started) * 1000))
@@ -38,18 +44,7 @@ final class AvatarRenderingTests: XCTestCase {
     private func render(_ content: AvatarStageContent, mode: AvatarPreviewMode, yaw: Float = 0, size: CGSize = CGSize(width: 240, height: 480)) -> UIImage {
         let coordinator = AvatarStageCoordinator()
         coordinator.show(content, mode: mode)
-        coordinator.scene.rootNode.childNodes.forEach { node in
-            if node.geometry == nil, node.light == nil, node.camera == nil { node.eulerAngles.y = yaw }
-        }
-        let camera = coordinator.cameraNode.camera
-        camera?.usesOrthographicProjection = true
-        camera?.orthographicScale = 0.95
-        coordinator.cameraNode.position = SCNVector3(0, 0.88, 4)
-        let renderer = SCNRenderer(device: MTLCreateSystemDefaultDevice(), options: nil)
-        renderer.scene = coordinator.scene
-        renderer.pointOfView = coordinator.cameraNode
-        coordinator.scene.background.contents = UIColor.white
-        return renderer.snapshot(atTime: 0, with: size, antialiasingMode: .multisampling4X)
+        return coordinator.snapshot(size: size, yaw: yaw)
     }
 
     func testAvatarRendersAndMorphsAreVisible() throws {
@@ -93,7 +88,65 @@ final class AvatarRenderingTests: XCTestCase {
         emit("outfit-side", render(outfit, mode: .photo3D, yaw: .pi / 2))
     }
 
+    /// The same outfit in all three preview modes, for the product comparison.
+    func testThreePreviewModesOnOneOutfit() throws {
+        let tee = Self.teeCutout()
+        let jeans = Self.trousersCutout()
+        var shape = AvatarBodyShape.neutral
+        shape[.hips] = 0.3
+        let outfit = try content(shape: shape, garments: [(.top(sleeve: .short), AvatarGarmentTexture.prepare(tee).image),
+                                                          (.trousers, AvatarGarmentTexture.prepare(jeans).image), (.shoes, nil)])
+        let size = CGSize(width: 240, height: 480)
+        let flatBody = try content(shape: shape, garments: [])
+        let base = render(flatBody, mode: .flat2D, size: size)
+        let projection = AvatarFrontProjection(viewWidth: size.width, viewHeight: size.height, visibleHeight: 1.9, centreY: 0.88)
+        let flat = UIGraphicsImageRenderer(size: size).image { _ in
+            base.draw(at: .zero)
+            for (layer, photo) in zip(outfit.garments, [tee, jeans]) {
+                if let rect = projection.overlayRect(for: layer.mesh, imageAspect: photo.size.width / photo.size.height) {
+                    photo.draw(in: rect)
+                }
+            }
+        }
+        emit("mode-2d", flat)
+        emit("mode-3d-photo", render(outfit, mode: .photo3D, size: size))
+        emit("mode-3d-colour", render(outfit, mode: .colour3D, size: size))
+        emit("mode-3d-photo-turned", render(outfit, mode: .photo3D, yaw: 0.6, size: size))
+    }
+
     // MARK: Helpers
+
+    /// A flat-lay T-shirt cutout: navy, white chest stripe, transparent background.
+    private static func teeCutout() -> UIImage {
+        let size = CGSize(width: 300, height: 300)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: 110, y: 10)); path.addLine(to: CGPoint(x: 190, y: 10))
+            path.addLine(to: CGPoint(x: 290, y: 60)); path.addLine(to: CGPoint(x: 260, y: 120))
+            path.addLine(to: CGPoint(x: 230, y: 100)); path.addLine(to: CGPoint(x: 230, y: 295))
+            path.addLine(to: CGPoint(x: 70, y: 295)); path.addLine(to: CGPoint(x: 70, y: 100))
+            path.addLine(to: CGPoint(x: 40, y: 120)); path.addLine(to: CGPoint(x: 10, y: 60)); path.close()
+            UIColor(red: 0.1, green: 0.15, blue: 0.4, alpha: 1).setFill()
+            path.fill()
+            path.addClip()
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 120, width: 300, height: 26))
+        }
+    }
+
+    /// A flat-lay trousers cutout in denim blue.
+    private static func trousersCutout() -> UIImage {
+        let size = CGSize(width: 200, height: 400)
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: 20, y: 5)); path.addLine(to: CGPoint(x: 180, y: 5))
+            path.addLine(to: CGPoint(x: 195, y: 395)); path.addLine(to: CGPoint(x: 115, y: 395))
+            path.addLine(to: CGPoint(x: 100, y: 120)); path.addLine(to: CGPoint(x: 85, y: 395))
+            path.addLine(to: CGPoint(x: 5, y: 395)); path.close()
+            UIColor(red: 0.25, green: 0.4, blue: 0.62, alpha: 1).setFill()
+            path.fill()
+        }
+    }
 
     /// A synthetic "garment photo": red and blue stripes, transparent corners.
     private static func stripedGarment() -> UIImage {

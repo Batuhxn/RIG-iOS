@@ -23,7 +23,8 @@ enum AvatarControl: String, CaseIterable, Codable, Sendable {
     case armLength
     case upperArms
     case overall
-    case frame
+    // MakeHuman's two sex macros are in the asset (frame-a / frame-b) but have no
+    // control: relabelling them would be misleading (product decision, v0.5).
 
     /// The five shown first; the rest are optional refinements.
     static let primary: [AvatarControl] = [.shoulders, .upperBody, .waist, .hips, .legLength]
@@ -46,7 +47,6 @@ enum AvatarControl: String, CaseIterable, Codable, Sendable {
         case .armLength: return "Arm length"
         case .upperArms: return "Upper arms"
         case .overall: return "Overall"
-        case .frame: return "Frame"
         }
     }
 
@@ -58,7 +58,6 @@ enum AvatarControl: String, CaseIterable, Codable, Sendable {
         case .height: return ("Shorter", "Taller")
         case .bust, .stomach, .seat, .thighs, .upperArms: return ("Less", "More")
         case .overall: return ("Slimmer", "Fuller")
-        case .frame: return ("Softer", "Angular")
         }
     }
 
@@ -94,7 +93,6 @@ enum AvatarControl: String, CaseIterable, Codable, Sendable {
         case .armLength: return pair("armlength")
         case .upperArms: return pair("upperarms")
         case .overall: return pair("fullness")
-        case .frame: return ([("frame-a", 1)], [("frame-b", 1)])
         }
     }
 }
@@ -153,20 +151,20 @@ struct AvatarBodyShape: Codable, Equatable, Sendable {
     }
 }
 
-/// Neutral starting points for onboarding. Not types of people: three different
-/// places to start adjusting from, all equally editable.
+/// Neutral starting points for onboarding. Not types of people and not named:
+/// "Silhouette 1 / 2 / 3", shown as pictures, all equally editable.
 struct AvatarStartingSilhouette: Identifiable, Sendable {
     let id: String
     let title: String
     let shape: AvatarBodyShape
 
     static let all: [AvatarStartingSilhouette] = [
-        AvatarStartingSilhouette(id: "balanced", title: "Balanced", shape: .neutral),
-        AvatarStartingSilhouette(id: "curved", title: "Curved", shape: AvatarBodyShape(values: [
-            .frame: -0.8, .waist: -0.3, .hips: 0.4, .seat: 0.3, .shoulders: -0.2,
+        AvatarStartingSilhouette(id: "silhouette-1", title: "Silhouette 1", shape: .neutral),
+        AvatarStartingSilhouette(id: "silhouette-2", title: "Silhouette 2", shape: AvatarBodyShape(values: [
+            .waist: -0.4, .hips: 0.5, .seat: 0.4, .bust: 0.3, .shoulders: -0.2, .thighs: 0.3,
         ])),
-        AvatarStartingSilhouette(id: "straight", title: "Straight", shape: AvatarBodyShape(values: [
-            .frame: 0.8, .shoulders: 0.3, .upperBody: 0.2, .hips: -0.2,
+        AvatarStartingSilhouette(id: "silhouette-3", title: "Silhouette 3", shape: AvatarBodyShape(values: [
+            .shoulders: 0.5, .upperBody: 0.4, .waist: 0.2, .hips: -0.3, .bust: -0.6, .seat: -0.3,
         ])),
     ]
 }

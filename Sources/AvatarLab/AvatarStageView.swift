@@ -1,3 +1,4 @@
+import Metal
 import SceneKit
 import SwiftUI
 import UIKit
@@ -133,10 +134,36 @@ final class AvatarStageCoordinator {
         }
     }
 
+    /// Renders the current scene offscreen from the front (or turned by `yaw`),
+    /// orthographic, on a white background: onboarding thumbnails and tests.
+    func snapshot(size: CGSize, yaw: Float = 0) -> UIImage {
+        avatarNode.eulerAngles = SCNVector3(0, yaw, 0)
+        let camera = SCNCamera()
+        camera.usesOrthographicProjection = true
+        camera.orthographicScale = 0.95
+        camera.zNear = 0.05
+        camera.zFar = 20
+        let eye = SCNNode()
+        eye.camera = camera
+        eye.position = SCNVector3(0, 0.88, 4)
+        scene.rootNode.addChildNode(eye)
+        let background = scene.background.contents
+        scene.background.contents = UIColor.white
+        defer {
+            eye.removeFromParentNode()
+            scene.background.contents = background
+            avatarNode.eulerAngles = SCNVector3Zero
+        }
+        let renderer = SCNRenderer(device: MTLCreateSystemDefaultDevice(), options: nil)
+        renderer.scene = scene
+        renderer.pointOfView = eye
+        return renderer.snapshot(atTime: 0, with: size, antialiasingMode: .multisampling4X)
+    }
+
     private static let skinMaterial: SCNMaterial = {
         let material = SCNMaterial()
         material.lightingModel = .physicallyBased
-        material.diffuse.contents = UIColor(red: 0.80, green: 0.78, blue: 0.75, alpha: 1)
+        material.diffuse.contents = UIColor(red: 0.93, green: 0.92, blue: 0.90, alpha: 1)  // matte dress-form white, not a skin tone
         material.roughness.contents = 0.7
         material.metalness.contents = 0.0
         return material

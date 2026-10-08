@@ -29,6 +29,14 @@ enum AvatarGarmentCut: Equatable, Sendable {
         }
     }
 
+    /// Tops, dresses and coats fall from the chest and shoulder blades.
+    var hangsFromChest: Bool {
+        switch self {
+        case .top, .dress, .outerwear: return true
+        default: return false
+        }
+    }
+
     var offset: Float {
         switch self {
         case .shoes: return 0.012
@@ -167,12 +175,44 @@ struct AvatarGarmentShellBuilder: Sendable {
                     mesh.positions[k] += (cut.offset - depth) * n
                 }
             }
+            if cut.hangsFromChest {
+                Self.drape(&mesh, maxAbsX: AvatarRestLandmarks.torsoHalfWidth)
+            }
             guard let bounds = mesh.frontBounds else { return mesh }
             let size = SIMD2(max(bounds.max.x - bounds.min.x, 1e-4), max(bounds.max.y - bounds.min.y, 1e-4))
             mesh.uvs = mesh.positions.map { p in
                 SIMD2((p.x - bounds.min.x) / size.x, (bounds.max.y - p.y) / size.y)
             }
             return mesh
+        }
+    }
+
+    /// Cloth over the torso hangs from what is above it instead of following
+    /// every hollow: in each vertical strip, a front vertex is never further
+    /// back than the most forward point above it, less a gentle slope (and the
+    /// same for the back). This removes the "painted on" look under the chest,
+    /// at the stomach and in the small of the back. Sleeves are left alone.
+    static func drape(_ mesh: inout AvatarMesh, maxAbsX: Float, strip: Float = 0.012, slope: Float = 0.25) {
+        var columns: [Int: [Int]] = [:]
+        for k in mesh.positions.indices where abs(mesh.positions[k].x) <= maxAbsX {
+            columns[Int((mesh.positions[k].x / strip).rounded(.down)), default: []].append(k)
+        }
+        for (_, members) in columns {
+            let sorted = members.sorted { mesh.positions[$0].y > mesh.positions[$1].y }
+            var front: (z: Float, y: Float)?
+            var back: (z: Float, y: Float)?
+            for k in sorted {
+                var p = mesh.positions[k]
+                let facesFront = mesh.normals[k].z >= 0
+                if facesFront {
+                    let limit = front.map { $0.z - slope * ($0.y - p.y) } ?? -.greatestFiniteMagnitude
+                    if p.z > limit { front = (p.z, p.y) } else { p.z = limit }
+                } else {
+                    let limit = back.map { $0.z + slope * ($0.y - p.y) } ?? .greatestFiniteMagnitude
+                    if p.z < limit { back = (p.z, p.y) } else { p.z = limit }
+                }
+                mesh.positions[k] = p
+            }
         }
     }
 

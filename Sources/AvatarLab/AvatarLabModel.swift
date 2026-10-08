@@ -5,12 +5,13 @@ import UIKit
 
 /// How the outfit is drawn on the avatar.
 enum AvatarPreviewMode: String, CaseIterable, Identifiable, Sendable {
-    /// The garment photo projected onto a 3D shell. Rotates.
+    /// The garment photo laid flat over a front view of the avatar. The default:
+    /// it keeps the real garment's look most faithfully.
+    case flat2D
+    /// The garment photo projected onto a 3D shell. Rotates. Experimental.
     case photo3D
     /// The garment's average colour on the 3D shell. Rotates.
     case colour3D
-    /// The garment photo laid flat over a front view of the avatar.
-    case flat2D
 
     var id: String { rawValue }
 
@@ -86,8 +87,10 @@ final class AvatarLabModel {
     private(set) var hasSavedProfile = false
     private(set) var loadMilliseconds: Int?
     var profile = AvatarProfile()
-    var mode: AvatarPreviewMode = .photo3D
+    var mode: AvatarPreviewMode = .flat2D
     private(set) var worn: [AvatarSlot: AvatarWornGarment] = [:]
+    /// Front thumbnails of the starting silhouettes, by silhouette ID.
+    private(set) var silhouettePreviews: [String: UIImage] = [:]
 
     private var asset: AvatarBodyAsset?
     private var builder: AvatarGarmentShellBuilder?
@@ -118,8 +121,22 @@ final class AvatarLabModel {
             }
             phase = .ready
             refresh()
+            await makeSilhouettePreviews(asset: asset)
         } catch {
             phase = .failed("The avatar could not be loaded.")
+        }
+    }
+
+    private func makeSilhouettePreviews(asset: AvatarBodyAsset) async {
+        for silhouette in AvatarStartingSilhouette.all {
+            let shape = silhouette.shape
+            let body = await Task.detached(priority: .utility) {
+                let engine = AvatarMorphEngine(asset: asset)
+                return engine.mesh(named: "body", positions: engine.positions(for: shape))
+            }.value
+            let stage = AvatarStageCoordinator()
+            stage.show(AvatarStageContent(body: body, garments: [], computeMilliseconds: 0), mode: .colour3D)
+            silhouettePreviews[silhouette.id] = stage.snapshot(size: CGSize(width: 120, height: 240))
         }
     }
 

@@ -53,13 +53,27 @@ jobs:
           [ -f "$LOG" ] || exit 0
           METRICS="$(grep -o 'AVATAR_METRIC [^ ]*' "$LOG" | sed 's/AVATAR_METRIC //' | sort -u | tr '\n' ' ')"
           echo "::notice title=avatar-metrics::${METRICS:-none}"
-          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' "$LOG" | sort -u -k2,2 | head -n 8 | while read -r _ name data; do
-            echo "::notice title=snap-${name}::${data}"
-          done
+          # At most 10 annotations of a kind per step: snapshots go in the next steps.
           grep -E "error:|failed \(" "$LOG" | grep -v "^$" | head -n 10 | while read -r line; do
             echo "::warning title=test-failure::${line}"
           done
           tail -n 3 "$LOG"
+
+      - name: Snapshots (part 1)
+        if: always()
+        run: |
+          [ -f build/avatar-lab.log ] || exit 0
+          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '1,9p' | while read -r _ name data; do
+            echo "::notice title=snap-${name}::${data}"
+          done
+
+      - name: Snapshots (part 2)
+        if: always()
+        run: |
+          [ -f build/avatar-lab.log ] || exit 0
+          grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '10,18p' | while read -r _ name data; do
+            echo "::notice title=snap-${name}::${data}"
+          done
 
       - name: Upload results
         if: always()

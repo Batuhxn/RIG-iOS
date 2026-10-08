@@ -262,12 +262,34 @@ private struct AvatarOnboardingView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, RIGTheme.Spacing.m)
-            AvatarStage(model: model).frame(height: 360)
-            Picker("Starting point", selection: $selected) {
-                ForEach(AvatarStartingSilhouette.all) { Text($0.title).tag($0.id) }
+            AvatarStage(model: model).frame(height: 300)
+            HStack(spacing: RIGTheme.Spacing.m) {
+                ForEach(AvatarStartingSilhouette.all) { silhouette in
+                    Button {
+                        selected = silhouette.id
+                    } label: {
+                        VStack(spacing: RIGTheme.Spacing.xs) {
+                            Group {
+                                if let preview = model.silhouettePreviews[silhouette.id] {
+                                    Image(uiImage: preview).resizable().scaledToFit()
+                                } else {
+                                    ProgressView()
+                                }
+                            }
+                            .frame(width: 70, height: 120)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(RoundedRectangle(cornerRadius: 10)
+                                .stroke(selected == silhouette.id ? Color.accentColor : Color.secondary.opacity(0.3),
+                                        lineWidth: selected == silhouette.id ? 3 : 1))
+                            Text(silhouette.title).font(.caption)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(silhouette.title)
+                    .accessibilityAddTraits(selected == silhouette.id ? .isSelected : [])
+                }
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, RIGTheme.Spacing.m)
             .onChange(of: selected, initial: true) { _, id in
                 if let silhouette = AvatarStartingSilhouette.all.first(where: { $0.id == id }) {
                     model.applyStartingSilhouette(silhouette)

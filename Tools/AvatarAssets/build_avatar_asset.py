@@ -126,6 +126,51 @@ def combine(download: Path, weighted: list[tuple[str, float]]) -> dict[int, list
     return acc
 
 
+# Mannequin look: anatomical detail (face, nipples, pelvis) is smoothed away in the
+# rest pose so the avatar reads as a dress form, not a person. Regions are in
+# output metres of the neutral figure: (name, test, iterations, shrink-back factor).
+# A shrink-back of -0.53 is Taubin smoothing (keeps volume, softens bumps); 0 is
+# plain Laplacian, used on the face so its features fade to a dress-form head.
+SMOOTH_REGIONS = [
+    ("face", lambda x, y, z: y > 1.50 and z > 0.02, 14, 0.0),
+    ("chest", lambda x, y, z: 1.12 < y < 1.32 and z > 0.0 and abs(x) < 0.16, 10, -0.53),
+    ("pelvis", lambda x, y, z: 0.70 < y < 0.88 and abs(x) < 0.09 and z > -0.02, 12, -0.53),
+]
+
+
+def mannequin_smooth(points, faces, scale, floor):
+    """Taubin smoothing (no shrinkage) restricted to SMOOTH_REGIONS, with a
+    soft edge so smoothed and untouched areas meet without a seam."""
+    n = len(points)
+    neighbours = [set() for _ in range(n)]
+    for f in faces:
+        for k in range(len(f)):
+            a, b = f[k], f[(k + 1) % len(f)]
+            neighbours[a].add(b)
+            neighbours[b].add(a)
+    pts = [list(p) for p in points]
+    out_m = lambda p: (p[0] * scale, (p[1] - floor) * scale, p[2] * scale)
+    for _, test, iterations, shrink_back in SMOOTH_REGIONS:
+        inside = [bool(neighbours[i]) and test(*out_m(pts[i])) for i in range(n)]
+        # Weight 1 inside, fading to 0 over two rings of neighbours outside.
+        weight = [1.0 if inside[i] else 0.0 for i in range(n)]
+        for fade in (0.5, 0.2):
+            ring = [i for i in range(n) if weight[i] == 0 and any(weight[j] > fade for j in neighbours[i])]
+            for i in ring:
+                weight[i] = fade
+        active = [i for i in range(n) if weight[i] > 0]
+        for _ in range(iterations):
+            for factor in (0.5, shrink_back) if shrink_back else (0.5,):
+                moved = {}
+                for i in active:
+                    nb = neighbours[i]
+                    c = [sum(pts[j][k] for j in nb) / len(nb) for k in range(3)]
+                    moved[i] = [pts[i][k] + factor * weight[i] * (c[k] - pts[i][k]) for k in range(3)]
+                for i, p in moved.items():
+                    pts[i] = p
+    return pts
+
+
 def main() -> int:
     download, output = Path(sys.argv[1]), Path(sys.argv[2])
     fetch(download)
@@ -163,6 +208,8 @@ def main() -> int:
     scale = 0.1  # MakeHuman units are decimetres
     kept = [positions[i] for i in used]
     floor = min(p[1] for p in kept)
+
+    kept = mannequin_smooth(kept, [[remap[i] for i in f] for f in faces["body"]], scale, floor)
 
     blob = bytearray(b"RIGAVTR1")
     blob += struct.pack("<I", len(kept))
