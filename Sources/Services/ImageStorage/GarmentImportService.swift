@@ -11,6 +11,11 @@ struct GarmentImportResult: Hashable, Sendable {
     /// explanation, never as a failure that blocks saving the garment.
     let backgroundRemovalMessage: String?
     var metadata: AutoMetadataResult? = nil
+
+    /// The image a garment's visual identity is computed from: the cutout when background
+    /// removal succeeded (that is what import analysis embeds), otherwise the original.
+    /// Independent of which rendition the user chooses to display.
+    var identityImageRelativePath: String { cutoutRelativePath ?? originalRelativePath }
 }
 
 enum GarmentImportError: LocalizedError, Equatable {

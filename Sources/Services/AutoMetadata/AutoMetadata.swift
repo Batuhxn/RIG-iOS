@@ -78,6 +78,12 @@ protocol GarmentIdentityProviding: Sendable {
     func identity(for imageData: Data) async -> GarmentVisualIdentity?
     /// The model ID new identities carry, or nil when no encoder is available.
     func currentModelID() async -> String?
+    /// The length of the vectors new identities carry, or nil when unknown.
+    func currentDimension() async -> Int?
+}
+
+extension GarmentIdentityProviding {
+    func currentDimension() async -> Int? { nil }
 }
 
 protocol GarmentMetadataAnalyzing: Sendable {

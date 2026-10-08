@@ -117,6 +117,21 @@ final class WardrobeIdentityTests: XCTestCase {
         XCTAssertEqual(identityModelID, "m1")
     }
 
+    /// Codex v0.4 review, P2: a truncated stored identity is never compared; it is re-embedded.
+    func testTruncatedStoredIdentityIsRecomputedAndReported() async {
+        let candidatePhoto = Data([1]), photo = Data([2])
+        let item = UUID()
+        let fresh = identity([0.99, 0.141])
+        let provider = FakeProvider([candidatePhoto: identity([1, 0]), photo: fresh])
+        let matcher = EmbeddingSimilarityMatcher(provider: provider)
+        let items = [WardrobeSimilarityCandidateItem(garmentID: item, category: .top, imageData: photo,
+                                                     identity: identity([1]))]
+        let ranking = await matcher.rankSimilarItemsReportingIdentities(
+            to: candidatePhoto, among: items, thresholds: .conservativeDefault)
+        XCTAssertEqual(ranking.matches.map(\.garmentID), [item], "the garment matches again once re-embedded")
+        XCTAssertEqual(ranking.computedIdentities[item], fresh, "and the repaired identity is reported for storage")
+    }
+
     func testComputedIdentitiesAreReportedEvenWithoutASuggestion() async {
         let provider = FakeProvider([Data([1]): identity([1, 0]), Data([2]): identity([0, 1])])
         let old = UUID()

@@ -50,6 +50,10 @@ struct EmbeddingSimilarityMatcher: GarmentSimilarityMatching {
         await provider.currentModelID()
     }
 
+    func identityDimension() async -> Int? {
+        await provider.currentDimension()
+    }
+
     func rankSimilarItems(
         to candidateImageData: Data,
         among items: [WardrobeSimilarityCandidateItem],
@@ -69,7 +73,8 @@ struct EmbeddingSimilarityMatcher: GarmentSimilarityMatching {
         var known: [(garmentID: UUID, identity: GarmentVisualIdentity)] = []
         var computed: [UUID: GarmentVisualIdentity] = [:]
         for item in items {
-            if let stored = item.identity, stored.modelID == candidate.modelID {
+            // A stored identity of another length (truncated or corrupt) is never compared.
+            if let stored = item.identity, stored.modelID == candidate.modelID, stored.vector.count == candidate.vector.count {
                 known.append((item.garmentID, stored))
             } else if !item.imageData.isEmpty, let fresh = await provider.identity(for: item.imageData) {
                 known.append((item.garmentID, fresh))

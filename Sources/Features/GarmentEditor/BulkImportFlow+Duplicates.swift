@@ -46,7 +46,7 @@ extension BulkImportFlow {
               let fields = drafts[item.id], fields.isValid,
               let category = fields.category else { return }
         let sources: [GarmentDuplicateSource] = wardrobeItems.compactMap { garment in
-            guard let path = garment.preferredImageRelativePath else { return nil }
+            guard let path = garment.identityImageRelativePath else { return nil }
             return GarmentDuplicateSource(garmentID: garment.id, category: garment.category, imagePath: path,
                                           identity: garment.visualIdentity)
         }

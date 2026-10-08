@@ -96,6 +96,12 @@ extension ClothingItem {
 
     /// The user's chosen image. A cutout file may be retained even when the
     /// original is selected, so the flag must decide which path wins.
+    /// The image this garment's visual identity is computed from: the cutout when there is
+    /// one, otherwise the original. Matches `GarmentImportResult.identityImageRelativePath`.
+    var identityImageRelativePath: String? {
+        cutoutImageRelativePath ?? originalImageRelativePath
+    }
+
     var preferredImageRelativePath: String? {
         isBackgroundRemoved
             ? (cutoutImageRelativePath ?? originalImageRelativePath)

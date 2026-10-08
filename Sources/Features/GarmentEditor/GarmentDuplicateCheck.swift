@@ -15,9 +15,12 @@ enum GarmentDuplicateCheck {
         case review(candidateImageData: Data, state: DuplicateReviewState)
     }
 
-    /// Both import flows use the selected rendition and the same category
-    /// scope, matcher and thresholds. Missing image data or a Vision failure
-    /// yields no suggestions and leaves the garment saveable.
+    /// Both import flows use the same category scope, matcher and thresholds.
+    /// Matching always uses the identity image (the cutout when there is one),
+    /// the same image a stored identity was computed from; the user's display
+    /// choice only decides which photo the review sheet shows. Missing image
+    /// data or a matcher failure yields no suggestions and leaves the garment
+    /// saveable.
     static func evaluate(
         result: GarmentImportResult,
         choice: GarmentImageChoice,
@@ -41,15 +44,22 @@ enum GarmentDuplicateCheck {
         store: GarmentImageStore,
         matcher: any GarmentSimilarityMatching
     ) async -> (outcome: Outcome, computedIdentities: [UUID: GarmentVisualIdentity]) {
-        guard let imageData = store.data(atRelativePath: choice.relativePath(in: result)) else {
+        guard let imageData = store.data(atRelativePath: result.identityImageRelativePath) else {
             return (.save, [:])
         }
+        let displayData = store.data(atRelativePath: choice.relativePath(in: result)) ?? imageData
         let currentModelID = await matcher.identityModelID()
+        let currentDimension = await matcher.identityDimension()
         let candidates = sources.compactMap { source -> WardrobeSimilarityCandidateItem? in
             guard source.category == category, source.garmentID != result.garmentID else { return nil }
             // A current stored identity makes the photo unnecessary; only items without one, or
             // with one from another encoder, are read from disk (and re-embedded by the matcher).
-            let isCurrent = source.identity != nil && (currentModelID == nil || source.identity?.modelID == currentModelID)
+            // A stored identity is only usable when it comes from the current encoder and has
+            // that encoder's length; a truncated or foreign vector is re-embedded from the photo.
+            let isCurrent = source.identity.map { identity in
+                (currentModelID == nil || identity.modelID == currentModelID)
+                    && (currentDimension == nil || identity.vector.count == currentDimension)
+            } ?? false
             let data = isCurrent ? Data() : store.data(atRelativePath: source.imagePath)
             guard let data, isCurrent || !data.isEmpty else { return nil }
             return WardrobeSimilarityCandidateItem(
@@ -69,7 +79,7 @@ enum GarmentDuplicateCheck {
             thresholds: .conservativeDefault
         )
         let review = DuplicateReviewState(matches: ranking.matches)
-        let outcome: Outcome = review.isExhausted ? .save : .review(candidateImageData: imageData, state: review)
+        let outcome: Outcome = review.isExhausted ? .save : .review(candidateImageData: displayData, state: review)
         return (outcome, ranking.computedIdentities)
     }
 }

@@ -6,15 +6,18 @@ final class GarmentDuplicateCheckTests: XCTestCase {
     private actor RecordingMatcher: GarmentSimilarityMatching {
         let answer: [WardrobeSimilarityMatch]
         let modelID: String?
+        let dimension: Int?
         private(set) var candidate: Data?
         private(set) var compared: [WardrobeSimilarityCandidateItem] = []
 
-        init(answer: [WardrobeSimilarityMatch] = [], modelID: String? = nil) {
+        init(answer: [WardrobeSimilarityMatch] = [], modelID: String? = nil, dimension: Int? = nil) {
             self.answer = answer
             self.modelID = modelID
+            self.dimension = dimension
         }
 
         func identityModelID() async -> String? { modelID }
+        func identityDimension() async -> Int? { dimension }
 
         func rankSimilarItems(
             to candidateImageData: Data,
@@ -71,7 +74,7 @@ final class GarmentDuplicateCheckTests: XCTestCase {
         )
         XCTAssertEqual(outcome, .save)
         let observed = await matcher.observation()
-        XCTAssertEqual(observed.0, Data([1]))
+        XCTAssertEqual(observed.0, Data([2]), "matching uses the cutout, the identity image")
         XCTAssertEqual(observed.1.map(\.garmentID), [existing.garmentID])
     }
 
@@ -88,7 +91,9 @@ final class GarmentDuplicateCheckTests: XCTestCase {
         XCTAssertEqual(observed.0, Data([2]))
     }
 
-    func testChangingImageChoiceBeforeSaveChangesComparisonSource() async throws {
+    /// Codex v0.4 review, P2: choosing "Original" used to compare the original's embedding with
+    /// stored identities computed from cutouts. The identity image no longer follows the choice.
+    func testImageChoiceDoesNotChangeTheIdentityImage() async throws {
         let store = try store()
         let candidate = try result(UUID(), store: store)
         let originalMatcher = RecordingMatcher()
@@ -103,8 +108,28 @@ final class GarmentDuplicateCheckTests: XCTestCase {
         )
         let original = await originalMatcher.observation()
         let cutout = await cutoutMatcher.observation()
-        XCTAssertEqual(original.0, Data([1]))
+        XCTAssertEqual(original.0, Data([2]))
         XCTAssertEqual(cutout.0, Data([2]))
+    }
+
+    /// Codex v0.4 review, P2: a stored identity of the wrong length, tagged with the current
+    /// model, used to count as current, so its photo was never read and it never matched again.
+    func testTruncatedStoredIdentityIsReembeddedFromItsPhoto() async throws {
+        let store = try store()
+        let candidate = try result(UUID(), store: store)
+        var truncated = try source(UUID(), category: .top, store: store)
+        truncated.identity = GarmentVisualIdentity(modelID: "m1", vector: [1])
+        var whole = try source(UUID(), category: .top, store: store)
+        whole.identity = GarmentVisualIdentity(modelID: "m1", vector: [1, 0])
+        let matcher = RecordingMatcher(modelID: "m1", dimension: 2)
+        _ = await GarmentDuplicateCheck.evaluateReportingIdentities(
+            result: candidate, choice: .cutout, category: .top,
+            sources: [truncated, whole], store: store, matcher: matcher
+        )
+        let observed = await matcher.observation()
+        let byID = Dictionary(uniqueKeysWithValues: observed.1.map { ($0.garmentID, $0) })
+        XCTAssertEqual(byID[truncated.garmentID]?.imageData, Data([3]), "a truncated identity sends its photo")
+        XCTAssertEqual(byID[whole.garmentID]?.imageData, Data(), "a whole identity still needs no photo")
     }
 
     func testMatchPresentsTheExistingComparison() async throws {

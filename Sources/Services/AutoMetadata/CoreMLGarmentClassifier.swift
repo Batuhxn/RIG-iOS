@@ -81,6 +81,13 @@ extension CoreMLGarmentClassifier: GarmentIdentityProviding {
         (try? load())?.1.modelID
     }
 
+    func currentDimension() async -> Int? {
+        guard let model = (try? load())?.0,
+              let shape = model.modelDescription.outputDescriptionsByName["embedding"]?.multiArrayConstraint?.shape,
+              !shape.isEmpty else { return nil }
+        return shape.map(\.intValue).reduce(1, *)
+    }
+
     func identity(for imageData: Data) async -> GarmentVisualIdentity? {
         if let hit = recent.first(where: { $0.data == imageData }) { return hit.identity }
         guard let embedded = try? await embed(imageData),

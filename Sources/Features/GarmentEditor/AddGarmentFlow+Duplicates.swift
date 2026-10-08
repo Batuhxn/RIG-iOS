@@ -62,7 +62,7 @@ extension AddGarmentFlow {
         }
 
         let sources: [GarmentDuplicateSource] = wardrobeItems.compactMap { item in
-            guard let path = item.preferredImageRelativePath else { return nil }
+            guard let path = item.identityImageRelativePath else { return nil }
             return GarmentDuplicateSource(garmentID: item.id, category: item.category, imagePath: path,
                                           identity: item.visualIdentity)
         }

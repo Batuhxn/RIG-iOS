@@ -150,6 +150,10 @@ protocol GarmentSimilarityMatching: Sendable {
     /// The encoder whose stored identities this matcher can use without the photo, or nil
     /// when it does not use stored identities at all.
     func identityModelID() async -> String?
+
+    /// The length of the identities `identityModelID` produces, or nil when unknown. A stored
+    /// identity of any other length is treated as missing and recomputed from the photo.
+    func identityDimension() async -> Int?
 }
 
 /// A ranking and the identities computed while producing it (v0.4 lazy backfill).
@@ -160,6 +164,8 @@ struct WardrobeSimilarityOutcome: Sendable, Equatable {
 
 extension GarmentSimilarityMatching {
     func identityModelID() async -> String? { nil }
+
+    func identityDimension() async -> Int? { nil }
 
     func rankSimilarItemsReportingIdentities(
         to candidateImageData: Data,
