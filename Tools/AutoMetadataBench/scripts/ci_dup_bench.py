@@ -77,8 +77,8 @@ def curve(name, dist_or_sim, higher_is_closer, meta, queries, thresholds):
     pos, hardest = [], []
     for (i, q) in queries:
         scores = dist_or_sim["score"](gal, q)
-        cat = meta[i]["category"]
-        same = [j for j in range(len(meta)) if meta[j]["category"] == cat]
+        cat = meta[i]["expected"]["category"]
+        same = [j for j in range(len(meta)) if meta[j]["expected"]["category"] == cat]
         best = max(same, key=lambda j: scores[j]) if higher_is_closer else min(same, key=lambda j: scores[j])
         top1.append(best == i)
         pos.append(scores[i])
