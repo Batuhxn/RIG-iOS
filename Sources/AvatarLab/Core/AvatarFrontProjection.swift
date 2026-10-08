@@ -22,6 +22,38 @@ struct AvatarFrontProjection: Equatable, Sendable {
                 y: viewHeight / 2 - CGFloat(y - centreY) * pointsPerMetre)
     }
 
+    /// A band-wise warp of a garment photo onto its shell: the photo is cut into
+    /// `bands` horizontal strips from collar (or waistband) to hem, and each strip
+    /// is stretched to the shell's front width at that height. The photo keeps
+    /// its print and colour but follows the body's shoulders, waist and hips.
+    /// Bands where the shell has no vertex take their neighbour's width.
+    func warpBands(for shell: AvatarMesh, bands: Int = 16) -> [CGRect]? {
+        guard bands > 0, let bounds = shell.frontBounds, bounds.max.y > bounds.min.y else { return nil }
+        let height = (bounds.max.y - bounds.min.y) / Float(bands)
+        var spans = [(lo: Float, hi: Float)?](repeating: nil, count: bands)
+        for p in shell.positions {
+            let band = min(bands - 1, max(0, Int((bounds.max.y - p.y) / height)))
+            if let s = spans[band] {
+                spans[band] = (min(s.lo, p.x), max(s.hi, p.x))
+            } else {
+                spans[band] = (p.x, p.x)
+            }
+        }
+        for i in spans.indices where spans[i] == nil {
+            if let previous = spans[..<i].compactMap({ $0 }).last {
+                spans[i] = previous
+            } else if let next = spans[(i + 1)...].compactMap({ $0 }).first {
+                spans[i] = next
+            }
+        }
+        return spans.enumerated().compactMap { i, span in
+            guard let span else { return nil }
+            let top = point(x: span.lo, y: bounds.max.y - Float(i) * height)
+            let bottom = point(x: span.hi, y: bounds.max.y - Float(i + 1) * height)
+            return CGRect(x: top.x, y: top.y, width: max(bottom.x - top.x, 1), height: bottom.y - top.y)
+        }
+    }
+
     /// Where to draw a garment photo of `imageAspect` (width / height): fitted
     /// inside the shell's front bounds, centred horizontally, pinned to the top
     /// (collar or waistband), so its proportions are kept.

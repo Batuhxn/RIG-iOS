@@ -185,6 +185,26 @@ final class AvatarLabTests: XCTestCase {
         XCTAssertLessThanOrEqual(rect.maxY, b.y + 0.5)
     }
 
+    func testWarpBandsFollowTheShellFromCollarToHem() throws {
+        let asset = try asset()
+        let builder = AvatarGarmentShellBuilder(asset: asset)
+        let projection = AvatarFrontProjection(viewWidth: 300, viewHeight: 600, visibleHeight: 2.0, centreY: 0.9)
+        let tee = try XCTUnwrap(projection.warpBands(for: builder.shell(for: .top(sleeve: .short), positions: asset.restPositions), bands: 16))
+        XCTAssertEqual(tee.count, 16)
+        for (upper, lower) in zip(tee, tee.dropFirst()) {
+            XCTAssertEqual(upper.maxY, lower.minY, accuracy: 0.01, "bands tile from top to bottom")
+        }
+        let sleeves = tee[2].width, belly = tee[12].width
+        XCTAssertGreaterThan(sleeves, belly * 1.4, "the sleeve rows are wider than the torso rows")
+        var curvy = AvatarBodyShape.neutral
+        curvy[.hips] = 1
+        let engine = AvatarMorphEngine(asset: asset)
+        let narrow = try XCTUnwrap(projection.warpBands(for: builder.shell(for: .skirt(length: .knee), positions: engine.positions(for: .neutral))))
+        let wide = try XCTUnwrap(projection.warpBands(for: builder.shell(for: .skirt(length: .knee), positions: engine.positions(for: curvy))))
+        // The hem flares the same either way; the hips are in the top bands.
+        XCTAssertGreaterThan(wide.prefix(5).map(\.width).max() ?? 0, (narrow.prefix(5).map(\.width).max() ?? 0) + 2, "the 2D skirt widens at the hips")
+    }
+
     func testMorphingIsFastEnoughForASlider() throws {
         let asset = try asset()
         let engine = AvatarMorphEngine(asset: asset)

@@ -120,13 +120,8 @@ private struct AvatarStage: View {
                 AvatarStageView(content: model.content, mode: model.mode, flatProjection: model.mode == .flat2D ? projection : nil)
                 if model.mode == .flat2D, let content = model.content {
                     ForEach(content.garments) { layer in
-                        if let texture = layer.texture,
-                           let rect = projection.overlayRect(for: layer.mesh, imageAspect: texture.size.width / max(texture.size.height, 1)) {
-                            Image(uiImage: texture)
-                                .resizable()
-                                .frame(width: rect.width, height: rect.height)
-                                .position(x: rect.midX, y: rect.midY)
-                                .allowsHitTesting(false)
+                        if let texture = layer.texture, let bands = projection.warpBands(for: layer.mesh) {
+                            AvatarWarpedPhoto(texture: texture, bands: bands)
                         }
                     }
                 }
@@ -306,5 +301,26 @@ private struct AvatarOnboardingView: View {
             Spacer(minLength: 0)
         }
         .padding(.top, RIGTheme.Spacing.m)
+    }
+}
+
+/// The 2D overlay: a garment photo drawn strip by strip into `bands`, so it
+/// follows the avatar's outline while keeping the photo's own pixels.
+private struct AvatarWarpedPhoto: View {
+    let texture: UIImage
+    let bands: [CGRect]
+
+    var body: some View {
+        Canvas { context, _ in
+            guard let cg = texture.cgImage, !bands.isEmpty else { return }
+            let rowHeight = CGFloat(cg.height) / CGFloat(bands.count)
+            for (i, rect) in bands.enumerated() {
+                // A little overlap hides seams between strips.
+                let source = CGRect(x: 0, y: (CGFloat(i) * rowHeight).rounded(.down), width: CGFloat(cg.width), height: rowHeight.rounded(.up) + 1)
+                guard let strip = cg.cropping(to: source) else { continue }
+                context.draw(Image(decorative: strip, scale: 1), in: rect.insetBy(dx: 0, dy: -0.5))
+            }
+        }
+        .allowsHitTesting(false)
     }
 }
