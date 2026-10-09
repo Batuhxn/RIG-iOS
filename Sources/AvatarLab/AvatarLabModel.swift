@@ -291,6 +291,10 @@ final class AvatarLabModel {
             let (newTextures, built) = await (loaded, geometryJob)
             guard let self, !Task.isCancelled, let geometry = built else { return }
             for (id, image, photo, colour, spans) in newTextures { self.textures[id] = (image, photo, colour, spans) }
+            // Keep textures only for garments still worn: browsing many garments must not
+            // accumulate decoded images (~8 MB each; Codex review).
+            let wornIDs = Set(self.worn.values.map(\.id))
+            self.textures = self.textures.filter { wornIDs.contains($0.key) }
             let layers = zip(garments, geometry.garments).map { garment, built -> AvatarGarmentLayer in
                 var mesh = built
                 // Template garments map the photo's outline onto the front panel's outline.

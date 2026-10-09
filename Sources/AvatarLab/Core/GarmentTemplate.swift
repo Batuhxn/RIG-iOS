@@ -212,8 +212,9 @@ extension AvatarGarmentCut {
         switch self {
         case .top(sleeve: .short, hem: .hip): return "tee"
         case .trousers: return "trousers"
-        case .skirt(length: .knee), .skirt(length: .midi): return "skirt"
-        case .dress(length: .knee), .dress(length: .midi): return "dress"
+        // Knee length only: a midi cut keeps the longer shell until a midi template exists.
+        case .skirt(length: .knee): return "skirt"
+        case .dress(length: .knee): return "dress"
         default: return nil
         }
     }

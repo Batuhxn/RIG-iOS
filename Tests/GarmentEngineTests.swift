@@ -218,6 +218,29 @@ final class GarmentEngineTests: XCTestCase {
         XCTAssertFalse(coat.garments[0].triangles.isEmpty)
     }
 
+    /// Codex review: a relaxed template tee used to show through a body-hugging coat shell.
+    func testOuterLayersStayOutsideInnerGarments() throws {
+        let (asset, library) = try load()
+        let builder = AvatarOutfitBuilder(asset: asset, templates: library)
+        let built = try XCTUnwrap(builder.build(shape: .neutral, cuts: [.top(sleeve: .short), .outerwear]))
+        let tee = built.garments[0], coat = built.garments[1]
+        let grid = HashGrid(points: tee.positions, cell: 0.03)
+        var through = 0, checked = 0
+        for (k, p) in coat.positions.enumerated() {
+            guard let j = grid.nearest(to: p, within: 0.06, in: tee.positions) else { continue }
+            checked += 1
+            if ((p - tee.positions[j]) * coat.normals[k]).sum() < 0.005 { through += 1 }
+        }
+        XCTAssertGreaterThan(checked, 100)
+        XCTAssertEqual(through, 0, "the coat stays outside the tee")
+    }
+
+    func testMidiCutsKeepTheirLengthUntilAMidiTemplateExists() {
+        XCTAssertNil(AvatarGarmentCut.skirt(length: .midi).templateName)
+        XCTAssertNil(AvatarGarmentCut.dress(length: .midi).templateName)
+        XCTAssertEqual(AvatarGarmentCut.skirt(length: .knee).templateName, "skirt")
+    }
+
     func testOutfitBuildIsFastEnoughForASlider() throws {
         let (asset, library) = try load()
         let builder = AvatarOutfitBuilder(asset: asset, templates: library)
