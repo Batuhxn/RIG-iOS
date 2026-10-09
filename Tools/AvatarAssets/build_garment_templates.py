@@ -469,7 +469,18 @@ def split_panels(new_pos, tris, sleeve_axes=None):
             if side in sleeve_axes:
                 ac, a, u, w = sleeve_axes[side]
                 z_ref = (ac + a * np.dot(c - ac, a))[2]
-        (front_faces if c[2] >= z_ref else back_faces).append(f)
+        # The photo only goes where the surface faces the camera: beyond ~69° (normal z <
+        # 0.35) a front photo would be smeared sideways, so those faces join the
+        # unknown region (Gemini's glancing-angle point, verified on the review grid).
+        loop = idx if len(idx) == 3 else [f[0], f[1], f[2], f[5]]
+        a, b, cc = (np.asarray(new_pos[i]) for i in loop[:3])
+        n = np.cross(b - a, cc - a)
+        n = n / (np.linalg.norm(n) + 1e-12)
+        outward = c - np.array([0.0, c[1], 0.0])
+        if np.dot(n, outward) < 0:
+            n = -n
+        facing = n[2] >= 0.35
+        (front_faces if c[2] >= z_ref and facing else back_faces).append(f)
     return front_faces, back_faces
 
 
