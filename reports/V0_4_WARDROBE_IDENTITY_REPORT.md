@@ -78,4 +78,9 @@ The three P2 findings are fixed in `7be0db8`, and CI run 37858049418 passed:
 - The backfill writes through its own ModelContext, so it never commits or
   rolls back another screen's pending edits.
 
+Codex re-reviewed the fixes and found them correct. Its follow-up check is now
+an Apple-runtime test: the container's main context sees a backfilled identity
+on its already-loaded object and keeps it through its own later save. CI run
+37874276234 passed it (`8da9c8e`).
+
 The temporary push triggers are removed. Both workflows are manual dispatch only.

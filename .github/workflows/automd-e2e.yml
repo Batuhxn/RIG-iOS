@@ -7,8 +7,6 @@ name: Auto Metadata end to end
 
 on:
   workflow_dispatch:
-  push: # TEMPORARY (one verification run for the backfill test) — remove right after
-    branches: [feat/v0.4-wardrobe-identity]
 
 permissions:
   contents: read
