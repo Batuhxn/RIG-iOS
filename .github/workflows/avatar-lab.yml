@@ -59,10 +59,11 @@ jobs:
           METRICS="$(grep -o 'AVATAR_METRIC [^ ]*' "$LOG" | sed 's/AVATAR_METRIC //' | sort -u | tr '\n' ' ')"
           echo "::notice title=avatar-metrics::${METRICS:-none}"
           # At most 10 annotations of a kind per step: snapshots go in the next steps.
-          grep -E "\.swift:[0-9]+:[0-9]+: error:|error: -\[|\*\* TEST FAILED|\*\* BUILD FAILED" "$LOG" | sort -u | grep -v "^$" | head -n 10 | while read -r line; do
-            echo "::warning title=test-failure::${line}"
+          grep -E "\.swift:[0-9]+:[0-9]+: error:|error: -\[|\*\* TEST FAILED|\*\* BUILD FAILED|RESULT: FAIL|^error:|[Ff]atal error|Test Case .* failed" "$LOG" | sort -u | grep -v "^$" | head -n 9 | while read -r line; do
+            echo "::warning title=test-failure::${line:0:900}"
           done
-          tail -n 3 "$LOG"
+          # The end of the log, so a failure can be read without downloading it.
+          echo "::warning title=log-tail::$(grep -v AVATAR_SNAPSHOT "$LOG" | tail -n 25 | cut -c1-200 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
 
       - name: Snapshots (1)
         if: always()
