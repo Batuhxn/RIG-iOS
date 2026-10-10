@@ -228,16 +228,18 @@ final class AvatarStageCoordinator {
 
     /// Renders the current scene offscreen from the front (or turned by `yaw`),
     /// orthographic, on a plain background (white by default): onboarding thumbnails and tests.
-    func snapshot(size: CGSize, yaw: Float = 0, background: UIColor = .white) -> UIImage {
+    /// `halfHeight` and `centre` frame a close-up (metres; the default shows the whole body).
+    func snapshot(size: CGSize, yaw: Float = 0, background: UIColor = .white,
+                  halfHeight: Double = 0.95, centre: SIMD2<Float> = SIMD2(0, 0.88)) -> UIImage {
         avatarNode.eulerAngles = SCNVector3(0, yaw, 0)
         let camera = SCNCamera()
         camera.usesOrthographicProjection = true
-        camera.orthographicScale = 0.95
+        camera.orthographicScale = halfHeight
         camera.zNear = 0.05
         camera.zFar = 20
         let eye = SCNNode()
         eye.camera = camera
-        eye.position = SCNVector3(0, 0.88, 4)
+        eye.position = SCNVector3(centre.x, centre.y, 4)
         scene.rootNode.addChildNode(eye)
         let previousBackground = scene.background.contents
         scene.background.contents = background

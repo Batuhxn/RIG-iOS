@@ -116,6 +116,37 @@ extension AvatarRenderingTests {
         }
     }
 
+    /// Close-ups at full resolution where the matrix tiles are too small to judge edges:
+    /// shoulders and sleeve openings, the skirt's side, the dress armhole from behind.
+    func testAtelierCloseUps() throws {
+        let asset = try loadAsset()
+        let library = try GarmentTemplateLibrary.bundled(in: AvatarTestBundle.bundle, for: asset)
+        let engine = AvatarOutfitBuilder(asset: asset, templates: library)
+        let shapes = Self.matrixShapes().filter { ["silhouette-1", "extreme"].contains($0.0) }
+        let shots: [(String, [(AvatarGarmentCut, UIImage)], Float, SIMD2<Float>)] = [
+            ("tee-shoulder-45", [(.trousers, Self.trousersCutout()), (.top(sleeve: .short), Self.plainTeeCutout())], .pi / 4, SIMD2(0.12, 1.25)),
+            ("tee-stripes-side", [(.trousers, Self.trousersCutout()), (.top(sleeve: .short), Self.stripedTeeCutout())], .pi / 2, SIMD2(0, 1.15)),
+            ("skirt-side", [(.skirt(length: .knee), Self.stripedDressCutout()), (.top(sleeve: .short), Self.plainTeeCutout())], .pi / 2, SIMD2(0, 0.75)),
+            ("dress-back-135", [(.dress(length: .knee), Self.plainDressCutout())], 3 * .pi / 4, SIMD2(0, 1.2)),
+        ]
+        let tile = CGSize(width: 400, height: 400)
+        var rows: [[UIImage]] = []
+        for (_, garments, yaw, centre) in shots {
+            var row: [UIImage] = []
+            for (_, shape) in shapes {
+                guard let built = engine.build(shape: shape, cuts: garments.map(\.0)) else { return XCTFail("cancelled") }
+                let content = Self.stageContent(built: built, garments: garments, wraps: true)
+                for style in [AvatarStageStyle.engineV1, .current] {
+                    let coordinator = AvatarStageCoordinator(style: style)
+                    coordinator.show(content, mode: .photo3D)
+                    row.append(coordinator.snapshot(size: tile, yaw: yaw, background: Self.matrixBackground, halfHeight: 0.28, centre: centre))
+                }
+            }
+            rows.append(row)
+        }
+        try saveRender("closeups", Self.compose(rows, tile: tile))
+    }
+
     static func turntable(_ content: AvatarStageContent, style: AvatarStageStyle, tile: CGSize) -> [UIImage] {
         let coordinator = AvatarStageCoordinator(style: style)
         coordinator.show(content, mode: .photo3D)
