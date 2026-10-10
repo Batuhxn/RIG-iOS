@@ -68,11 +68,17 @@ struct AvatarStageStyle: Equatable, Sendable {
     /// garments stay visible against it (on the earlier near-white form the sides of a
     /// red-and-white tee disappeared).
     var mannequin = SIMD3<Float>(0.80, 0.78, 0.75)
+    /// Screen-space ambient occlusion strength (0 = off): contact shading where fabric
+    /// meets the body or another garment.
+    var occlusion: Float = 0
+    /// Template garments darken slightly towards their open edges (hems, cuffs,
+    /// necklines), as a turned hem does, so where the fabric ends reads at a glance.
+    var hemShading = false
 
     static let current = AvatarStageStyle()
     static let engineV1 = AvatarStageStyle(softSeam: false, studioLight: false, fabricInterior: false, groundShadow: false,
                                            environmentIntensity: 1.1, keyIntensity: 650, keyShadows: false,
-                                           mannequin: SIMD3(0.93, 0.92, 0.90))
+                                           mannequin: SIMD3(0.93, 0.92, 0.90), occlusion: 0, hemShading: false)
 }
 
 /// Owns the SceneKit scene; rebuilt geometry is swapped in on every update.
@@ -95,6 +101,7 @@ final class AvatarStageCoordinator {
         camera.fieldOfView = 30
         camera.zNear = 0.05
         camera.zFar = 20
+        Self.applyOcclusion(style, to: camera)
         cameraNode.camera = camera
         scene.rootNode.addChildNode(cameraNode)
         scene.rootNode.addChildNode(avatarNode)
@@ -193,15 +200,25 @@ final class AvatarStageCoordinator {
             // The back panel is what a single front photo cannot show: it gets the
             // garment's own main colour, slightly shaded, never an invented print.
             let back = Self.fabric(unknown)
-            var seam: [Float]?
-            if isTemplate, style.softSeam {
-                seam = Self.seamWeights(layer.mesh)
-                front.roughness.contents = Self.seamRamp
-                front.roughness.mappingChannel = 1
-                front.roughness.wrapS = .clamp
-                front.shaderModifiers = [.surface: Self.softSeamModifier(unknown)]
+            var channels: [[Float]] = []
+            if isTemplate, style.softSeam || style.hemShading {
+                // Channel 1: distance weight from the photo/plain boundary; channel 2: from the
+                // open edges. Read back in the surface shaders through two identity ramps.
+                let count = layer.mesh.positions.count
+                channels = [style.softSeam ? Self.seamWeights(layer.mesh) : [Float](repeating: 1, count: count),
+                            style.hemShading ? Self.hemWeights(layer.mesh) : [Float](repeating: 1, count: count)]
+                for material in [front, back] {
+                    material.roughness.contents = Self.seamRamp
+                    material.roughness.mappingChannel = 1
+                    material.roughness.wrapS = .clamp
+                    material.metalness.contents = Self.seamRamp
+                    material.metalness.mappingChannel = 2
+                    material.metalness.wrapS = .clamp
+                }
+                front.shaderModifiers = [.surface: Self.surfaceModifier(unknown: style.softSeam ? unknown : nil, hem: style.hemShading)]
+                back.shaderModifiers = [.surface: Self.surfaceModifier(unknown: nil, hem: style.hemShading)]
             }
-            let garment = node(for: layer.mesh, materials: [front, back], second: seam)
+            let garment = node(for: layer.mesh, materials: [front, back], channels: channels)
             garment.renderingOrder = layer.cut.layer
             avatarNode.addChildNode(garment)
             garmentNodes.append(garment)
@@ -237,6 +254,7 @@ final class AvatarStageCoordinator {
         camera.orthographicScale = halfHeight
         camera.zNear = 0.05
         camera.zFar = 20
+        Self.applyOcclusion(style, to: camera)
         let eye = SCNNode()
         eye.camera = camera
         eye.position = SCNVector3(centre.x, centre.y, 4)
@@ -292,27 +310,96 @@ final class AvatarStageCoordinator {
     /// offline front/back panel split (Tools/AvatarAssets/build_garment_templates.py).
     static let seamBand: ClosedRange<Float> = 0.35...0.55
 
-    /// Surface shader for a template's front panel: the photo fades into `unknown` where
-    /// the garment turns away from the camera. It uses the garment-space normal, so the
-    /// band stays on the fabric while the avatar turns. The colour is written into the
-    /// source (linear, as SceneKit shades), so no argument binding is involved.
-    static func softSeamModifier(_ unknown: UIColor) -> String {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        if !unknown.getRed(&r, green: &g, blue: &b, alpha: &a) { (r, g, b) = (0.5, 0.5, 0.5) }
-        func linear(_ c: CGFloat) -> Double {
-            let c = Double(min(max(c, 0), 1))
-            return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
-        }
-        let colour = String(format: "float3(%.5f, %.5f, %.5f)", linear(r), linear(g), linear(b))
-        let band = String(format: "%.3f, %.3f", seamBand.lowerBound, seamBand.upperBound)
-        return """
+    /// Surface shader for template garments. With `unknown` (the front panel): the photo
+    /// fades into that colour where the garment turns away from the camera (garment-space
+    /// normal, so the band stays on the fabric while the avatar turns) and near the
+    /// photo/plain boundary (channel 1). With `hem`: darker towards open edges (channel 2).
+    /// Channels arrive through the roughness and metalness slots, which are then reset to
+    /// the fabric's real values. Colours are written into the source (linear, as SceneKit
+    /// shades), so no argument binding is involved.
+    static func surfaceModifier(unknown: UIColor?, hem: Bool) -> String {
+        var body = """
         #pragma body
         float seam = _surface.roughness;
+        float hem = _surface.metalness;
         _surface.roughness = 0.85;
-        float3 garmentNormal = normalize((scn_node.inverseModelViewTransform * float4(_surface.normal, 0.0)).xyz);
-        float photo = smoothstep(\(band), garmentNormal.z) * seam;
-        _surface.diffuse.rgb = mix(\(colour), _surface.diffuse.rgb, photo);
+        _surface.metalness = 0.0;
+
         """
+        if let unknown {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            if !unknown.getRed(&r, green: &g, blue: &b, alpha: &a) { (r, g, b) = (0.5, 0.5, 0.5) }
+            func linear(_ c: CGFloat) -> Double {
+                let c = Double(min(max(c, 0), 1))
+                return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+            }
+            let colour = String(format: "float3(%.5f, %.5f, %.5f)", linear(r), linear(g), linear(b))
+            let band = String(format: "%.3f, %.3f", seamBand.lowerBound, seamBand.upperBound)
+            body += """
+            float3 garmentNormal = normalize((scn_node.inverseModelViewTransform * float4(_surface.normal, 0.0)).xyz);
+            float photo = smoothstep(\(band), garmentNormal.z) * seam;
+            _surface.diffuse.rgb = mix(\(colour), _surface.diffuse.rgb, photo);
+
+            """
+        }
+        if hem {
+            body += """
+            _surface.diffuse.rgb *= mix(\(String(format: "%.3f", hemDarkening)), 1.0, hem);
+
+            """
+        }
+        return body
+    }
+
+    /// How dark the very edge of a hem is, relative to the fabric.
+    static let hemDarkening: Float = 0.74
+    static let hemWidth: Float = 0.018
+
+    /// 0 on the open edges (hems, cuffs, necklines), rising to 1 over `hemWidth`. Panel
+    /// seams are not open edges: seam duplicates are welded by position first.
+    static func hemWeights(_ mesh: AvatarMesh) -> [Float] {
+        var slot: [SIMD3<UInt32>: Int] = [:]
+        let key: [Int] = mesh.positions.map { p in
+            let bits = SIMD3(p.x.bitPattern, p.y.bitPattern, p.z.bitPattern)
+            if let s = slot[bits] { return s }
+            slot[bits] = slot.count
+            return slot.count - 1
+        }
+        var uses: [UInt64: Int] = [:]
+        for list in [mesh.triangles, mesh.backTriangles] {
+            var t = 0
+            while t + 2 < list.count {
+                for e in 0..<3 {
+                    let a = key[Int(list[t + e])], b = key[Int(list[t + (e + 1) % 3])]
+                    uses[UInt64(min(a, b)) << 32 | UInt64(max(a, b)), default: 0] += 1
+                }
+                t += 3
+            }
+        }
+        var onEdge = Set<Int>()
+        for (edge, count) in uses where count == 1 {
+            onEdge.insert(Int(edge >> 32))
+            onEdge.insert(Int(edge & 0xFFFF_FFFF))
+        }
+        let edgePoints = mesh.positions.indices.filter { onEdge.contains(key[$0]) }.map { mesh.positions[$0] }
+        guard !edgePoints.isEmpty else { return [Float](repeating: 1, count: mesh.positions.count) }
+        let grid = HashGrid(points: edgePoints, cell: hemWidth)
+        return mesh.positions.indices.map { k in
+            if onEdge.contains(key[k]) { return 0 }
+            guard let j = grid.nearest(to: mesh.positions[k], within: hemWidth, in: edgePoints) else { return 1 }
+            let d = mesh.positions[k] - edgePoints[j]
+            let s = min((d * d).sum().squareRoot() / hemWidth, 1)
+            return s * s * (3 - 2 * s)
+        }
+    }
+
+    private static func applyOcclusion(_ style: AvatarStageStyle, to camera: SCNCamera) {
+        guard style.occlusion > 0 else { return }
+        camera.screenSpaceAmbientOcclusionIntensity = CGFloat(style.occlusion)
+        camera.screenSpaceAmbientOcclusionRadius = 0.06
+        camera.screenSpaceAmbientOcclusionBias = 0.02
+        camera.screenSpaceAmbientOcclusionDepthThreshold = 0.1
+        camera.screenSpaceAmbientOcclusionNormalThreshold = 0.3
     }
 
     /// Distance from the photo panel's material boundary, as a 0...1 weight per vertex:
@@ -396,9 +483,9 @@ final class AvatarStageCoordinator {
 
     /// One geometry; the back panel, when there is one, is a second element with its
     /// own material.
-    /// `second`, when given, is a per-vertex value carried in texture channel 1 (the
-    /// soft seam's distance weight).
-    private func node(for mesh: AvatarMesh, materials: [SCNMaterial], second: [Float]? = nil) -> SCNNode {
+    /// `channels` are per-vertex values carried in texture channels 1, 2, ... (the soft
+    /// seam's and the hem's distance weights).
+    private func node(for mesh: AvatarMesh, materials: [SCNMaterial], channels: [[Float]] = []) -> SCNNode {
         let vertices = mesh.positions.map { SCNVector3($0.x, $0.y, $0.z) }
         let normals = mesh.normals.map { SCNVector3($0.x, $0.y, $0.z) }
         let uvs = mesh.uvs.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) }
@@ -408,8 +495,8 @@ final class AvatarStageCoordinator {
         }
         var sources = [SCNGeometrySource(vertices: vertices), SCNGeometrySource(normals: normals),
                        SCNGeometrySource(textureCoordinates: uvs)]
-        if let second, second.count == mesh.positions.count {
-            sources.append(SCNGeometrySource(textureCoordinates: second.map { CGPoint(x: CGFloat($0), y: 0.5) }))
+        for channel in channels where channel.count == mesh.positions.count {
+            sources.append(SCNGeometrySource(textureCoordinates: channel.map { CGPoint(x: CGFloat($0), y: 0.5) }))
         }
         let geometry = SCNGeometry(sources: sources, elements: elements)
         geometry.materials = Array(materials.prefix(elements.count))

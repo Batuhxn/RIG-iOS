@@ -83,13 +83,18 @@ extension AvatarRenderingTests {
         let engine = AvatarOutfitBuilder(asset: asset, templates: library)
         var a = AvatarStageStyle.current
         a.environmentIntensity = 1.1; a.keyIntensity = 650; a.keyShadows = false
+        a.mannequin = SIMD3(0.93, 0.92, 0.90); a.occlusion = 0; a.hemShading = false
         var b = a
         b.environmentIntensity = 0.8; b.keyIntensity = 750; b.keyShadows = true
         var c = b
         c.mannequin = SIMD3(0.80, 0.78, 0.75)
         var d = c
         d.environmentIntensity = 0.6; d.keyIntensity = 900
-        let styles: [(String, AvatarStageStyle)] = [("A", a), ("B", b), ("C", c), ("D", d)]
+        var e = d
+        e.occlusion = 0.8
+        var f = e
+        f.hemShading = true
+        let styles: [(String, AvatarStageStyle)] = [("A", a), ("B", b), ("C", c), ("D", d), ("E", e), ("F", f)]
         let outfits: [[(AvatarGarmentCut, UIImage)]] = [
             [(.trousers, Self.trousersCutout()), (.top(sleeve: .short), Self.stripedTeeCutout())],
             [(.trousers, Self.trousersCutout()), (.top(sleeve: .short), Self.plainTeeCutout())],
