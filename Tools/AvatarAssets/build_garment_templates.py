@@ -664,6 +664,9 @@ def rays_hit(origins, directions, tris, reach):
     return hit
 
 
+REVIEW_BODIES = []  # (positions, vertex normals) of morphed review bodies; set in main()
+
+
 def camera_directions():
     out = []
     for elevation in (-10, 0, 25):
@@ -729,21 +732,28 @@ def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body
     # corners and centre all are. Skin under the fabric is hidden up to the openings;
     # skin seen through an opening stays (Codex round 3: a normal-ray rule hid skin
     # visible at trouser hems and armholes). The region bounds only exclude far skin.
+    # Checked on the rest body and on every review body (REVIEW_BODIES), with the
+    # garment evaluated through its binding, so a morph that opens an armhole cannot
+    # expose hidden skin (extreme body: 8 tee and 26 dress triangles otherwise).
     T = np.array(body_tris).reshape(-1, 3)
-    G = np.array([[pos[v] for v in f] for f in np.array(sel_tris).reshape(-1, 3)])
+    faces = np.array(front_idx + back_idx).reshape(-1, 3)
     cand = np.array([i for i in range(len(P)) if hide_region(P[i])], dtype=np.int64)
-    inside = np.zeros(len(P), bool)
-    if len(cand):
-        inside[cand] = occluded(P[cand], body_normals[cand], G)
-    tri_cand = [t for t in range(len(T)) if inside[T[t]].all()]
-    if tri_cand:
-        centres = P[T[tri_cand]].mean(axis=1)
-        cn = body_normals[T[tri_cand]].mean(axis=1)
-        cn /= np.linalg.norm(cn, axis=1, keepdims=True) + 1e-12
-        keep = occluded(centres, cn, G)
-        hidden = [t for t, k in zip(tri_cand, keep) if k]
-    else:
-        hidden = []
+    hidden_set = None
+    for Pb, Nb in [(P, body_normals)] + REVIEW_BODIES:
+        G = evaluate(binding, Pb, Nb)[faces]
+        inside = np.zeros(len(P), bool)
+        if len(cand):
+            inside[cand] = occluded(Pb[cand], Nb[cand], G)
+        tri_cand = [t for t in range(len(T)) if inside[T[t]].all() and (hidden_set is None or t in hidden_set)]
+        if tri_cand:
+            centres = Pb[T[tri_cand]].mean(axis=1)
+            cn = Nb[T[tri_cand]].mean(axis=1)
+            cn /= np.linalg.norm(cn, axis=1, keepdims=True) + 1e-12
+            keep = occluded(centres, cn, G)
+            hidden_set = {t for t, k in zip(tri_cand, keep) if k}
+        else:
+            hidden_set = set()
+    hidden = sorted(hidden_set)
     return {
         "name": name, "verts": verts, "canonical": canonical, "binding": binding, "uvs": uvs,
         "front": front_idx, "back": back_idx, "hidden": hidden,
@@ -782,13 +792,21 @@ def write(templates, out_path):
 def main():
     asset, out = sys.argv[1], sys.argv[2]
     preview = Path(sys.argv[3]) if len(sys.argv) > 3 else None
-    P, subs, _ = pa.read_asset(asset)
+    P, subs, targets = pa.read_asset(asset)
     P = P.astype(np.float64)
     body = subs["body"].reshape(-1).tolist()
     tights = subs["tights"].reshape(-1).tolist()
     skirt = subs["skirt"].reshape(-1).tolist()
     body_set = set(body)
     bn = vertex_normals(P, body)
+    # Review bodies for the hidden-skin check: the silhouettes and extremes the app's
+    # render matrix and Codex's audit use (atelier_lab.SHAPES), plus Codex's stronger one.
+    import atelier_lab as lab
+    shapes = list(lab.SHAPES.values()) + [{"hips": 1, "waist": -1, "bust": 1, "shoulders": 1, "overall": 1, "legLength": -0.6}]
+    for shape in shapes:
+        if shape:
+            Pm = lab.morphed(P, targets, shape)
+            REVIEW_BODIES.append((Pm, vertex_normals(Pm, body)))
 
     def is_arm(p):
         return abs(p[0]) > TORSO_X and p[1] > 0.84
