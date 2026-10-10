@@ -15,6 +15,9 @@ helper-skirt topology, so no third-party garment asset is distributed:
    mesh so the shaped regions meet without folds.
 3. Panels: faces are split at the side seams into a front panel (which gets
    the garment photo) and a back panel (an explicitly unknown region).
+3b. Clear: garment vertices left inside the skin (the armholes cut into the
+   arm root at the armpit; Atelier review) are moved just outside it, along
+   the closest skin face's normal, before binding.
 4. Bind (.mhclo-style, implemented independently): each garment vertex is
    tied to its nearest body triangle by barycentric weights plus an offset in
    that triangle's local frame, so it follows every body morph.
@@ -484,6 +487,70 @@ def split_panels(new_pos, tris, sleeve_axes=None):
     return front_faces, back_faces
 
 
+def closest_points(p, a, b, c):
+    """Closest points on triangles a/b/c to points p, row by row (Ericson 5.1.5)."""
+    ab, ac, ap = b - a, c - a, p - a
+    d1, d2 = np.einsum("ij,ij->i", ab, ap), np.einsum("ij,ij->i", ac, ap)
+    bp = p - b
+    d3, d4 = np.einsum("ij,ij->i", ab, bp), np.einsum("ij,ij->i", ac, bp)
+    cp = p - c
+    d5, d6 = np.einsum("ij,ij->i", ab, cp), np.einsum("ij,ij->i", ac, cp)
+    va, vb, vc = d3 * d6 - d5 * d4, d5 * d2 - d1 * d6, d1 * d4 - d3 * d2
+    den = va + vb + vc
+    den = np.where(np.abs(den) < 1e-30, 1e-30, den)
+    out = a + ab * (vb / den)[:, None] + ac * (vc / den)[:, None]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        for mask, value in (
+            ((va <= 0) & (d4 - d3 >= 0) & (d5 - d6 >= 0), b + ((d4 - d3) / ((d4 - d3) + (d5 - d6)))[:, None] * (c - b)),
+            ((vb <= 0) & (d2 >= 0) & (d6 <= 0), a + (d2 / (d2 - d6))[:, None] * ac),
+            ((d6 >= 0) & (d5 <= d6), c),
+            ((vc <= 0) & (d1 >= 0) & (d3 <= 0), a + (d1 / (d1 - d3))[:, None] * ab),
+            ((d3 >= 0) & (d4 <= d3), b),
+            ((d1 <= 0) & (d2 <= 0), a),
+        ):
+            out[mask] = value[mask]
+    return out
+
+
+def skin_distance(points, P, T, k=48):
+    """Signed distance from each point to the closest skin triangle (negative behind
+    its face), with that triangle's unit normal and the closest point."""
+    from scipy.spatial import cKDTree
+
+    A, B, C = P[T[:, 0]], P[T[:, 1]], P[T[:, 2]]
+    _, cand = cKDTree((A + B + C) / 3).query(points, k=k)
+    n, m = cand.shape
+    flat = cand.reshape(-1)
+    pr = np.repeat(points, m, axis=0)
+    q = closest_points(pr, A[flat], B[flat], C[flat])
+    d = np.linalg.norm(pr - q, axis=1).reshape(n, m)
+    best = d.argmin(axis=1)
+    tri = cand[np.arange(n), best]
+    qb = q.reshape(n, m, 3)[np.arange(n), best]
+    fn = np.cross(B[tri] - A[tri], C[tri] - A[tri])
+    fn /= np.linalg.norm(fn, axis=1, keepdims=True) + 1e-12
+    sign = np.sign(np.einsum("ij,ij->i", points - qb, fn))
+    return sign * d[np.arange(n), best], fn, qb
+
+
+def clear_of_body(pos, P, body_tris, below=0.003, target=0.007, passes=4):
+    """Moves garment vertices closer than `below` to the skin (or inside it) to
+    `target` above the closest skin point, along that face's normal. Only the
+    armpits need it today; everything else is left exactly where shaping put it."""
+    T = np.array(body_tris).reshape(-1, 3)
+    keys = list(pos)
+    X = np.array([pos[k] for k in keys], dtype=np.float64)
+    moved = np.zeros(len(X), bool)
+    for _ in range(passes):
+        sd, fn, q = skin_distance(X, P, T)
+        need = sd < below
+        if not need.any():
+            break
+        X[need] = q[need] + target * fn[need]
+        moved |= need
+    return {k: X[i] for i, k in enumerate(keys)}, int(moved.sum())
+
+
 def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body, hide_region, sleeve_axes=None):
     used = sorted(set(sel_tris))
     new = {v: new.get(v, tuple(P[v])) for v in used}
@@ -504,6 +571,7 @@ def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body
         canonical.append(first.setdefault(src, k))
 
     pos = {v: np.asarray(new.get(v, P[v])) for v in used}
+    pos, cleared = clear_of_body(pos, P, body_tris)
     binding = bind(P, body_tris, body_normals, [pos[src] for src, _ in verts], allowed_body)
 
     # Front photo projection over the front panel's own bounds; the back uses the
@@ -529,7 +597,7 @@ def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body
     return {
         "name": name, "verts": verts, "canonical": canonical, "binding": binding, "uvs": uvs,
         "front": front_idx, "back": back_idx, "hidden": hidden,
-        "rest": {v: pos[v] for v in used},
+        "rest": {v: pos[v] for v in used}, "cleared": cleared,
     }
 
 
@@ -624,6 +692,7 @@ def main():
         err = np.abs(evaluate(t["binding"], P, bn) - rest).max()
         report[t["name"]] = {"vertices": len(t["verts"]), "front_tris": len(t["front"]) // 3,
                              "back_tris": len(t["back"]) // 3, "hidden_body_tris": len(t["hidden"]),
+                             "vertices_cleared_of_skin": t["cleared"],
                              "rest_reconstruction_error_m": float(err)}
         if preview:
             preview.mkdir(parents=True, exist_ok=True)

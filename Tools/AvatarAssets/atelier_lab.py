@@ -179,4 +179,74 @@ def winding():
 
 
 if __name__ == "__main__":
-    {"check": check, "winding": winding}[sys.argv[1]]()
+    if sys.argv[1] in ("check", "winding"):
+        {"check": check, "winding": winding}[sys.argv[1]]()
+
+
+# --- closest-triangle signed distance (numpy + scipy KD-tree on centroids) ----------
+
+def closest_points(p, a, b, c):
+    """Vectorised Ericson closest point; p (N,3), a/b/c (N,3)."""
+    ab, ac, ap = b - a, c - a, p - a
+    d1, d2 = np.einsum("ij,ij->i", ab, ap), np.einsum("ij,ij->i", ac, ap)
+    bp = p - b
+    d3, d4 = np.einsum("ij,ij->i", ab, bp), np.einsum("ij,ij->i", ac, bp)
+    cp = p - c
+    d5, d6 = np.einsum("ij,ij->i", ab, cp), np.einsum("ij,ij->i", ac, cp)
+    va, vb, vc = d3 * d6 - d5 * d4, d5 * d2 - d1 * d6, d1 * d4 - d3 * d2
+    den = va + vb + vc
+    den = np.where(np.abs(den) < 1e-30, 1e-30, den)
+    out = a + ab * (vb / den)[:, None] + ac * (vc / den)[:, None]
+    def put(mask, val):
+        out[mask] = val[mask]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        put((va <= 0) & (d4 - d3 >= 0) & (d5 - d6 >= 0), b + ((d4 - d3) / ((d4 - d3) + (d5 - d6)))[:, None] * (c - b))
+        put((vb <= 0) & (d2 >= 0) & (d6 <= 0), a + (d2 / (d2 - d6))[:, None] * ac)
+        put((d6 >= 0) & (d5 <= d6), c)
+        put((vc <= 0) & (d1 >= 0) & (d3 <= 0), a + (d1 / (d1 - d3))[:, None] * ab)
+        put((d3 >= 0) & (d4 <= d3), b)
+        put((d1 <= 0) & (d2 <= 0), a)
+    return out
+
+
+def signed_distance(points, P, T, k=48):
+    """Distance to the closest body triangle, negative behind its face. Returns
+    (signed distance, triangle index, closest point)."""
+    from scipy.spatial import cKDTree
+    A, B, C = P[T[:, 0]], P[T[:, 1]], P[T[:, 2]]
+    tree = cKDTree((A + B + C) / 3)
+    _, cand = tree.query(points, k=k)
+    n, m = cand.shape
+    pr = np.repeat(points, m, axis=0)
+    flat = cand.reshape(-1)
+    q = closest_points(pr, A[flat], B[flat], C[flat])
+    d = np.linalg.norm(pr - q, axis=1).reshape(n, m)
+    best = d.argmin(axis=1)
+    tri = cand[np.arange(n), best]
+    qb = q.reshape(n, m, 3)[np.arange(n), best]
+    fn = np.cross(B[tri] - A[tri], C[tri] - A[tri])
+    fn /= np.linalg.norm(fn, axis=1, keepdims=True) + 1e-12
+    s = np.sign(np.einsum("ij,ij->i", points - qb, fn))
+    return s * d[np.arange(n), best], tri, qb
+
+
+def penetration():
+    P0, subs, targets = pa.read_asset(str(BODY))
+    P0 = P0.astype(np.float64)
+    body = subs["body"].astype(np.int64)
+    T = body.reshape(-1, 3)
+    for shape_name, shape in SHAPES.items():
+        P = morphed(P0, targets, shape)
+        BN = vertex_normals(P, T)
+        for name, t in read_templates().items():
+            g = deform(t, P, BN)
+            sd, tri, _ = signed_distance(g, P, T)
+            hidden = set(t["hidden"].tolist())
+            visible = np.array([i not in hidden for i in tri])
+            bad = (sd < -0.002) & visible
+            worst = sd[visible].min() * 1000 if visible.any() else 0
+            print(f"{shape_name:13s} {name:9s} inside>2mm on visible skin: {bad.sum():3d}  worst {worst:7.2f} mm")
+
+
+if __name__ == "__main__" and sys.argv[1] == "penetration":
+    penetration()
