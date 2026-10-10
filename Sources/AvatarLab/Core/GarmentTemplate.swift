@@ -78,6 +78,8 @@ struct GarmentTemplateLibrary: Sendable {
 
     static let resourceName = "RIGGarments"
     static let resourceExtension = "rigarm"
+    /// Template versions this loader understands (`VERSION` in build_garment_templates.py).
+    static let supportedVersions: Set<Int> = [1]
 
     let templates: [String: GarmentTemplate]
 
@@ -93,6 +95,7 @@ struct GarmentTemplateLibrary: Sendable {
         for _ in 0..<count {
             let name = try r.name()
             let version = Int(try r.u32())
+            guard Self.supportedVersions.contains(version) else { throw LibraryError.invalidValue }
             let n = Int(try r.u32())
             try r.require(n, bytesEach: 44)  // 3 × u32, 7 × f32, 1 × u32
             var bindings: [GarmentTemplate.Binding] = []
@@ -106,11 +109,18 @@ struct GarmentTemplateLibrary: Sendable {
                 guard Int(a) < bodyVertexCount, Int(b) < bodyVertexCount, Int(c) < bodyVertexCount,
                       Int(twin) < n else { throw LibraryError.indexOutOfRange }
                 guard floats.allSatisfy({ $0.isFinite && abs($0) <= 10 }) else { throw LibraryError.invalidValue }
+                // A binding is a point on its triangle: barycentric weights inside the simplex.
+                let tolerance: Float = 1e-4
+                guard floats[0] >= -tolerance, floats[1] >= -tolerance, floats[0] + floats[1] <= 1 + tolerance else {
+                    throw LibraryError.invalidValue
+                }
                 bindings.append(.init(a: Int32(a), b: Int32(b), c: Int32(c), wb: floats[0], wc: floats[1],
                                       normal: floats[2], tangent1: floats[3], tangent2: floats[4]))
                 uvs.append(SIMD2(floats[5], floats[6]))
                 canonical.append(Int32(twin))
             }
+            // A seam duplicate points at its canonical vertex, which points at itself.
+            guard canonical.allSatisfy({ canonical[Int($0)] == $0 }) else { throw LibraryError.invalidValue }
             let front = try r.indices(limit: n)
             let back = try r.indices(limit: n)
             let hidden = try r.indices(limit: bodyTriangleCount).map(Int32.init)
@@ -175,9 +185,29 @@ enum GarmentDeformer {
         // The stage culls inside faces of template garments, so triangles must wind
         // counter-clockwise seen from outside. The bundled templates already do; a
         // template wound the other way is reversed rather than drawn inside out.
-        let front = flip < 0 ? Self.reversed(template.frontTriangles) : template.frontTriangles
-        let back = flip < 0 ? Self.reversed(template.backTriangles) : template.backTriangles
+        var front = flip < 0 ? Self.reversed(template.frontTriangles) : template.frontTriangles
+        var back = flip < 0 ? Self.reversed(template.backTriangles) : template.backTriangles
+        Self.reclassify(&front, into: &back, positions: out)
         return AvatarMesh(positions: out, normals: normals, uvs: template.uvs, triangles: front, backTriangles: back)
+    }
+
+    /// The photo only belongs on faces turned towards the camera (outward normal z at
+    /// least `photoFacing`, the offline split's threshold). The split is authored at rest;
+    /// a morphed, smoothed body can turn front faces away (an extreme tee had faces at
+    /// z = -0.36; Codex review), so those move to the back panel here.
+    static let photoFacing: Float = 0.35
+
+    static func reclassify(_ front: inout [UInt32], into back: inout [UInt32], positions: [SIMD3<Float>]) {
+        var kept: [UInt32] = []
+        kept.reserveCapacity(front.count)
+        var t = 0
+        while t + 2 < front.count {
+            let a = Int(front[t]), b = Int(front[t + 1]), c = Int(front[t + 2])
+            let fn = normalized(avatarCross(positions[b] - positions[a], positions[c] - positions[a]))
+            if fn.z >= photoFacing { kept += front[t..<(t + 3)] } else { back += front[t..<(t + 3)] }
+            t += 3
+        }
+        front = kept
     }
 
     static func reversed(_ triangles: [UInt32]) -> [UInt32] {
