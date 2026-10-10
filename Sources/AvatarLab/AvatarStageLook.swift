@@ -122,7 +122,7 @@ extension AvatarStageCoordinator {
     /// fwidth keeps the line anti-aliased at any zoom.
     static let crispPhoto = """
     float facingAA = max(fwidth(garmentNormal.z) * 1.5, 0.004);
-    float seamAA = max(fwidth(seam) * 1.5, 0.01);
+    float seamAA = clamp(fwidth(seam) * 1.5, 0.01, 0.39);  // never reaches seam = 0, where the plain panel starts
     float photo = smoothstep(0.47 - facingAA, 0.47 + facingAA, garmentNormal.z) * smoothstep(0.40 - seamAA, 0.40 + seamAA, seam);
     """
 

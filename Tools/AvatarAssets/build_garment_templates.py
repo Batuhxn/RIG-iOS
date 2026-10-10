@@ -664,6 +664,33 @@ def rays_hit(origins, directions, tris, reach):
     return hit
 
 
+def camera_directions():
+    out = []
+    for elevation in (-10, 0, 25):
+        e = np.radians(elevation)
+        for azimuth in range(0, 360, 30):
+            a = np.radians(azimuth)
+            out.append((np.cos(e) * np.sin(a), np.sin(e), np.cos(e) * np.cos(a)))
+    return np.array(out)
+
+
+def occluded(points, normals, tris, reach=1.0):
+    """Whether the fabric hides each skin point from every review camera direction
+    that leaves the skin's front side (falls back to the normal ray if none does)."""
+    dirs = camera_directions()
+    result = np.ones(len(points), bool)
+    origins = points + 0.002 * normals
+    facing = normals @ dirs.T > 0.05
+    for k, d in enumerate(dirs):
+        rows = np.nonzero(facing[:, k] & result)[0]
+        if len(rows):
+            result[rows] &= rays_hit(origins[rows], np.repeat(d[None], len(rows), axis=0), tris, reach)
+    none = ~facing.any(axis=1)
+    if none.any():
+        result[none] &= rays_hit(origins[none], normals[none], tris, reach)
+    return result
+
+
 def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body, hide_region, sleeve_axes=None):
     used = sorted(set(sel_tris))
     new = {v: new.get(v, tuple(P[v])) for v in used}
@@ -695,19 +722,28 @@ def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body
     uvs = [((pos[s][0] - x0) / max(x1 - x0, 1e-6), (y1 - pos[s][1]) / max(y1 - y0, 1e-6)) for s, _ in verts]
     uvs = [(min(max(u, 0.0), 1.0), min(max(v, 0.0), 1.0)) for u, v in uvs]
 
-    # Hidden body: triangles whose vertices are all covered by the garment: a ray from
-    # the skin along its outward normal meets the fabric within 8 cm. Skin above a
-    # neckline or beyond a cuff misses the fabric and stays visible; skin under it is
-    # hidden right up to the openings. (Fixed region margins of 3-6 cm left skin under
-    # the fabric unhidden, and it poked through as jagged teeth along necklines and
-    # cuffs; Atelier close-ups.) The region bounds only exclude far-away skin.
+    # Hidden body: skin the garment occludes from every direction the app's camera can
+    # look from (turntable azimuths every 30 degrees, elevations -10, 0 and +25, as the
+    # stage's orbit allows): every ray from the skin towards such a camera, among those
+    # leaving the skin's front side, meets the fabric. A triangle is hidden when its
+    # corners and centre all are. Skin under the fabric is hidden up to the openings;
+    # skin seen through an opening stays (Codex round 3: a normal-ray rule hid skin
+    # visible at trouser hems and armholes). The region bounds only exclude far skin.
     T = np.array(body_tris).reshape(-1, 3)
     G = np.array([[pos[v] for v in f] for f in np.array(sel_tris).reshape(-1, 3)])
     cand = np.array([i for i in range(len(P)) if hide_region(P[i])], dtype=np.int64)
     inside = np.zeros(len(P), bool)
     if len(cand):
-        inside[cand] = rays_hit(P[cand], body_normals[cand], G, reach=0.08)
-    hidden = [t for t in range(len(T)) if inside[T[t]].all()]
+        inside[cand] = occluded(P[cand], body_normals[cand], G)
+    tri_cand = [t for t in range(len(T)) if inside[T[t]].all()]
+    if tri_cand:
+        centres = P[T[tri_cand]].mean(axis=1)
+        cn = body_normals[T[tri_cand]].mean(axis=1)
+        cn /= np.linalg.norm(cn, axis=1, keepdims=True) + 1e-12
+        keep = occluded(centres, cn, G)
+        hidden = [t for t, k in zip(tri_cand, keep) if k]
+    else:
+        hidden = []
     return {
         "name": name, "verts": verts, "canonical": canonical, "binding": binding, "uvs": uvs,
         "front": front_idx, "back": back_idx, "hidden": hidden,

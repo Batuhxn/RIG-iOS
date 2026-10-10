@@ -90,10 +90,10 @@ struct AvatarOutfitBuilder: Sendable {
             var surfaces = inners.map { TriangleGrid(mesh: garments[$0], cell: reach) }
             let pointGrids = inners.map { HashGrid(points: garments[$0].positions, cell: reach / 2) }
             var mesh = garments[outer]
-            // Pushes follow the vertex normals; once normals are recomputed from the moved
-            // positions, clearance is checked again along them. The 8 mm gap leaves room
-            // for the small tilt recomputed normals get, so two rounds settle it.
-            for _ in 0..<2 {
+            // Pushes follow the vertex normals. Normals are recomputed from the moved
+            // positions after the first two rounds; the last round checks clearance along
+            // those final normals, and its (sub-millimetre) moves keep them.
+            for round in 0..<3 {
                 var movedThisRound = false
                 for (i, inner) in inners.enumerated() {
                     let innerPoints = garments[inner].positions
@@ -104,8 +104,10 @@ struct AvatarOutfitBuilder: Sendable {
                         for k in pending {
                             var p = mesh.positions[k]
                             let n = mesh.normals[k]
+                            var compatible = true
                             if let hit = surfaces[i].closest(to: p, within: reach) {
                                 let depth = ((p - hit.point) * hit.normal).sum()
+                                compatible = (n * hit.normal).sum() >= 0.5
                                 if depth < gap {
                                     // Along our own normal while it roughly agrees with theirs; otherwise
                                     // straight out of their surface (a perpendicular or opposed normal
@@ -114,7 +116,9 @@ struct AvatarOutfitBuilder: Sendable {
                                     p += (gap - depth) * (along >= 0.5 ? n / along : hit.normal)
                                 }
                             }
-                            if let j = pointGrids[i].nearest(to: p, within: reach, in: innerPoints) {
+                            // The nearest-vertex clearance only applies along a normal that agrees
+                            // with the inner surface; otherwise it would undo the push above.
+                            if compatible, let j = pointGrids[i].nearest(to: p, within: reach, in: innerPoints) {
                                 let depth = ((p - innerPoints[j]) * n).sum()
                                 if depth < gap { p += (gap - depth) * n }
                             }
@@ -128,7 +132,7 @@ struct AvatarOutfitBuilder: Sendable {
                     }
                 }
                 guard movedThisRound else { break }
-                mesh.normals = Self.recomputedNormals(mesh)
+                if round < 2 { mesh.normals = Self.recomputedNormals(mesh) }
             }
             garments[outer] = mesh
         }

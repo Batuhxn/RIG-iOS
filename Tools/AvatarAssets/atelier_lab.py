@@ -321,3 +321,35 @@ def skin_poke(tuck=0.0, shapes=("silhouette-1", "extreme")):
 if __name__ == "__main__" and sys.argv[1] == "poke":
     for tk in (0.0, 0.008):
         skin_poke(tk)
+
+
+def hidden_visible(shapes=("silhouette-1", "extreme")):
+    """Hidden skin triangles whose centre can still see a review camera direction
+    (nothing — garment or body — in the way): holes the hidden-skin list would cut."""
+    import build_garment_templates as b
+    P0, subs, targets = pa.read_asset(str(BODY))
+    P0 = P0.astype(np.float64)
+    T = subs["body"].astype(np.int64).reshape(-1, 3)
+    dirs = b.camera_directions()
+    for shape_name in shapes:
+        P = morphed(P0, targets, SHAPES[shape_name])
+        BN = vertex_normals(P, T)
+        for name, t in read_templates().items():
+            g = deform(t, P, BN)
+            F = np.concatenate([t["front"], t["back"]])
+            hid = t["hidden"]
+            visible_body = np.ones(len(T), bool); visible_body[hid] = False
+            occluders = np.concatenate([g[F], P[T[visible_body]]])
+            c = P[T[hid]].mean(axis=1)
+            n = BN[T[hid]].mean(axis=1); n /= np.linalg.norm(n, axis=1, keepdims=True) + 1e-12
+            o = c + 0.002 * n
+            seen = np.zeros(len(hid), bool)
+            for d in dirs:
+                rows = np.nonzero((n @ d > 0.05) & ~seen)[0]
+                if len(rows):
+                    seen[rows] |= ~b.rays_hit(o[rows], np.repeat(d[None], len(rows), axis=0), occluders, 1.0)
+            print(f"{shape_name:13s} {name:9s} hidden {len(hid):5d}  visible from a review camera: {seen.sum():3d}")
+
+
+if __name__ == "__main__" and sys.argv[1] == "holes":
+    hidden_visible()
