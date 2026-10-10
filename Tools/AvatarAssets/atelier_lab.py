@@ -284,3 +284,40 @@ def skin_through(shapes=None, margin=0.001):
 
 if __name__ == "__main__" and sys.argv[1] == "skinthrough":
     skin_through()
+
+
+def skin_poke(tuck=0.0, shapes=("silhouette-1", "extreme")):
+    """Sampled points of visible skin triangles that lie outside a template garment, where
+    the closest garment face is not on an open edge: skin showing through the fabric.
+    `tuck` mimics AvatarOutfitBuilder.skinTuck (rim vertices pulled in along the normal)."""
+    from scipy.spatial import cKDTree
+    P0, subs, targets = pa.read_asset(str(BODY))
+    P0 = P0.astype(np.float64)
+    T = subs["body"].astype(np.int64).reshape(-1, 3)
+    bary = np.array([(a, b, 1 - a - b) for a in np.linspace(0, 1, 6) for b in np.linspace(0, 1, 6) if a + b <= 1.0001])
+    for shape_name in shapes:
+        P = morphed(P0, targets, SHAPES[shape_name])
+        BN = vertex_normals(P, T)
+        for name, t in read_templates().items():
+            g = deform(t, P, BN)
+            F = np.concatenate([t["front"], t["back"]])
+            _, boundary = topology(t)
+            edge = boundary[t["canonical"]]
+            hidden = np.zeros(len(T), bool); hidden[t["hidden"]] = True
+            covered = np.zeros(len(P), bool); covered[T[hidden].reshape(-1)] = True
+            S = P.copy()
+            vis_tris = T[~hidden]
+            rim = np.unique(vis_tris.reshape(-1)); rim = rim[covered[rim]]
+            S[rim] -= tuck * BN[rim]
+            near = cKDTree(g).query(S[vis_tris].mean(axis=1))[0] < 0.03
+            tris = vis_tris[near]
+            pts = np.einsum("kj,tjd->tkd", bary, S[tris]).reshape(-1, 3)
+            sd, tri, _ = signed_distance(pts, g, F)
+            interior = ~edge[F[tri]].any(axis=1)
+            poke = (sd > 0.0005) & interior & (np.abs(sd) < 0.015)
+            print(f"tuck {tuck*1000:4.1f} mm {shape_name:13s} {name:9s} skin points outside fabric: {poke.sum():5d}")
+
+
+if __name__ == "__main__" and sys.argv[1] == "poke":
+    for tk in (0.0, 0.008):
+        skin_poke(tk)

@@ -55,8 +55,10 @@ extension AvatarRenderingTests {
             for (outfitName, garments) in outfits {
                 var variants = [Variant(name: "v1", style: .engineV1, wraps: false),
                                 Variant(name: "atelier", style: .current, wraps: true)]
-                if fabricName == "stripes", outfitName != "separates" {
-                    variants.append(Variant(name: "atelier-planar", style: .current, wraps: false))
+                if fabricName == "stripes" {
+                    var crisp = AvatarStageStyle.current
+                    crisp.crispSeam = true
+                    variants.append(Variant(name: "atelier-crisp", style: crisp, wraps: true))
                 }
                 var grids: [String: [[UIImage]]] = [:]
                 for (_, shape) in Self.matrixShapes() {
@@ -74,51 +76,6 @@ extension AvatarRenderingTests {
             }
         }
         print("AVATAR_METRIC atelier_matrix_build_ms_max=\(timings.max() ?? 0)")
-    }
-
-    /// Lighting and mannequin study: the same outfits under candidate stage styles.
-    func testAtelierLightingStudy() throws {
-        let asset = try loadAsset()
-        let library = try GarmentTemplateLibrary.bundled(in: AvatarTestBundle.bundle, for: asset)
-        let engine = AvatarOutfitBuilder(asset: asset, templates: library)
-        var a = AvatarStageStyle.current
-        a.environmentIntensity = 1.1; a.keyIntensity = 650; a.keyShadows = false
-        a.mannequin = SIMD3(0.93, 0.92, 0.90); a.occlusion = 0; a.hemShading = false
-        var b = a
-        b.environmentIntensity = 0.8; b.keyIntensity = 750; b.keyShadows = true
-        var c = b
-        c.mannequin = SIMD3(0.80, 0.78, 0.75)
-        var d = c
-        d.environmentIntensity = 0.6; d.keyIntensity = 900
-        var e = d
-        e.occlusion = 0.8
-        var f = e
-        f.hemShading = true
-        let styles: [(String, AvatarStageStyle)] = [("A", a), ("B", b), ("C", c), ("D", d), ("E", e), ("F", f)]
-        let outfits: [[(AvatarGarmentCut, UIImage)]] = [
-            [(.trousers, Self.trousersCutout()), (.top(sleeve: .short), Self.stripedTeeCutout())],
-            [(.trousers, Self.trousersCutout()), (.top(sleeve: .short), Self.plainTeeCutout())],
-            [(.skirt(length: .knee), Self.stripedDressCutout()), (.top(sleeve: .short), Self.plainTeeCutout())],
-        ]
-        let shapes = Self.matrixShapes().filter { ["silhouette-1", "extreme"].contains($0.0) }.map(\.1)
-        let tile = CGSize(width: 180, height: 360)
-        var rows: [String: [[UIImage]]] = [:]
-        for garments in outfits {
-            for shape in shapes {
-                guard let built = engine.build(shape: shape, cuts: garments.map(\.0)) else { return XCTFail("cancelled") }
-                let content = Self.stageContent(built: built, garments: garments, wraps: true)
-                for (name, style) in styles {
-                    let coordinator = AvatarStageCoordinator(style: style)
-                    coordinator.show(content, mode: .photo3D)
-                    rows[name, default: []].append([0, Float.pi / 4].map {
-                        coordinator.snapshot(size: tile, yaw: $0, background: Self.matrixBackground)
-                    })
-                }
-            }
-        }
-        for (name, _) in styles {
-            try saveRender("lighting_\(name)", Self.compose(rows[name] ?? [], tile: tile))
-        }
     }
 
     /// Close-ups at full resolution where the matrix tiles are too small to judge edges:
@@ -141,7 +98,9 @@ extension AvatarRenderingTests {
             for (_, shape) in shapes {
                 guard let built = engine.build(shape: shape, cuts: garments.map(\.0)) else { return XCTFail("cancelled") }
                 let content = Self.stageContent(built: built, garments: garments, wraps: true)
-                for style in [AvatarStageStyle.engineV1, .current] {
+                var crisp = AvatarStageStyle.current
+                crisp.crispSeam = true
+                for style in [AvatarStageStyle.engineV1, .current, crisp] {
                     let coordinator = AvatarStageCoordinator(style: style)
                     coordinator.show(content, mode: .photo3D)
                     row.append(coordinator.snapshot(size: tile, yaw: yaw, background: Self.matrixBackground, halfHeight: 0.28, centre: centre))

@@ -175,7 +175,7 @@ final class AvatarStageCoordinator {
                     material.metalness.mappingChannel = 2
                     material.metalness.wrapS = .clamp
                 }
-                front.shaderModifiers = [.surface: Self.surfaceModifier(unknown: style.softSeam ? unknown : nil, hem: style.hemShading)]
+                front.shaderModifiers = [.surface: Self.surfaceModifier(unknown: style.softSeam ? unknown : nil, hem: style.hemShading, crisp: style.crispSeam)]
                 back.shaderModifiers = [.surface: Self.surfaceModifier(unknown: nil, hem: style.hemShading)]
             }
             let garment = node(for: layer.mesh, materials: [front, back], channels: channels)

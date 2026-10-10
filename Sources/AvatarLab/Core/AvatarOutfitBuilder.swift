@@ -21,6 +21,9 @@ struct AvatarOutfitBuilder: Sendable {
     /// - Returns: `body` without the skin garments cover (for 3D), `bareBody` complete
     ///   (for the 2D overlay, which draws no 3D garments), and the garments; nil once the
     ///   calling task is cancelled.
+    /// How far skin bordering hidden skin is pulled in under the fabric.
+    static let skinTuck: Float = 0.008
+
     func build(shape: AvatarBodyShape, cuts: [AvatarGarmentCut]) -> (body: AvatarMesh, bareBody: AvatarMesh, garments: [AvatarMesh])? {
         let engine = AvatarMorphEngine(asset: asset)
         let positions = engine.positions(for: shape)
@@ -48,7 +51,20 @@ struct AvatarOutfitBuilder: Sendable {
             if !hidden.contains(Int32(t / 3)) { visible += bodyTriangles[t..<(t + 3)] }
             t += 3
         }
-        let body = AvatarMorphEngine.compact(triangles: visible, positions: positions, offset: 0)
+        // Skin on the edge of what garments hide is tucked in a little, so the visible
+        // triangles there slope under the fabric instead of poking through its edge
+        // (the jagged white teeth along necklines in the Atelier close-ups).
+        var shown = positions
+        if !hidden.isEmpty {
+            var covered = [Bool](repeating: false, count: positions.count)
+            for triangle in hidden {
+                for k in 0..<3 { covered[Int(bodyTriangles[Int(triangle) * 3 + k])] = true }
+            }
+            for v in visible where covered[Int(v)] {
+                shown[Int(v)] = positions[Int(v)] - Self.skinTuck * bodyNormals[Int(v)]
+            }
+        }
+        let body = AvatarMorphEngine.compact(triangles: visible, positions: shown, offset: 0)
         let bare = hidden.isEmpty ? body : AvatarMorphEngine.compact(triangles: bodyTriangles, positions: positions, offset: 0)
         return (body, bare, garments)
     }
@@ -66,45 +82,53 @@ struct AvatarOutfitBuilder: Sendable {
             return (ys.min() ?? 0)...(ys.max() ?? 0)
         }
         for (rank, outer) in order.enumerated() {
-            var mesh = garments[outer]
-            var movedAny = false
-            for inner in order[..<rank] where cuts[inner].layer < cuts[outer].layer {
+            let inners = order[..<rank].filter {
                 // Garments that cannot touch (shoes and a tee) are skipped.
-                guard yRange(garments[inner]).overlaps(yRange(garments[outer])) else { continue }
-                let innerPoints = garments[inner].positions
-                var surface = TriangleGrid(mesh: garments[inner], cell: reach)
-                let points = HashGrid(points: innerPoints, cell: reach / 2)
-                // A push can bring a different inner triangle into play; a few passes settle it.
-                var pending = Array(mesh.positions.indices)
-                for _ in 0..<6 where !pending.isEmpty {
-                    var moved: [Int] = []
-                    for k in pending {
-                        var p = mesh.positions[k]
-                        let n = mesh.normals[k]
-                        if let hit = surface.closest(to: p, within: reach) {
-                            let depth = ((p - hit.point) * hit.normal).sum()
-                            if depth < gap {
-                                // Along our own normal while it roughly agrees with theirs; otherwise
-                                // straight out of their surface (a perpendicular or opposed normal
-                                // slid vertices sideways or deeper; Codex review).
-                                let along = (n * hit.normal).sum()
-                                p += (gap - depth) * (along >= 0.5 ? n / along : hit.normal)
+                cuts[$0].layer < cuts[outer].layer && yRange(garments[$0]).overlaps(yRange(garments[outer]))
+            }
+            guard !inners.isEmpty else { continue }
+            var surfaces = inners.map { TriangleGrid(mesh: garments[$0], cell: reach) }
+            let pointGrids = inners.map { HashGrid(points: garments[$0].positions, cell: reach / 2) }
+            var mesh = garments[outer]
+            // Pushes follow the vertex normals; once normals are recomputed from the moved
+            // positions, clearance is checked again along them (a few rounds settle it).
+            for _ in 0..<3 {
+                var movedThisRound = false
+                for (i, inner) in inners.enumerated() {
+                    let innerPoints = garments[inner].positions
+                    // A push can bring a different inner triangle into play; a few passes settle it.
+                    var pending = Array(mesh.positions.indices)
+                    for _ in 0..<6 where !pending.isEmpty {
+                        var moved: [Int] = []
+                        for k in pending {
+                            var p = mesh.positions[k]
+                            let n = mesh.normals[k]
+                            if let hit = surfaces[i].closest(to: p, within: reach) {
+                                let depth = ((p - hit.point) * hit.normal).sum()
+                                if depth < gap {
+                                    // Along our own normal while it roughly agrees with theirs; otherwise
+                                    // straight out of their surface (a perpendicular or opposed normal
+                                    // slid vertices sideways or deeper; Codex review).
+                                    let along = (n * hit.normal).sum()
+                                    p += (gap - depth) * (along >= 0.5 ? n / along : hit.normal)
+                                }
+                            }
+                            if let j = pointGrids[i].nearest(to: p, within: reach, in: innerPoints) {
+                                let depth = ((p - innerPoints[j]) * n).sum()
+                                if depth < gap { p += (gap - depth) * n }
+                            }
+                            if p != mesh.positions[k] {
+                                mesh.positions[k] = p
+                                moved.append(k)
                             }
                         }
-                        if let j = points.nearest(to: p, within: reach, in: innerPoints) {
-                            let depth = ((p - innerPoints[j]) * n).sum()
-                            if depth < gap { p += (gap - depth) * n }
-                        }
-                        if p != mesh.positions[k] {
-                            mesh.positions[k] = p
-                            moved.append(k)
-                        }
+                        if !moved.isEmpty { movedThisRound = true }
+                        pending = moved
                     }
-                    if !moved.isEmpty { movedAny = true }
-                    pending = moved
                 }
+                guard movedThisRound else { break }
+                mesh.normals = Self.recomputedNormals(mesh)
             }
-            if movedAny { mesh.normals = Self.recomputedNormals(mesh) }
             garments[outer] = mesh
         }
     }

@@ -615,6 +615,29 @@ def unfold_and_clear(pos, tris, P, body_tris, limit_deg=75.0, rounds=30):
     return pos, cleared_total, len(relaxed), len(folds(pos, tris, limit_deg))
 
 
+def rays_hit(origins, directions, tris, reach):
+    """Whether each ray (origin, unit direction) meets any triangle within `reach`
+    (Moller-Trumbore, both faces)."""
+    a, b, c = tris[:, 0], tris[:, 1], tris[:, 2]
+    e1, e2 = b - a, c - a
+    hit = np.zeros(len(origins), bool)
+    for start in range(0, len(origins), 256):
+        o = origins[start:start + 256][:, None, :]
+        d = directions[start:start + 256][:, None, :]
+        pv = np.cross(d, e2[None])
+        det = np.einsum("ijk,jk->ij", pv, e1)
+        ok = np.abs(det) > 1e-12
+        inv = np.where(ok, 1 / np.where(ok, det, 1), 0)
+        tv = o - a[None]
+        u = np.einsum("ijk,ijk->ij", tv, pv) * inv
+        qv = np.cross(tv, e1[None])
+        v = np.einsum("ijk,ijk->ij", np.broadcast_to(d, qv.shape), qv) * inv
+        t = np.einsum("ijk,jk->ij", qv, e2) * inv
+        found = ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 0) & (t <= reach)
+        hit[start:start + 256] = found.any(axis=1)
+    return hit
+
+
 def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body, hide_region, sleeve_axes=None):
     used = sorted(set(sel_tris))
     new = {v: new.get(v, tuple(P[v])) for v in used}
@@ -646,17 +669,18 @@ def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body
     uvs = [((pos[s][0] - x0) / max(x1 - x0, 1e-6), (y1 - pos[s][1]) / max(y1 - y0, 1e-6)) for s, _ in verts]
     uvs = [(min(max(u, 0.0), 1.0), min(max(v, 0.0), 1.0)) for u, v in uvs]
 
-    # Hidden body: triangles whose vertices all sit inside the garment region and
-    # behind the garment surface; open ends keep a margin of visible skin.
+    # Hidden body: triangles whose vertices are all covered by the garment: a ray from
+    # the skin along its outward normal meets the fabric within 8 cm. Skin above a
+    # neckline or beyond a cuff misses the fabric and stays visible; skin under it is
+    # hidden right up to the openings. (Fixed region margins of 3-6 cm left skin under
+    # the fabric unhidden, and it poked through as jagged teeth along necklines and
+    # cuffs; Atelier close-ups.) The region bounds only exclude far-away skin.
     T = np.array(body_tris).reshape(-1, 3)
-    gp = np.array([pos[v] for v in used])
-    gn = vertex_normals_of(pos, sel_tris, used)
+    G = np.array([[pos[v] for v in f] for f in np.array(sel_tris).reshape(-1, 3)])
+    cand = np.array([i for i in range(len(P)) if hide_region(P[i])], dtype=np.int64)
     inside = np.zeros(len(P), bool)
-    cand = [i for i in range(len(P)) if hide_region(P[i])]
-    for i in cand:
-        k = int(np.argmin(np.linalg.norm(gp - P[i], axis=1)))
-        if np.dot(P[i] - gp[k], gn[k]) < -0.003:
-            inside[i] = True
+    if len(cand):
+        inside[cand] = rays_hit(P[cand], body_normals[cand], G, reach=0.08)
     hidden = [t for t in range(len(T)) if inside[T[t]].all()]
     return {
         "name": name, "verts": verts, "canonical": canonical, "binding": binding, "uvs": uvs,
@@ -720,7 +744,7 @@ def main():
     tee_new = straighten_sleeves(tee_new, tee_tris, axes)
     templates.append(build_template(
         "tee", P, body, bn, tee_tris, tee_new, allowed_any,
-        lambda p: 0.90 <= p[1] <= NECK - 0.04 and abs(p[0]) <= 0.27, axes))
+        lambda p: 0.86 <= p[1] <= NECK + 0.04 and abs(p[0]) <= 0.45, axes))
 
     # 2. Straight-leg trousers: waist to ankle.
     tr_tris = select(P, tights, lambda c: 0.06 <= c[1] <= WAIST and abs(c[0]) <= 0.33)
@@ -728,7 +752,7 @@ def main():
     tr_new = straighten_hems(smooth_displacement(P, shape_trousers(P, tr_ids), tr_tris), tr_tris, split_x=True)
     templates.append(build_template(
         "trousers", P, body, bn, tr_tris, tr_new, allowed_lower,
-        lambda p: 0.10 <= p[1] <= WAIST - 0.03 and abs(p[0]) <= 0.30))
+        lambda p: 0.04 <= p[1] <= WAIST + 0.03 and abs(p[0]) <= 0.33))
 
     # 3. A-line skirt: waist to knee.
     sk_tris = select(P, skirt, lambda c: c[1] >= 0.46)
@@ -736,7 +760,7 @@ def main():
     sk_new = straighten_hems(smooth_displacement(P, shape_skirt(P, sk_ids), sk_tris, iterations=3), sk_tris)
     templates.append(build_template(
         "skirt", P, body, bn, sk_tris, sk_new, allowed_torso,
-        lambda p: 0.74 <= p[1] <= WAIST - 0.03 and abs(p[0]) <= 0.25))
+        lambda p: 0.74 <= p[1] <= WAIST + 0.03 and abs(p[0]) <= 0.25))
 
     # 4. Simple sleeveless dress: bodice from the tights, A-line skirt to below the knee.
     bod_tris = select(P, tights, lambda c: 0.95 <= c[1] <= NECK - 0.03 and abs(c[0]) <= TORSO_X)
@@ -747,7 +771,7 @@ def main():
     dress_new = straighten_hems(smooth_displacement(P, {**bod_new, **dsk_new}, bod_tris + dsk_tris, iterations=3), bod_tris + dsk_tris, neckline=0.025)
     templates.append(build_template(
         "dress", P, body, bn, bod_tris + dsk_tris, dress_new, allowed_torso,
-        lambda p: 0.74 <= p[1] <= NECK - 0.06 and abs(p[0]) <= 0.18))
+        lambda p: 0.74 <= p[1] <= NECK + 0.04 and abs(p[0]) <= 0.24))
 
     size = write(templates, out)
     report = {}

@@ -34,11 +34,14 @@ struct AvatarStageStyle: Equatable, Sendable {
     /// Template garments darken slightly towards their open edges (hems, cuffs,
     /// necklines), as a turned hem does, so where the fabric ends reads at a glance.
     var hemShading = false
+    /// The photo ends in a clean, anti-aliased line along a smooth curve of constant
+    /// surface angle (like a side seam) instead of fading over a band.
+    var crispSeam = false
 
     static let current = AvatarStageStyle()
     static let engineV1 = AvatarStageStyle(softSeam: false, studioLight: false, fabricInterior: false, groundShadow: false,
                                            environmentIntensity: 1.1, keyIntensity: 650, keyShadows: false,
-                                           mannequin: SIMD3(0.93, 0.92, 0.90), occlusion: 0, hemShading: false)
+                                           mannequin: SIMD3(0.93, 0.92, 0.90), occlusion: 0, hemShading: false, crispSeam: false)
 }
 
 /// Materials, shaders and generated images of the stage (split from AvatarStageView.swift).
@@ -78,7 +81,7 @@ extension AvatarStageCoordinator {
     /// Channels arrive through the roughness and metalness slots, which are then reset to
     /// the fabric's real values. Colours are written into the source (linear, as SceneKit
     /// shades), so no argument binding is involved.
-    static func surfaceModifier(unknown: UIColor?, hem: Bool) -> String {
+    static func surfaceModifier(unknown: UIColor?, hem: Bool, crisp: Bool = false) -> String {
         var body = """
         #pragma body
         float seam = _surface.roughness;
@@ -96,9 +99,10 @@ extension AvatarStageCoordinator {
             }
             let colour = String(format: "float3(%.5f, %.5f, %.5f)", linear(r), linear(g), linear(b))
             let band = String(format: "%.3f, %.3f", seamBand.lowerBound, seamBand.upperBound)
+            let softPhoto = "float photo = smoothstep(\(band), garmentNormal.z) * seam;"
             body += """
             float3 garmentNormal = normalize((scn_node.inverseModelViewTransform * float4(_surface.normal, 0.0)).xyz);
-            float photo = smoothstep(\(band), garmentNormal.z) * seam;
+            \(crisp ? crispPhoto : softPhoto)
             _surface.diffuse.rgb = mix(\(colour), _surface.diffuse.rgb, photo);
 
             """
@@ -111,6 +115,15 @@ extension AvatarStageCoordinator {
         }
         return body
     }
+
+    /// A side-seam-like edge: the photo stops where the garment-space normal z crosses
+    /// 0.47 (about 62 degrees) and, at the latest, 40% of the way into the boundary fade;
+    /// fwidth keeps the line anti-aliased at any zoom.
+    static let crispPhoto = """
+    float facingAA = max(fwidth(garmentNormal.z) * 1.5, 0.004);
+    float seamAA = max(fwidth(seam) * 1.5, 0.01);
+    float photo = smoothstep(0.47 - facingAA, 0.47 + facingAA, garmentNormal.z) * smoothstep(0.40 - seamAA, 0.40 + seamAA, seam);
+    """
 
     /// How dark the very edge of a hem is, relative to the fabric.
     static let hemDarkening: Float = 0.74
