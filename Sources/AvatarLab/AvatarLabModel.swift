@@ -100,7 +100,9 @@ final class AvatarLabModel {
 
     private var asset: AvatarBodyAsset?
     private var builder: AvatarOutfitBuilder?
-    private var textures: [UUID: (image: UIImage?, photo: UIImage?, colour: UIColor, spans: [ClosedRange<Float>?])] = [:]
+    /// Decoded garment photos by garment, with the photo path they were decoded from:
+    /// choosing the original instead of the cutout changes the path, not the garment.
+    private var textures: [UUID: (path: String?, image: UIImage?, photo: UIImage?, colour: UIColor, spans: [ClosedRange<Float>?])] = [:]
     private var updateTask: Task<Void, Never>?
     private let store: AvatarProfileStore?
     private let imageStore: GarmentImageStore
@@ -252,15 +254,15 @@ final class AvatarLabModel {
     // MARK: Recompute
 
     /// Off the main actor; stops between garments once cancelled.
-    nonisolated private static func loadTextures(_ garments: [AvatarWornGarment], from imageStore: GarmentImageStore) async -> [(UUID, UIImage?, UIImage?, UIColor, [ClosedRange<Float>?])] {
-        var out: [(UUID, UIImage?, UIImage?, UIColor, [ClosedRange<Float>?])] = []
+    nonisolated private static func loadTextures(_ garments: [AvatarWornGarment], from imageStore: GarmentImageStore) async -> [(UUID, String?, UIImage?, UIImage?, UIColor, [ClosedRange<Float>?])] {
+        var out: [(UUID, String?, UIImage?, UIImage?, UIColor, [ClosedRange<Float>?])] = []
         for garment in garments {
             if Task.isCancelled { break }
             let data = garment.imageRelativePath.flatMap { imageStore.data(atRelativePath: $0) }
             let photo = data.flatMap(UIImage.init(data:)).map { AvatarGarmentTexture.downscaled($0, maxSide: 1024) }
             let prepared = photo.map(AvatarGarmentTexture.prepare)
             let spans = photo.map { AvatarGarmentTexture.photoSpans(of: $0) } ?? []
-            out.append((garment.id, prepared?.image, photo, prepared?.colour ?? .gray, spans))
+            out.append((garment.id, garment.imageRelativePath, prepared?.image, photo, prepared?.colour ?? .gray, spans))
         }
         return out
     }
@@ -278,7 +280,10 @@ final class AvatarLabModel {
         updateTask?.cancel()
         let shape = profile.shape
         let garments = activeGarments
-        let missing = garments.filter { textures[$0.id] == nil }
+        let missing = garments.filter { garment in
+            guard let cached = textures[garment.id] else { return true }
+            return cached.path != garment.imageRelativePath
+        }
         let imageStore = imageStore
         updateTask = Task { [weak self] in
             // Coalesce: while a slider is being dragged, only the last value is built.
@@ -290,7 +295,7 @@ final class AvatarLabModel {
             async let geometryJob = Self.buildGeometry(builder: builder, shape: shape, cuts: garments.map(\.cut))
             let (newTextures, built) = await (loaded, geometryJob)
             guard let self, !Task.isCancelled, let geometry = built else { return }
-            for (id, image, photo, colour, spans) in newTextures { self.textures[id] = (image, photo, colour, spans) }
+            for (id, path, image, photo, colour, spans) in newTextures { self.textures[id] = (path, image, photo, colour, spans) }
             // Keep textures only for garments still worn: browsing many garments must not
             // accumulate decoded images (~8 MB each; Codex review).
             let wornIDs = Set(self.worn.values.map(\.id))

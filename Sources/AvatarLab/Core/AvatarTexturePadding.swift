@@ -31,15 +31,30 @@ enum AvatarTexturePadding {
                 copy(&rgba, from: (y * width + source) * 4, to: (y * width + x) * 4)
             }
         }
-        guard let firstRow = rowHasGarment.firstIndex(of: true) else { return false }
-        var lastGood = firstRow
+        guard rowHasGarment.contains(true) else { return false }
+        // Rows without garment copy the nearest row with garment, above or below (ties
+        // go to the row above), so a gap between two colours splits between them.
+        var above = [Int?](repeating: nil, count: height)
+        var below = [Int?](repeating: nil, count: height)
+        var last: Int?
         for y in 0..<height {
-            if rowHasGarment[y] {
-                lastGood = y
-            } else {
-                let source = y < firstRow ? firstRow : lastGood
-                for x in 0..<width { copy(&rgba, from: (source * width + x) * 4, to: (y * width + x) * 4) }
+            if rowHasGarment[y] { last = y }
+            above[y] = last
+        }
+        last = nil
+        for y in (0..<height).reversed() {
+            if rowHasGarment[y] { last = y }
+            below[y] = last
+        }
+        for y in 0..<height where !rowHasGarment[y] {
+            let source: Int
+            switch (above[y], below[y]) {
+            case let (up?, down?): source = down - y < y - up ? down : up
+            case let (up?, nil): source = up
+            case let (nil, down?): source = down
+            case (nil, nil): continue
             }
+            for x in 0..<width { copy(&rgba, from: (source * width + x) * 4, to: (y * width + x) * 4) }
         }
         for i in stride(from: 3, to: width * height * 4, by: 4) { rgba[i] = 255 }
         return true
