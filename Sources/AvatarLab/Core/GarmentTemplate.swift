@@ -172,8 +172,22 @@ enum GarmentDeformer {
         for (k, bind) in template.bindings.enumerated() { outward += (acc[Int(template.canonical[k])] * bodyNormals[Int(bind.a)]).sum() }
         let flip: Float = outward < 0 ? -1 : 1
         let normals = (0..<out.count).map { flip * normalized(acc[Int(template.canonical[$0])]) }
-        return AvatarMesh(positions: out, normals: normals, uvs: template.uvs,
-                          triangles: template.frontTriangles, backTriangles: template.backTriangles)
+        // The stage culls inside faces of template garments, so triangles must wind
+        // counter-clockwise seen from outside. The bundled templates already do; a
+        // template wound the other way is reversed rather than drawn inside out.
+        let front = flip < 0 ? Self.reversed(template.frontTriangles) : template.frontTriangles
+        let back = flip < 0 ? Self.reversed(template.backTriangles) : template.backTriangles
+        return AvatarMesh(positions: out, normals: normals, uvs: template.uvs, triangles: front, backTriangles: back)
+    }
+
+    static func reversed(_ triangles: [UInt32]) -> [UInt32] {
+        var out = triangles
+        var t = 0
+        while t + 2 < out.count {
+            out.swapAt(t + 1, t + 2)
+            t += 3
+        }
+        return out
     }
 
     /// Two Taubin steps (shrink-free smoothing) over the garment, on canonical vertices,
