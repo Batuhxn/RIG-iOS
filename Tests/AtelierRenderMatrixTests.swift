@@ -6,13 +6,15 @@ import XCTest
 
 /// RiG Atelier visual regression matrix: every Garment Engine template on silhouettes
 /// 1-3 and one extreme but valid body, from the front, three-quarter, side and
-/// three-quarter back, with striped and plain fabric, drawn once in the Garment Engine
-/// v1 stage style and once in the current one. Nothing is filtered: the extreme body
-/// and the back views stay in.
+/// three-quarter back, with striped and plain fabric, drawn once as Garment Engine v1
+/// (v1 stage style, planar photo mapping) and once as the current app. Striped skirts
+/// and dresses are also drawn in the current style with the old planar mapping, so the
+/// mapping's own effect is visible. Nothing is filtered: the extreme body and the back
+/// views stay in.
 ///
 /// Full-size PNGs go to `RIG_RENDER_DIR` when CI sets it (`TEST_RUNNER_RIG_RENDER_DIR`);
-/// the result bundle keeps them as attachments either way. Camera, lights per style,
-/// morphs and garments are identical across the two styles.
+/// the result bundle keeps them as attachments either way. Camera, morphs and garments
+/// are identical across the variants.
 extension AvatarRenderingTests {
     static let matrixYaws: [(String, Float)] = [("front", 0), ("three-quarter", .pi / 4), ("side", .pi / 2), ("back-three-quarter", 3 * .pi / 4)]
     static let matrixBackground = UIColor(red: 0.949, green: 0.949, blue: 0.969, alpha: 1)  // systemGroupedBackground, light
@@ -27,6 +29,12 @@ extension AvatarRenderingTests {
         return AvatarStartingSilhouette.all.map { ($0.id, $0.shape) } + [("extreme", extreme)]
     }
 
+    private struct Variant {
+        let name: String
+        let style: AvatarStageStyle
+        let wraps: Bool
+    }
+
     func testAtelierRenderMatrix() throws {
         let asset = try loadAsset()
         let library = try GarmentTemplateLibrary.bundled(in: AvatarTestBundle.bundle, for: asset)
@@ -36,7 +44,6 @@ extension AvatarRenderingTests {
             ("plain", Self.plainTeeCutout(), Self.plainDressCutout()),
         ]
         let jeans = Self.trousersCutout()
-        let styles: [(String, AvatarStageStyle)] = [("v1", .engineV1), ("atelier", .current)]
         let tile = CGSize(width: 180, height: 360)
         var timings: [Int] = []
         for (fabricName, tee, dress) in fabrics {
@@ -46,35 +53,83 @@ extension AvatarRenderingTests {
                 ("dress", [(.dress(length: .knee), dress)]),
             ]
             for (outfitName, garments) in outfits {
+                var variants = [Variant(name: "v1", style: .engineV1, wraps: false),
+                                Variant(name: "atelier", style: .current, wraps: true)]
+                if fabricName == "stripes", outfitName != "separates" {
+                    variants.append(Variant(name: "atelier-planar", style: .current, wraps: false))
+                }
                 var grids: [String: [[UIImage]]] = [:]
                 for (_, shape) in Self.matrixShapes() {
                     let started = Date()
                     guard let built = engine.build(shape: shape, cuts: garments.map(\.0)) else { return XCTFail("cancelled") }
                     timings.append(Int(Date().timeIntervalSince(started) * 1000))
-                    let content = Self.stageContent(built: built, garments: garments)
-                    for (styleName, style) in styles {
-                        let coordinator = AvatarStageCoordinator(style: style)
-                        coordinator.show(content, mode: .photo3D)
-                        let row = Self.matrixYaws.map { coordinator.snapshot(size: tile, yaw: $0.1, background: Self.matrixBackground) }
-                        grids[styleName, default: []].append(row)
+                    for variant in variants {
+                        let content = Self.stageContent(built: built, garments: garments, wraps: variant.wraps)
+                        grids[variant.name, default: []].append(Self.turntable(content, style: variant.style, tile: tile))
                     }
                 }
-                for (styleName, _) in styles {
-                    let grid = Self.compose(grids[styleName] ?? [], tile: tile)
-                    try saveRender("matrix_\(outfitName)_\(fabricName)_\(styleName)", grid)
+                for variant in variants {
+                    try saveRender("matrix_\(outfitName)_\(fabricName)_\(variant.name)", Self.compose(grids[variant.name] ?? [], tile: tile))
                 }
             }
         }
         print("AVATAR_METRIC atelier_matrix_build_ms_max=\(timings.max() ?? 0)")
     }
 
+    /// Lighting and mannequin study: the same outfits under candidate stage styles.
+    func testAtelierLightingStudy() throws {
+        let asset = try loadAsset()
+        let library = try GarmentTemplateLibrary.bundled(in: AvatarTestBundle.bundle, for: asset)
+        let engine = AvatarOutfitBuilder(asset: asset, templates: library)
+        var a = AvatarStageStyle.current
+        a.environmentIntensity = 1.1; a.keyIntensity = 650; a.keyShadows = false
+        var b = a
+        b.environmentIntensity = 0.8; b.keyIntensity = 750; b.keyShadows = true
+        var c = b
+        c.mannequin = SIMD3(0.80, 0.78, 0.75)
+        var d = c
+        d.environmentIntensity = 0.6; d.keyIntensity = 900
+        let styles: [(String, AvatarStageStyle)] = [("A", a), ("B", b), ("C", c), ("D", d)]
+        let outfits: [[(AvatarGarmentCut, UIImage)]] = [
+            [(.trousers, Self.trousersCutout()), (.top(sleeve: .short), Self.stripedTeeCutout())],
+            [(.trousers, Self.trousersCutout()), (.top(sleeve: .short), Self.plainTeeCutout())],
+            [(.skirt(length: .knee), Self.stripedDressCutout()), (.top(sleeve: .short), Self.plainTeeCutout())],
+        ]
+        let shapes = Self.matrixShapes().filter { ["silhouette-1", "extreme"].contains($0.0) }.map(\.1)
+        let tile = CGSize(width: 180, height: 360)
+        var rows: [String: [[UIImage]]] = [:]
+        for garments in outfits {
+            for shape in shapes {
+                guard let built = engine.build(shape: shape, cuts: garments.map(\.0)) else { return XCTFail("cancelled") }
+                let content = Self.stageContent(built: built, garments: garments, wraps: true)
+                for (name, style) in styles {
+                    let coordinator = AvatarStageCoordinator(style: style)
+                    coordinator.show(content, mode: .photo3D)
+                    rows[name, default: []].append([0, Float.pi / 4].map {
+                        coordinator.snapshot(size: tile, yaw: $0, background: Self.matrixBackground)
+                    })
+                }
+            }
+        }
+        for (name, _) in styles {
+            try saveRender("lighting_\(name)", Self.compose(rows[name] ?? [], tile: tile))
+        }
+    }
+
+    static func turntable(_ content: AvatarStageContent, style: AvatarStageStyle, tile: CGSize) -> [UIImage] {
+        let coordinator = AvatarStageCoordinator(style: style)
+        coordinator.show(content, mode: .photo3D)
+        return matrixYaws.map { coordinator.snapshot(size: tile, yaw: $0.1, background: matrixBackground) }
+    }
+
     /// The same garments as the app builds them: engine meshes, photo UVs on templates.
     static func stageContent(built: (body: AvatarMesh, bareBody: AvatarMesh, garments: [AvatarMesh]),
-                             garments: [(AvatarGarmentCut, UIImage)]) -> AvatarStageContent {
+                             garments: [(AvatarGarmentCut, UIImage)], wraps: Bool) -> AvatarStageContent {
         let layers = zip(garments, built.garments).map { garment, built -> AvatarGarmentLayer in
             var mesh = built
             if !mesh.backTriangles.isEmpty {
-                mesh.uvs = GarmentPhotoMapping.uvs(for: mesh, photoSpans: AvatarGarmentTexture.photoSpans(of: garment.1))
+                mesh.uvs = GarmentPhotoMapping.uvs(for: mesh, photoSpans: AvatarGarmentTexture.photoSpans(of: garment.1),
+                                                   wrapsAround: wraps && garment.0.photoWrapsAround)
             }
             let prepared = AvatarGarmentTexture.prepare(garment.1)
             return AvatarGarmentLayer(id: UUID(), cut: garment.0, mesh: mesh, texture: prepared.image, colour: prepared.colour)
@@ -82,12 +137,16 @@ extension AvatarRenderingTests {
         return AvatarStageContent(body: built.body, bareBody: built.bareBody, garments: layers, computeMilliseconds: 0)
     }
 
+    /// Tiles on an opaque page-coloured background (snapshots can carry alpha).
     static func compose(_ rows: [[UIImage]], tile: CGSize) -> UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
+        format.opaque = true
         let columns = rows.map(\.count).max() ?? 0
         let size = CGSize(width: tile.width * CGFloat(columns), height: tile.height * CGFloat(rows.count))
-        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
+            matrixBackground.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
             for (r, row) in rows.enumerated() {
                 for (c, image) in row.enumerated() {
                     image.draw(in: CGRect(x: CGFloat(c) * tile.width, y: CGFloat(r) * tile.height, width: tile.width, height: tile.height))

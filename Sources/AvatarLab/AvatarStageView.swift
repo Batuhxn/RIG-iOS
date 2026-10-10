@@ -57,6 +57,13 @@ struct AvatarStageStyle: Equatable, Sendable {
     var fabricInterior = true
     /// A soft contact shadow under the feet (3D only).
     var groundShadow = true
+    /// Studio light levels (used when `studioLight` is on).
+    var environmentIntensity: Float = 0.8
+    var keyIntensity: Float = 750
+    /// Soft shadows from the key light: a sleeve on the arm, a hem on the trousers.
+    var keyShadows = false
+    /// The mannequin's albedo (sRGB). Dress-form white by default.
+    var mannequin = SIMD3<Float>(0.93, 0.92, 0.90)
 
     static let current = AvatarStageStyle()
     static let engineV1 = AvatarStageStyle(softSeam: false, studioLight: false, fabricInterior: false, groundShadow: false)
@@ -89,12 +96,22 @@ final class AvatarStageCoordinator {
         let key = SCNNode()
         key.light = SCNLight()
         key.light?.type = .directional
-        key.light?.intensity = style.studioLight ? 650 : 900
+        key.light?.intensity = style.studioLight ? CGFloat(style.keyIntensity) : 900
         key.eulerAngles = SCNVector3(-0.5, 0.45, 0)
+        if style.keyShadows, let light = key.light {
+            light.castsShadow = true
+            light.shadowMode = .deferred
+            light.shadowMapSize = CGSize(width: 2048, height: 2048)
+            light.shadowSampleCount = 16
+            light.shadowRadius = 6
+            light.shadowColor = UIColor(white: 0, alpha: 0.32)
+            light.automaticallyAdjustsShadowProjection = true
+            light.shadowBias = 0.02
+        }
         scene.rootNode.addChildNode(key)
         if style.studioLight {
             scene.lightingEnvironment.contents = Self.studioEnvironment
-            scene.lightingEnvironment.intensity = 1.1
+            scene.lightingEnvironment.intensity = CGFloat(style.environmentIntensity)
         } else {
             let fill = SCNNode()
             fill.light = SCNLight()
@@ -140,7 +157,7 @@ final class AvatarStageCoordinator {
         // SwiftUI updates the view for unrelated state too; only rebuild on new geometry.
         if let shown, shown.content == content.id, shown.mode == mode { return }
         shown = (content.id, mode)
-        let body = node(for: mode == .flat2D ? (content.bareBody ?? content.body) : content.body, materials: [Self.skinMaterial])
+        let body = node(for: mode == .flat2D ? (content.bareBody ?? content.body) : content.body, materials: [skinMaterial])
         bodyNode?.removeFromParentNode()
         avatarNode.addChildNode(body)
         bodyNode = body
@@ -219,10 +236,11 @@ final class AvatarStageCoordinator {
         return renderer.snapshot(atTime: 0, with: size, antialiasingMode: .multisampling4X)
     }
 
-    private static let skinMaterial: SCNMaterial = {
+    private lazy var skinMaterial: SCNMaterial = {
         let material = SCNMaterial()
         material.lightingModel = .physicallyBased
-        material.diffuse.contents = UIColor(red: 0.93, green: 0.92, blue: 0.90, alpha: 1)  // matte dress-form white, not a skin tone
+        let tone = style.mannequin
+        material.diffuse.contents = UIColor(red: CGFloat(tone.x), green: CGFloat(tone.y), blue: CGFloat(tone.z), alpha: 1)  // a dress form, not a skin tone
         material.roughness.contents = 0.7
         material.metalness.contents = 0.0
         return material

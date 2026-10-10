@@ -304,7 +304,7 @@ final class AvatarLabModel {
                 var mesh = built
                 // Template garments map the photo's outline onto the front panel's outline.
                 if !mesh.backTriangles.isEmpty, let spans = self.textures[garment.id]?.spans, !spans.isEmpty {
-                    mesh.uvs = GarmentPhotoMapping.uvs(for: mesh, photoSpans: spans)
+                    mesh.uvs = GarmentPhotoMapping.uvs(for: mesh, photoSpans: spans, wrapsAround: garment.cut.photoWrapsAround)
                 }
                 return AvatarGarmentLayer(id: garment.id, cut: garment.cut, mesh: mesh,
                                    texture: self.textures[garment.id]?.image,
