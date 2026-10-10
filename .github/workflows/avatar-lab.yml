@@ -12,10 +12,8 @@ on:
   push:
     branches: [polish/rig-atelier]
 
-# contents: write only so the review renders can be pushed to their own branch
-# (polish/rig-atelier-renders); nothing else is written.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: avatar-lab-${{ github.ref }}
@@ -105,42 +103,14 @@ jobs:
             echo "::notice title=snap-${name}::${data}"
           done
 
-      - name: Publish review renders to polish/rig-atelier-renders
-        if: always() && github.ref == 'refs/heads/polish/rig-atelier'
-        env:
-          RUN: ${{ github.run_id }}
-          SHA: ${{ github.sha }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          SRC="$GITHUB_WORKSPACE/build/renders"
-          if [ -z "$(ls -A "$SRC" 2>/dev/null)" ] && [ -d build/RIGTests.xcresult ]; then
-            # Fallback: the attachments in the result bundle (Xcode 16 xcresulttool).
-            mkdir -p build/attachments
-            xcrun xcresulttool export attachments --path build/RIGTests.xcresult --output-path build/attachments || true
-            find build/attachments -name '*.png' -exec cp {} "$SRC"/ \; 2>/dev/null || true
-          fi
-          [ -n "$(ls -A "$SRC" 2>/dev/null)" ] || { echo "no renders"; exit 0; }
-          ls -la "$SRC"
-          PUB="$RUNNER_TEMP/renders-branch"
-          git init -q "$PUB"
-          cd "$PUB"
-          git config user.name "rig-ci"
-          git config user.email "rig-ci@users.noreply.github.com"
-          git remote add origin "https://x-access-token:${TOKEN}@github.com/${REPO}.git"
-          if git fetch -q --depth 1 origin polish/rig-atelier-renders; then
-            git checkout -q -b polish/rig-atelier-renders FETCH_HEAD
-          else
-            git checkout -q --orphan polish/rig-atelier-renders
-          fi
-          mkdir -p "run-$RUN"
-          cp "$SRC"/* "run-$RUN"/
-          echo "$SHA" > "run-$RUN/SOURCE_COMMIT"
-          git add "run-$RUN"
-          git commit -q -m "Review renders: run $RUN ($SHA)"
-          git push -q origin HEAD:polish/rig-atelier-renders
-          echo "::notice title=renders::run-$RUN on polish/rig-atelier-renders"
+      - name: Upload review renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: avatar-lab-renders
+          path: build/renders/*.png
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload results
         if: always()
@@ -152,3 +122,73 @@ jobs:
             build/avatar-lab.log
           if-no-files-found: ignore
           retention-days: 7
+
+  # Full-size review renders as public annotations (no write access, no sign-in
+  # needed to read them): Tools/CI/render_chunks.py. 50 chunks fit in each job.
+  renders:
+    name: Review renders (${{ matrix.part }})
+    needs: avatar
+    if: always()
+    runs-on: macos-15
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3, 4, 5]
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Download the renders
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: avatar-lab-renders
+          path: renders
+
+      - name: Encode this part
+        if: steps.download.outcome == 'success'
+        run: |
+          python3 -m pip install --quiet --break-system-packages pillow || python3 -m pip install --quiet --user pillow
+          python3 Tools/CI/render_chunks.py split renders ${{ matrix.part }} 6 chunks.txt
+
+      - name: Render chunks (1)
+        if: always()
+        run: |
+          [ -f chunks.txt ] || exit 0
+          sed -n '1,10p' chunks.txt | while read -r name data; do
+            echo "::notice title=r-${name}::${data}"
+          done
+
+      - name: Render chunks (2)
+        if: always()
+        run: |
+          [ -f chunks.txt ] || exit 0
+          sed -n '11,20p' chunks.txt | while read -r name data; do
+            echo "::notice title=r-${name}::${data}"
+          done
+
+      - name: Render chunks (3)
+        if: always()
+        run: |
+          [ -f chunks.txt ] || exit 0
+          sed -n '21,30p' chunks.txt | while read -r name data; do
+            echo "::notice title=r-${name}::${data}"
+          done
+
+      - name: Render chunks (4)
+        if: always()
+        run: |
+          [ -f chunks.txt ] || exit 0
+          sed -n '31,40p' chunks.txt | while read -r name data; do
+            echo "::notice title=r-${name}::${data}"
+          done
+
+      - name: Render chunks (5)
+        if: always()
+        run: |
+          [ -f chunks.txt ] || exit 0
+          sed -n '41,50p' chunks.txt | while read -r name data; do
+            echo "::notice title=r-${name}::${data}"
+          done

@@ -37,7 +37,7 @@ extension AvatarRenderingTests {
         ]
         let jeans = Self.trousersCutout()
         let styles: [(String, AvatarStageStyle)] = [("v1", .engineV1), ("atelier", .current)]
-        let tile = CGSize(width: 200, height: 400)
+        let tile = CGSize(width: 180, height: 360)
         var timings: [Int] = []
         for (fabricName, tee, dress) in fabrics {
             let outfits: [(String, [(AvatarGarmentCut, UIImage)])] = [

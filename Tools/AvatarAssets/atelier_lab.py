@@ -106,13 +106,46 @@ def deform(t, P, BN, smoothing=2, topo=None):
     return out
 
 
-SHAPES = {}
+# AvatarControl -> morph targets (Sources/AvatarLab/Core/AvatarBodyShape.swift).
+CONTROL_TARGETS = {
+    "shoulders": "shoulders", "waist": "waist", "hips": "hips", "legLength": "leglength",
+    "height": "height", "torsoLength": "torsolength", "bust": "bust", "underbust": "underbust",
+    "stomach": "stomach", "seat": "seat", "thighs": "thighs", "armLength": "armlength",
+    "upperArms": "upperarms", "overall": "fullness",
+}
+
+# AvatarStartingSilhouette.all plus the review grids' extreme body.
+SHAPES = {
+    "silhouette-1": {},
+    "silhouette-2": {"waist": -0.4, "hips": 0.5, "seat": 0.4, "bust": 0.3, "shoulders": -0.2, "thighs": 0.3},
+    "silhouette-3": {"shoulders": 0.5, "upperBody": 0.4, "waist": 0.2, "hips": -0.3, "bust": -0.6, "seat": -0.3},
+    "extreme": {"hips": 1, "waist": -1, "bust": 1, "shoulders": 1, "overall": 0.8},
+}
 
 
-def shapes(targets):
-    """Silhouette presets are defined in Swift (AvatarStartingSilhouette); here the
-    matrix uses the neutral body and the report's extreme body via raw targets."""
-    return {"neutral": {}}
+def target_weights(shape):
+    w = {}
+    for control, value in shape.items():
+        if value == 0:
+            continue
+        side = "decr" if value < 0 else "incr"
+        if control == "upperBody":
+            parts = [("underbust", 1.0), ("bust", 0.5)]
+        else:
+            parts = [(CONTROL_TARGETS[control], 1.0)]
+        for base, per in parts:
+            key = f"{base}-{side}"
+            w[key] = w.get(key, 0.0) + abs(value) * per
+    return w
+
+
+def morphed(P0, targets, shape):
+    P = P0.copy()
+    for name, weight in target_weights(shape).items():
+        if name in targets:
+            idx, d = targets[name]
+            P[idx] += weight * d
+    return P
 
 
 def check():
