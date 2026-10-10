@@ -15,9 +15,11 @@ helper-skirt topology, so no third-party garment asset is distributed:
    mesh so the shaped regions meet without folds.
 3. Panels: faces are split at the side seams into a front panel (which gets
    the garment photo) and a back panel (an explicitly unknown region).
-3b. Clear: garment vertices left inside the skin (the armholes cut into the
-   arm root at the armpit; Atelier review) are moved just outside it, along
-   the closest skin face's normal, before binding.
+3b. Clear and unfold: garment vertices left inside the skin (the armholes cut
+   into the arm root at the armpit; Atelier review) are moved just outside it,
+   along the closest skin face's normal, and creases where the fabric folds
+   back over itself (armpits, crotch: neighbouring faces more than 75 degrees
+   apart) are relaxed, alternating until both hold, before binding.
 4. Bind (.mhclo-style, implemented independently): each garment vertex is
    tied to its nearest body triangle by barycentric weights plus an offset in
    that triangle's local frame, so it follows every body morph.
@@ -551,6 +553,68 @@ def clear_of_body(pos, P, body_tris, below=0.003, target=0.007, passes=4):
     return {k: X[i] for i, k in enumerate(keys)}, int(moved.sum())
 
 
+def folds(pos, tris, limit_deg):
+    """Vertices of edges whose two faces differ by more than `limit_deg`."""
+    T = np.array(tris).reshape(-1, 3)
+    fn = {}
+    for f, (a, b, c) in enumerate(T):
+        n = np.cross(pos[b] - pos[a], pos[c] - pos[a])
+        fn[f] = n / (np.linalg.norm(n) + 1e-12)
+    edges = {}
+    for f, (a, b, c) in enumerate(T):
+        for u, v in ((a, b), (b, c), (c, a)):
+            edges.setdefault((min(u, v), max(u, v)), []).append(f)
+    limit = np.cos(np.radians(limit_deg))
+    bad = set()
+    for (u, v), fs in edges.items():
+        if len(fs) == 2 and fn[fs[0]] @ fn[fs[1]] < limit:
+            for f in fs:
+                bad.update(int(x) for x in T[f])
+    return bad
+
+
+def unfold_and_clear(pos, tris, P, body_tris, limit_deg=75.0, rounds=30):
+    """Alternates skin clearance with Laplacian relaxation of folded creases (and
+    their one-ring) until neither is needed. Returns positions and counts."""
+    nb = {}
+    T = np.array(tris).reshape(-1, 3)
+    for a, b, c in T:
+        for u, v in ((a, b), (b, c), (c, a)):
+            nb.setdefault(int(u), set()).add(int(v))
+            nb.setdefault(int(v), set()).add(int(u))
+    uses = {}
+    for a, b, c in T:
+        for u, v in ((a, b), (b, c), (c, a)):
+            key = (min(u, v), max(u, v))
+            uses[key] = uses.get(key, 0) + 1
+    boundary_nb = {}
+    for (u, v), k in uses.items():
+        if k == 1:
+            boundary_nb.setdefault(int(u), set()).add(int(v))
+            boundary_nb.setdefault(int(v), set()).add(int(u))
+    cleared_total, relaxed = 0, set()
+    for _ in range(rounds):
+        pos, cleared = clear_of_body(pos, P, body_tris)
+        cleared_total += cleared
+        bad = folds(pos, tris, limit_deg)
+        if not bad:
+            break
+        region = set(bad)
+        for v in bad:
+            region |= nb.get(v, set())
+        relaxed |= region
+        moved = dict(pos)
+        for v in region:
+            # Open edges (hems, armholes) relax along the edge only, so they stay lines.
+            ring = boundary_nb.get(v) or nb.get(v)
+            centre = np.mean([pos[u] for u in ring], axis=0)
+            moved[v] = pos[v] + 0.5 * (centre - pos[v])
+        pos = moved
+    pos, cleared = clear_of_body(pos, P, body_tris)
+    cleared_total += cleared
+    return pos, cleared_total, len(relaxed), len(folds(pos, tris, limit_deg))
+
+
 def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body, hide_region, sleeve_axes=None):
     used = sorted(set(sel_tris))
     new = {v: new.get(v, tuple(P[v])) for v in used}
@@ -571,7 +635,7 @@ def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body
         canonical.append(first.setdefault(src, k))
 
     pos = {v: np.asarray(new.get(v, P[v])) for v in used}
-    pos, cleared = clear_of_body(pos, P, body_tris)
+    pos, cleared, relaxed, folded = unfold_and_clear(pos, sel_tris, P, body_tris)
     binding = bind(P, body_tris, body_normals, [pos[src] for src, _ in verts], allowed_body)
 
     # Front photo projection over the front panel's own bounds; the back uses the
@@ -597,7 +661,7 @@ def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body
     return {
         "name": name, "verts": verts, "canonical": canonical, "binding": binding, "uvs": uvs,
         "front": front_idx, "back": back_idx, "hidden": hidden,
-        "rest": {v: pos[v] for v in used}, "cleared": cleared,
+        "rest": {v: pos[v] for v in used}, "cleared": cleared, "relaxed": relaxed, "folded": folded,
     }
 
 
@@ -693,6 +757,7 @@ def main():
         report[t["name"]] = {"vertices": len(t["verts"]), "front_tris": len(t["front"]) // 3,
                              "back_tris": len(t["back"]) // 3, "hidden_body_tris": len(t["hidden"]),
                              "vertices_cleared_of_skin": t["cleared"],
+                             "vertices_relaxed_out_of_folds": t["relaxed"], "folded_vertices_left": t["folded"],
                              "rest_reconstruction_error_m": float(err)}
         if preview:
             preview.mkdir(parents=True, exist_ok=True)
