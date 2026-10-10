@@ -250,3 +250,37 @@ def penetration():
 
 if __name__ == "__main__" and sys.argv[1] == "penetration":
     penetration()
+
+
+def skin_through(shapes=None, margin=0.001):
+    """Visible skin poking out through a garment: body vertices of visible triangles whose
+    closest garment point lies away from the garment's open edges, yet which sit
+    outside the garment surface (by more than `margin`)."""
+    from scipy.spatial import cKDTree
+    P0, subs, targets = pa.read_asset(str(BODY))
+    P0 = P0.astype(np.float64)
+    T = subs["body"].astype(np.int64).reshape(-1, 3)
+    for shape_name in (shapes or SHAPES):
+        P = morphed(P0, targets, SHAPES[shape_name])
+        BN = vertex_normals(P, T)
+        for name, t in read_templates().items():
+            g = deform(t, P, BN)
+            F = np.concatenate([t["front"], t["back"]])
+            nb, boundary = topology(t)
+            edge = boundary[t["canonical"]]
+            hidden = np.zeros(len(T), bool); hidden[t["hidden"]] = True
+            vis = np.unique(T[~hidden].reshape(-1))
+            near = cKDTree(g).query(P[vis], k=1)
+            cand = vis[near[0] < 0.04]
+            if len(cand) == 0:
+                print(shape_name, name, 0); continue
+            sd, tri, q = signed_distance(P[cand], g, F)
+            # the closest garment face must not touch an open edge (necklines, hems, cuffs)
+            interior = ~edge[F[tri]].any(axis=1)
+            # also skip skin far from any garment vertex ring: require distance < 2 cm
+            out = (sd > margin) & interior & (np.abs(sd) < 0.02)
+            print(f"{shape_name:13s} {name:9s} visible skin outside the garment: {out.sum():4d}  worst {sd[out].max()*1000 if out.any() else 0:6.1f} mm", np.round(P[cand][out].mean(axis=0), 2) if out.any() else "")
+
+
+if __name__ == "__main__" and sys.argv[1] == "skinthrough":
+    skin_through()

@@ -70,21 +70,19 @@ enum GarmentPhotoMapping {
             lo[b] = pointwiseMin(lo[b], SIMD2(p.x, p.z))
             hi[b] = pointwiseMax(hi[b], SIMD2(p.x, p.z))
         }
-        var centres: [SIMD2<Float>?] = (0..<bins).map { lo[$0].x.isFinite && hi[$0].x.isFinite ? (lo[$0] + hi[$0]) / 2 : nil }
-        // Empty bins take the nearest filled one; then a light smoothing along the height.
-        guard let firstFilled = centres.compactMap({ $0 }).first else { return nil }
-        var last = firstFilled
-        for b in 0..<bins { if let c = centres[b] { last = c } else { centres[b] = last } }
-        let raw = centres.map { $0 ?? firstFilled }
-        let axis = raw.indices.map { b -> SIMD2<Float> in
-            let window = raw[max(0, b - 2)...min(bins - 1, b + 2)]
-            return window.reduce(.zero, +) / Float(window.count)
+        // The axis is one straight line fitted through the cross-section centres: a centre
+        // that follows every bulge (a full seat moves it back at the hips) kinked every
+        // stripe at that height on the extreme review body.
+        var sy: Float = 0, syy: Float = 0, sc = SIMD2<Float>.zero, syc = SIMD2<Float>.zero, count: Float = 0
+        for b in 0..<bins where lo[b].x.isFinite && hi[b].x.isFinite {
+            let y = Float(b), c = (lo[b] + hi[b]) / 2
+            sy += y; syy += y * y; sc += c; syc += y * c; count += 1
         }
-        func centre(_ y: Float) -> SIMD2<Float> {
-            let f = bin(y)
-            let b0 = Int(f), b1 = min(b0 + 1, bins - 1), w = f - Float(b0)
-            return axis[b0] * (1 - w) + axis[b1] * w
-        }
+        guard count >= 2 else { return nil }
+        let denominator = count * syy - sy * sy
+        let slope = denominator > 1e-6 ? (count * syc - sy * sc) / denominator : .zero
+        let intercept = (sc - slope * sy) / count
+        func centre(_ y: Float) -> SIMD2<Float> { intercept + slope * bin(y) }
         func angle(_ p: SIMD3<Float>) -> Float {
             let c = centre(p.y)
             return atan2(p.x - c.x, p.z - c.y)
@@ -98,17 +96,26 @@ enum GarmentPhotoMapping {
         return { p in (angle(p) + half) / (2 * half) }
     }
 
-    /// Empty rows take the nearest non-empty row; nil when every row is empty.
+    /// Empty rows take the nearest non-empty row (ties: the one above); nil when every
+    /// row is empty.
     private static func fill(_ spans: [ClosedRange<Float>?]) -> [ClosedRange<Float>]? {
         fillPairs(spans.map { $0.map { (lo: $0.lowerBound, hi: $0.upperBound) } })?.map { $0.lo...max($0.lo, $0.hi) }
     }
 
     private static func fillPairs(_ rows: [(lo: Float, hi: Float)?]) -> [(lo: Float, hi: Float)]? {
-        guard var last = rows.compactMap({ $0 }).first else { return nil }
+        let filled = rows.indices.filter { rows[$0] != nil }
+        guard !filled.isEmpty else { return nil }
         var out: [(lo: Float, hi: Float)] = []
-        for r in rows {
-            if let r { last = r }
-            out.append(last)
+        var next = 0
+        for i in rows.indices {
+            if let r = rows[i] {
+                out.append(r)
+                continue
+            }
+            while next + 1 < filled.count, filled[next + 1] < i { next += 1 }
+            var source = filled[next]
+            if source < i, next + 1 < filled.count, filled[next + 1] - i < i - source { source = filled[next + 1] }
+            out.append(rows[source]!)
         }
         return out
     }

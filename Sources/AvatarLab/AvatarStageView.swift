@@ -57,16 +57,22 @@ struct AvatarStageStyle: Equatable, Sendable {
     var fabricInterior = true
     /// A soft contact shadow under the feet (3D only).
     var groundShadow = true
-    /// Studio light levels (used when `studioLight` is on).
-    var environmentIntensity: Float = 0.8
-    var keyIntensity: Float = 750
+    /// Studio light levels (used when `studioLight` is on). Chosen from the lighting
+    /// study (variant D): a soft environment and a clear key light give the fabric form
+    /// without dramatic shadows.
+    var environmentIntensity: Float = 0.6
+    var keyIntensity: Float = 900
     /// Soft shadows from the key light: a sleeve on the arm, a hem on the trousers.
-    var keyShadows = false
-    /// The mannequin's albedo (sRGB). Dress-form white by default.
-    var mannequin = SIMD3<Float>(0.93, 0.92, 0.90)
+    var keyShadows = true
+    /// The mannequin's albedo (sRGB): a light warm grey dress form, so white and cream
+    /// garments stay visible against it (on the earlier near-white form the sides of a
+    /// red-and-white tee disappeared).
+    var mannequin = SIMD3<Float>(0.80, 0.78, 0.75)
 
     static let current = AvatarStageStyle()
-    static let engineV1 = AvatarStageStyle(softSeam: false, studioLight: false, fabricInterior: false, groundShadow: false)
+    static let engineV1 = AvatarStageStyle(softSeam: false, studioLight: false, fabricInterior: false, groundShadow: false,
+                                           environmentIntensity: 1.1, keyIntensity: 650, keyShadows: false,
+                                           mannequin: SIMD3(0.93, 0.92, 0.90))
 }
 
 /// Owns the SceneKit scene; rebuilt geometry is swapped in on every update.
@@ -187,22 +193,32 @@ final class AvatarStageCoordinator {
             // The back panel is what a single front photo cannot show: it gets the
             // garment's own main colour, slightly shaded, never an invented print.
             let back = Self.fabric(unknown)
+            var seam: [Float]?
             if isTemplate, style.softSeam {
+                seam = Self.seamWeights(layer.mesh)
+                front.roughness.contents = Self.seamRamp
+                front.roughness.mappingChannel = 1
+                front.roughness.wrapS = .clamp
                 front.shaderModifiers = [.surface: Self.softSeamModifier(unknown)]
             }
-            let garment = node(for: layer.mesh, materials: [front, back])
+            let garment = node(for: layer.mesh, materials: [front, back], second: seam)
             garment.renderingOrder = layer.cut.layer
             avatarNode.addChildNode(garment)
             garmentNodes.append(garment)
             // Template triangles wind outward (GarmentDeformer), so culling is safe for them.
-            if isTemplate, style.fabricInterior, let geometry = garment.geometry?.copy() as? SCNGeometry {
+            // The inside is its own surface: reversed triangles and normals pointing in, so
+            // it is lit as the inside of the fabric rather than as a face turned away
+            // (which rendered almost black).
+            if isTemplate, style.fabricInterior {
                 front.isDoubleSided = false
                 back.isDoubleSided = false
                 let inside = Self.fabric(Self.interior(unknown))
                 inside.isDoubleSided = false
-                inside.cullMode = .front
-                geometry.materials = [inside, inside]
-                let lining = SCNNode(geometry: geometry)
+                var inner = layer.mesh
+                inner.normals = inner.normals.map { -$0 }
+                inner.triangles = GarmentDeformer.reversed(inner.triangles + inner.backTriangles)
+                inner.backTriangles = []
+                let lining = node(for: inner, materials: [inside])
                 lining.renderingOrder = layer.cut.layer
                 avatarNode.addChildNode(lining)
                 garmentNodes.append(lining)
@@ -223,11 +239,11 @@ final class AvatarStageCoordinator {
         eye.camera = camera
         eye.position = SCNVector3(0, 0.88, 4)
         scene.rootNode.addChildNode(eye)
-        let background = scene.background.contents
+        let previousBackground = scene.background.contents
         scene.background.contents = background
         defer {
             eye.removeFromParentNode()
-            scene.background.contents = background
+            scene.background.contents = previousBackground
             avatarNode.eulerAngles = SCNVector3Zero
         }
         let renderer = SCNRenderer(device: MTLCreateSystemDefaultDevice(), options: nil)
@@ -289,11 +305,48 @@ final class AvatarStageCoordinator {
         let band = String(format: "%.3f, %.3f", seamBand.lowerBound, seamBand.upperBound)
         return """
         #pragma body
+        float seam = _surface.roughness;
+        _surface.roughness = 0.85;
         float3 garmentNormal = normalize((scn_node.inverseModelViewTransform * float4(_surface.normal, 0.0)).xyz);
-        float photo = smoothstep(\(band), garmentNormal.z);
+        float photo = smoothstep(\(band), garmentNormal.z) * seam;
         _surface.diffuse.rgb = mix(\(colour), _surface.diffuse.rgb, photo);
         """
     }
+
+    /// Distance from the photo panel's material boundary, as a 0...1 weight per vertex:
+    /// 0 on every vertex the back panel also uses, rising smoothly over `seamWidth`.
+    /// With the angle band alone, vertices on the boundary could keep the full photo
+    /// beside plain-colour faces (Codex review: 27 on the neutral tee).
+    static let seamWidth: Float = 0.035
+
+    static func seamWeights(_ mesh: AvatarMesh) -> [Float] {
+        let backUsed = Set(mesh.backTriangles.map(Int.init))
+        let backPoints = backUsed.map { mesh.positions[$0] }
+        guard !backPoints.isEmpty else { return [Float](repeating: 1, count: mesh.positions.count) }
+        let grid = HashGrid(points: backPoints, cell: seamWidth)
+        return mesh.positions.indices.map { k in
+            if backUsed.contains(k) { return 0 }
+            guard let j = grid.nearest(to: mesh.positions[k], within: seamWidth, in: backPoints) else { return 1 }
+            let d = mesh.positions[k] - backPoints[j]
+            let s = min((d * d).sum().squareRoot() / seamWidth, 1)
+            return s * s * (3 - 2 * s)
+        }
+    }
+
+    /// Identity ramp: the roughness slot samples it with channel 1, so the shader reads
+    /// the seam weight back (and then sets the real roughness).
+    static let seamRamp: UIImage = {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        let size = CGSize(width: 256, height: 1)
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
+            for x in 0..<256 {
+                UIColor(white: CGFloat(x) / 255, alpha: 1).setFill()
+                context.fill(CGRect(x: x, y: 0, width: 1, height: 1))
+            }
+        }
+    }()
 
     /// Soft studio light for image-based lighting: bright overhead, a light horizon and
     /// a darker floor, the same all the way round (no direction to get wrong).
@@ -341,7 +394,9 @@ final class AvatarStageCoordinator {
 
     /// One geometry; the back panel, when there is one, is a second element with its
     /// own material.
-    private func node(for mesh: AvatarMesh, materials: [SCNMaterial]) -> SCNNode {
+    /// `second`, when given, is a per-vertex value carried in texture channel 1 (the
+    /// soft seam's distance weight).
+    private func node(for mesh: AvatarMesh, materials: [SCNMaterial], second: [Float]? = nil) -> SCNNode {
         let vertices = mesh.positions.map { SCNVector3($0.x, $0.y, $0.z) }
         let normals = mesh.normals.map { SCNVector3($0.x, $0.y, $0.z) }
         let uvs = mesh.uvs.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) }
@@ -349,11 +404,12 @@ final class AvatarStageCoordinator {
         if !mesh.backTriangles.isEmpty {
             elements.append(SCNGeometryElement(indices: mesh.backTriangles, primitiveType: .triangles))
         }
-        let geometry = SCNGeometry(sources: [
-            SCNGeometrySource(vertices: vertices),
-            SCNGeometrySource(normals: normals),
-            SCNGeometrySource(textureCoordinates: uvs),
-        ], elements: elements)
+        var sources = [SCNGeometrySource(vertices: vertices), SCNGeometrySource(normals: normals),
+                       SCNGeometrySource(textureCoordinates: uvs)]
+        if let second, second.count == mesh.positions.count {
+            sources.append(SCNGeometrySource(textureCoordinates: second.map { CGPoint(x: CGFloat($0), y: 0.5) }))
+        }
+        let geometry = SCNGeometry(sources: sources, elements: elements)
         geometry.materials = Array(materials.prefix(elements.count))
         return SCNNode(geometry: geometry)
     }

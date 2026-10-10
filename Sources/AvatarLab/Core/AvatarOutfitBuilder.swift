@@ -55,10 +55,10 @@ struct AvatarOutfitBuilder: Sendable {
 
     /// Layer guard: every garment sits at least `gap` outside each garment on a lower layer
     /// (a body-hugging coat shell used to pass through a relaxed tee; Codex review).
-    /// Vertices are pushed out along their own normal, measured against the closest point
-    /// on the inner garment's triangles within `reach` (not only its vertices, which
-    /// missed the inside of large triangles; Atelier review). Normals of a moved garment
-    /// are recomputed from its final positions.
+    /// Two clearances are enforced: above the closest point of the inner garment's
+    /// surface, so the inside of a large triangle counts (Atelier review), and along the
+    /// vertex's own normal from the nearest inner vertex, as before. Only vertices that
+    /// moved are checked again. Normals of a moved garment are recomputed at the end.
     static func layer(_ garments: inout [AvatarMesh], cuts: [AvatarGarmentCut], gap: Float = 0.006, reach: Float = 0.06) {
         let order = cuts.indices.sorted { cuts[$0].layer < cuts[$1].layer }
         func yRange(_ m: AvatarMesh) -> ClosedRange<Float> {
@@ -71,25 +71,37 @@ struct AvatarOutfitBuilder: Sendable {
             for inner in order[..<rank] where cuts[inner].layer < cuts[outer].layer {
                 // Garments that cannot touch (shoes and a tee) are skipped.
                 guard yRange(garments[inner]).overlaps(yRange(garments[outer])) else { continue }
-                let surface = TriangleGrid(mesh: garments[inner], cell: 0.03)
+                let innerPoints = garments[inner].positions
+                var surface = TriangleGrid(mesh: garments[inner], cell: reach)
+                let points = HashGrid(points: innerPoints, cell: reach / 2)
                 // A push can bring a different inner triangle into play; a few passes settle it.
-                for _ in 0..<6 {
-                    var moved = false
-                    for k in mesh.positions.indices {
-                        let p = mesh.positions[k]
-                        guard let hit = surface.closest(to: p, within: reach) else { continue }
+                var pending = Array(mesh.positions.indices)
+                for _ in 0..<6 where !pending.isEmpty {
+                    var moved: [Int] = []
+                    for k in pending {
+                        var p = mesh.positions[k]
                         let n = mesh.normals[k]
-                        // Height above the inner surface, along the inner surface's normal.
-                        let depth = ((p - hit.point) * hit.normal).sum()
-                        if depth < gap {
-                            // Moving along our own normal, which may be tilted against theirs.
-                            let along = max((n * hit.normal).sum(), 0.25)
-                            mesh.positions[k] = p + ((gap - depth) / along) * n
-                            moved = true
+                        if let hit = surface.closest(to: p, within: reach) {
+                            let depth = ((p - hit.point) * hit.normal).sum()
+                            if depth < gap {
+                                // Along our own normal while it roughly agrees with theirs; otherwise
+                                // straight out of their surface (a perpendicular or opposed normal
+                                // slid vertices sideways or deeper; Codex review).
+                                let along = (n * hit.normal).sum()
+                                p += (gap - depth) * (along >= 0.5 ? n / along : hit.normal)
+                            }
+                        }
+                        if let j = points.nearest(to: p, within: reach, in: innerPoints) {
+                            let depth = ((p - innerPoints[j]) * n).sum()
+                            if depth < gap { p += (gap - depth) * n }
+                        }
+                        if p != mesh.positions[k] {
+                            mesh.positions[k] = p
+                            moved.append(k)
                         }
                     }
-                    if !moved { break }
-                    movedAny = true
+                    if !moved.isEmpty { movedAny = true }
+                    pending = moved
                 }
             }
             if movedAny { mesh.normals = Self.recomputedNormals(mesh) }
@@ -140,9 +152,16 @@ struct AvatarOutfitBuilder: Sendable {
 /// queries against a surface (the layer guard).
 struct TriangleGrid {
     private var cells: [SIMD3<Int32>: [Int32]] = [:]
+    /// Triangles spanning more than `maxCells` cells are checked on every query instead
+    /// of being bucketed, so one huge triangle cannot make construction explode.
+    private var oversized: [Int32] = []
+    private static let maxCells = 512
     private let positions: [SIMD3<Float>]
     private let normals: [SIMD3<Float>]
     private let corners: [SIMD3<Int32>]
+    /// Per-triangle mark of the last query that tested it (no per-query set).
+    private var stamps: [UInt32]
+    private var query: UInt32 = 0
     let cell: Float
 
     init(mesh: AvatarMesh, cell: Float) {
@@ -158,9 +177,15 @@ struct TriangleGrid {
             t += 3
         }
         self.corners = corners
+        stamps = [UInt32](repeating: 0, count: corners.count)
         for (index, tri) in corners.enumerated() {
             let a = positions[Int(tri.x)], b = positions[Int(tri.y)], c = positions[Int(tri.z)]
             let lo = Self.key(pointwiseMin(a, pointwiseMin(b, c)), cell), hi = Self.key(pointwiseMax(a, pointwiseMax(b, c)), cell)
+            let span = (Int(hi.x) - Int(lo.x) + 1) * (Int(hi.y) - Int(lo.y) + 1) * (Int(hi.z) - Int(lo.z) + 1)
+            if span > Self.maxCells {
+                oversized.append(Int32(index))
+                continue
+            }
             for x in lo.x...hi.x {
                 for y in lo.y...hi.y {
                     for z in lo.z...hi.z { cells[SIMD3(x, y, z), default: []].append(Int32(index)) }
@@ -175,29 +200,34 @@ struct TriangleGrid {
 
     /// The closest point on any triangle within `radius`, with that triangle's normal
     /// oriented like the mesh's vertex normals there.
-    func closest(to p: SIMD3<Float>, within radius: Float) -> (point: SIMD3<Float>, normal: SIMD3<Float>)? {
+    mutating func closest(to p: SIMD3<Float>, within radius: Float) -> (point: SIMD3<Float>, normal: SIMD3<Float>)? {
         let lo = Self.key(p - radius, cell), hi = Self.key(p + radius, cell)
+        query &+= 1
         var best: (point: SIMD3<Float>, normal: SIMD3<Float>)?
         var bestDistance = radius * radius
-        var seen = Set<Int32>()
+        func test(_ index: Int32) {
+            let t = Int(index)
+            guard stamps[t] != query else { return }
+            stamps[t] = query
+            let tri = corners[t]
+            let a = positions[Int(tri.x)], b = positions[Int(tri.y)], c = positions[Int(tri.z)]
+            let q = Self.closestPoint(p, a, b, c)
+            let d = p - q
+            let distance = (d * d).sum()
+            guard distance < bestDistance else { return }
+            var n = avatarCross(b - a, c - a)
+            let length = (n * n).sum().squareRoot()
+            guard length > 1e-12 else { return }
+            n /= length
+            if (n * (normals[Int(tri.x)] + normals[Int(tri.y)] + normals[Int(tri.z)])).sum() < 0 { n = -n }
+            bestDistance = distance
+            best = (q, n)
+        }
+        for index in oversized { test(index) }
         for x in lo.x...hi.x {
             for y in lo.y...hi.y {
                 for z in lo.z...hi.z {
-                    for index in cells[SIMD3(x, y, z)] ?? [] where seen.insert(index).inserted {
-                        let tri = corners[Int(index)]
-                        let a = positions[Int(tri.x)], b = positions[Int(tri.y)], c = positions[Int(tri.z)]
-                        let q = Self.closestPoint(p, a, b, c)
-                        let d = p - q
-                        let distance = (d * d).sum()
-                        guard distance < bestDistance else { continue }
-                        var n = avatarCross(b - a, c - a)
-                        let length = (n * n).sum().squareRoot()
-                        guard length > 1e-12 else { continue }
-                        n /= length
-                        if (n * (normals[Int(tri.x)] + normals[Int(tri.y)] + normals[Int(tri.z)])).sum() < 0 { n = -n }
-                        bestDistance = distance
-                        best = (q, n)
-                    }
+                    for index in cells[SIMD3(x, y, z)] ?? [] { test(index) }
                 }
             }
         }
