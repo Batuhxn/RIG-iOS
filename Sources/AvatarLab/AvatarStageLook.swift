@@ -35,8 +35,9 @@ struct AvatarStageStyle: Equatable, Sendable {
     /// necklines), as a turned hem does, so where the fabric ends reads at a glance.
     var hemShading = false
     /// The photo ends in a clean, anti-aliased line along a smooth curve of constant
-    /// surface angle (like a side seam) instead of fading over a band.
-    var crispSeam = false
+    /// surface angle (like a side seam) instead of fading over a band. Chosen after the
+    /// close-ups: the soft fade read as a blur on side views.
+    var crispSeam = true
 
     static let current = AvatarStageStyle()
     static let engineV1 = AvatarStageStyle(softSeam: false, studioLight: false, fabricInterior: false, groundShadow: false,

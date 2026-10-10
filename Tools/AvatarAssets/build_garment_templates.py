@@ -345,6 +345,32 @@ def straighten_hems(new, tris, band=0.035, split_x=False, neckline=0.0):
     return new
 
 
+def smooth_open_edges(P, new, tris, iterations=12):
+    """Taubin smoothing along each open-edge loop (hems, cuffs, necklines, armholes).
+    The cut follows whole quads, so an edge loop is a staircase; once its height is
+    straightened the stairs remain as a horizontal zigzag, which rendered as a
+    sawtooth along necklines and sleeve openings (Atelier close-ups). Only loop
+    vertices move, towards their two loop neighbours."""
+    T = np.array(tris).reshape(-1, 3)
+    uses = {}
+    for a, b, c in T:
+        for u, v in ((a, b), (b, c), (c, a)):
+            key = (min(u, v), max(u, v))
+            uses[key] = uses.get(key, 0) + 1
+    ring = {}
+    for (u, v), k in uses.items():
+        if k == 1:
+            ring.setdefault(int(u), []).append(int(v))
+            ring.setdefault(int(v), []).append(int(u))
+    loop = {v: n for v, n in ring.items() if len(n) == 2}
+    pos = {int(v): np.asarray(new.get(int(v), P[int(v)]), dtype=np.float64) for v in set(T.reshape(-1).tolist()) | set(new)}
+    for _ in range(iterations):
+        for factor in (0.5, -0.53):
+            moved = {v: pos[v] + factor * ((pos[n[0]] + pos[n[1]]) / 2 - pos[v]) for v, n in loop.items()}
+            pos.update(moved)
+    return {v: tuple(pos[v]) for v in pos}
+
+
 def straighten_sleeves(new, tris, axes, band=0.03):
     """Sleeve openings: open-edge vertices near each sleeve's end are moved along
     the arm axis to one axial position, so the opening is a clean ring."""
@@ -742,6 +768,7 @@ def main():
     tee_new = straighten_hems(smooth_displacement(P, shape_top(P, tee_ids), tee_tris), tee_tris, neckline=0.025)
     axes = arm_axes(P, tee_ids)
     tee_new = straighten_sleeves(tee_new, tee_tris, axes)
+    tee_new = straighten_sleeves(straighten_hems(smooth_open_edges(P, tee_new, tee_tris), tee_tris, neckline=0.025), tee_tris, axes)
     templates.append(build_template(
         "tee", P, body, bn, tee_tris, tee_new, allowed_any,
         lambda p: 0.86 <= p[1] <= NECK + 0.04 and abs(p[0]) <= 0.45, axes))
@@ -750,6 +777,7 @@ def main():
     tr_tris = select(P, tights, lambda c: 0.06 <= c[1] <= WAIST and abs(c[0]) <= 0.33)
     tr_ids = sorted(set(tr_tris))
     tr_new = straighten_hems(smooth_displacement(P, shape_trousers(P, tr_ids), tr_tris), tr_tris, split_x=True)
+    tr_new = straighten_hems(smooth_open_edges(P, tr_new, tr_tris), tr_tris, split_x=True)
     templates.append(build_template(
         "trousers", P, body, bn, tr_tris, tr_new, allowed_lower,
         lambda p: 0.04 <= p[1] <= WAIST + 0.03 and abs(p[0]) <= 0.33))
@@ -758,6 +786,7 @@ def main():
     sk_tris = select(P, skirt, lambda c: c[1] >= 0.46)
     sk_ids = sorted(set(sk_tris))
     sk_new = straighten_hems(smooth_displacement(P, shape_skirt(P, sk_ids), sk_tris, iterations=3), sk_tris)
+    sk_new = straighten_hems(smooth_open_edges(P, sk_new, sk_tris), sk_tris)
     templates.append(build_template(
         "skirt", P, body, bn, sk_tris, sk_new, allowed_torso,
         lambda p: 0.74 <= p[1] <= WAIST + 0.03 and abs(p[0]) <= 0.25))
@@ -769,6 +798,7 @@ def main():
     dsk_tris = select(P, skirt, lambda c: c[1] >= 0.40)
     dsk_new = shape_skirt(P, sorted(set(dsk_tris)), ease=0.014, rate=0.22)
     dress_new = straighten_hems(smooth_displacement(P, {**bod_new, **dsk_new}, bod_tris + dsk_tris, iterations=3), bod_tris + dsk_tris, neckline=0.025)
+    dress_new = straighten_hems(smooth_open_edges(P, dress_new, bod_tris + dsk_tris), bod_tris + dsk_tris, neckline=0.025)
     templates.append(build_template(
         "dress", P, body, bn, bod_tris + dsk_tris, dress_new, allowed_torso,
         lambda p: 0.74 <= p[1] <= NECK + 0.04 and abs(p[0]) <= 0.24))

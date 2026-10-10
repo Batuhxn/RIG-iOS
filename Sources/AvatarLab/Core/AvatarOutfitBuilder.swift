@@ -75,7 +75,7 @@ struct AvatarOutfitBuilder: Sendable {
     /// surface, so the inside of a large triangle counts (Atelier review), and along the
     /// vertex's own normal from the nearest inner vertex, as before. Only vertices that
     /// moved are checked again. Normals of a moved garment are recomputed at the end.
-    static func layer(_ garments: inout [AvatarMesh], cuts: [AvatarGarmentCut], gap: Float = 0.006, reach: Float = 0.06) {
+    static func layer(_ garments: inout [AvatarMesh], cuts: [AvatarGarmentCut], gap: Float = 0.008, reach: Float = 0.06) {
         let order = cuts.indices.sorted { cuts[$0].layer < cuts[$1].layer }
         func yRange(_ m: AvatarMesh) -> ClosedRange<Float> {
             let ys = m.positions.map(\.y)
@@ -91,8 +91,9 @@ struct AvatarOutfitBuilder: Sendable {
             let pointGrids = inners.map { HashGrid(points: garments[$0].positions, cell: reach / 2) }
             var mesh = garments[outer]
             // Pushes follow the vertex normals; once normals are recomputed from the moved
-            // positions, clearance is checked again along them (a few rounds settle it).
-            for _ in 0..<3 {
+            // positions, clearance is checked again along them. The 8 mm gap leaves room
+            // for the small tilt recomputed normals get, so two rounds settle it.
+            for _ in 0..<2 {
                 var movedThisRound = false
                 for (i, inner) in inners.enumerated() {
                     let innerPoints = garments[inner].positions

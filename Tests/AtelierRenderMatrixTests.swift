@@ -56,9 +56,9 @@ extension AvatarRenderingTests {
                 var variants = [Variant(name: "v1", style: .engineV1, wraps: false),
                                 Variant(name: "atelier", style: .current, wraps: true)]
                 if fabricName == "stripes" {
-                    var crisp = AvatarStageStyle.current
-                    crisp.crispSeam = true
-                    variants.append(Variant(name: "atelier-crisp", style: crisp, wraps: true))
+                    var soft = AvatarStageStyle.current
+                    soft.crispSeam = false
+                    variants.append(Variant(name: "atelier-soft", style: soft, wraps: true))
                 }
                 var grids: [String: [[UIImage]]] = [:]
                 for (_, shape) in Self.matrixShapes() {
@@ -98,9 +98,9 @@ extension AvatarRenderingTests {
             for (_, shape) in shapes {
                 guard let built = engine.build(shape: shape, cuts: garments.map(\.0)) else { return XCTFail("cancelled") }
                 let content = Self.stageContent(built: built, garments: garments, wraps: true)
-                var crisp = AvatarStageStyle.current
-                crisp.crispSeam = true
-                for style in [AvatarStageStyle.engineV1, .current, crisp] {
+                var soft = AvatarStageStyle.current
+                soft.crispSeam = false
+                for style in [AvatarStageStyle.engineV1, soft, .current] {
                     let coordinator = AvatarStageCoordinator(style: style)
                     coordinator.show(content, mode: .photo3D)
                     row.append(coordinator.snapshot(size: tile, yaw: yaw, background: Self.matrixBackground, halfHeight: 0.28, centre: centre))
