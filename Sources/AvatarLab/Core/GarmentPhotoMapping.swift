@@ -102,7 +102,7 @@ enum GarmentPhotoMapping {
         fillPairs(spans.map { $0.map { (lo: $0.lowerBound, hi: $0.upperBound) } })?.map { $0.lo...max($0.lo, $0.hi) }
     }
 
-    private static func fillPairs(_ rows: [(lo: Float, hi: Float)?]) -> [(lo: Float, hi: Float)]? {
+    static func fillPairs(_ rows: [(lo: Float, hi: Float)?]) -> [(lo: Float, hi: Float)]? {
         let filled = rows.indices.filter { rows[$0] != nil }
         guard !filled.isEmpty else { return nil }
         var out: [(lo: Float, hi: Float)] = []
