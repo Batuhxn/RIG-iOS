@@ -2,16 +2,20 @@
 # avatar renders on an iPhone simulator. Runs on GitHub's standard macOS runner,
 # which is free for public repositories.
 #
-# Manual dispatch only. (A temporary push trigger was used while the
-# feature branch was built overnight and has been removed.)
+# Manual dispatch. TEMPORARY: pushes to polish/rig-atelier also run it while the
+# RiG Atelier quality pass is in progress (remove before handing over).
 
 name: Avatar Lab
 
 on:
   workflow_dispatch:
+  push:
+    branches: [polish/rig-atelier]
 
+# contents: write only so the review renders can be pushed to their own branch
+# (polish/rig-atelier-renders); nothing else is written.
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: avatar-lab-${{ github.ref }}
@@ -38,9 +42,12 @@ jobs:
         run: command -v xcodegen >/dev/null 2>&1 || brew install xcodegen
 
       - name: Generate, build and run every test
+        env:
+          # Passed into the test process as RIG_RENDER_DIR (full-size review renders).
+          TEST_RUNNER_RIG_RENDER_DIR: ${{ github.workspace }}/build/renders
         run: |
           set -o pipefail
-          mkdir -p build
+          mkdir -p build/renders
           bash scripts/validate_macos.sh 2>&1 | tee build/avatar-lab.log
 
       - name: Publish avatar metrics and snapshots as annotations
@@ -96,6 +103,43 @@ jobs:
           grep -o 'AVATAR_SNAPSHOT [^ ]* [A-Za-z0-9+/=]*' build/avatar-lab.log | sort -u -k2,2 | sed -n '41,50p' | while read -r _ name data; do
             echo "::notice title=snap-${name}::${data}"
           done
+
+      - name: Publish review renders to polish/rig-atelier-renders
+        if: always() && github.ref == 'refs/heads/polish/rig-atelier'
+        env:
+          RUN: ${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          SRC="$GITHUB_WORKSPACE/build/renders"
+          if [ -z "$(ls -A "$SRC" 2>/dev/null)" ] && [ -d build/RIGTests.xcresult ]; then
+            # Fallback: the attachments in the result bundle (Xcode 16 xcresulttool).
+            mkdir -p build/attachments
+            xcrun xcresulttool export attachments --path build/RIGTests.xcresult --output-path build/attachments || true
+            find build/attachments -name '*.png' -exec cp {} "$SRC"/ \; 2>/dev/null || true
+          fi
+          [ -n "$(ls -A "$SRC" 2>/dev/null)" ] || { echo "no renders"; exit 0; }
+          ls -la "$SRC"
+          PUB="$RUNNER_TEMP/renders-branch"
+          git init -q "$PUB"
+          cd "$PUB"
+          git config user.name "rig-ci"
+          git config user.email "rig-ci@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${TOKEN}@github.com/${REPO}.git"
+          if git fetch -q --depth 1 origin polish/rig-atelier-renders; then
+            git checkout -q -b polish/rig-atelier-renders FETCH_HEAD
+          else
+            git checkout -q --orphan polish/rig-atelier-renders
+          fi
+          mkdir -p "run-$RUN"
+          cp "$SRC"/* "run-$RUN"/
+          echo "$SHA" > "run-$RUN/SOURCE_COMMIT"
+          git add "run-$RUN"
+          git commit -q -m "Review renders: run $RUN ($SHA)"
+          git push -q origin HEAD:polish/rig-atelier-renders
+          echo "::notice title=renders::run-$RUN on polish/rig-atelier-renders"
 
       - name: Upload results
         if: always()
