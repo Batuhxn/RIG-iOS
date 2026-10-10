@@ -95,7 +95,9 @@ struct AvatarLabView: View {
         VStack(spacing: 0) {
             AvatarStage(model: model)
                 .frame(maxWidth: .infinity)
-                .frame(height: 380)
+                // At most half the screen, so the sliders stay reachable on small phones
+                // (a fixed 380 pt left about 50 pt for them on an iPhone SE).
+                .containerRelativeFrame(.vertical) { length, _ in min(380, length * 0.5) }
             Picker("Preview", selection: Binding(get: { model.mode }, set: { model.mode = $0 })) {
                 ForEach(AvatarPreviewMode.allCases) { Text($0.title).tag($0) }
             }
@@ -103,9 +105,11 @@ struct AvatarLabView: View {
             .padding(.horizontal, RIGTheme.Spacing.m)
             Text(model.mode == .flat2D
                  ? "Approximate preview, not a size or fit guide."
-                 : "Experimental 3D: garments are stretched at the sides and do not drape. Not a fit guide.")
+                 : "Experimental 3D: the sides and back show the garment's main colour, not its print. No drape; not a fit guide.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, RIGTheme.Spacing.m)
                 .padding(.top, RIGTheme.Spacing.s)
             Picker("Section", selection: $section) {
                 ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
@@ -192,9 +196,19 @@ private struct AvatarBodyControls: View {
                 Slider(value: Binding(get: { model.profile.shape[control] }, set: { model.setValue($0, for: control) }),
                        in: control.range)
                     .accessibilityLabel(control.title)
+                    .accessibilityValue(Self.spokenValue(model.profile.shape[control], control))
                 Text(control.endLabels.high).font(.caption2).foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+extension AvatarBodyControls {
+    /// VoiceOver reads the slider as words ("Wider, 40 percent") instead of a raw number.
+    static func spokenValue(_ value: Float, _ control: AvatarControl) -> String {
+        let percent = Int((abs(value) / max(abs(value < 0 ? control.range.lowerBound : control.range.upperBound), 0.01) * 100).rounded())
+        guard percent > 0 else { return "Starting shape" }
+        return "\(value < 0 ? control.endLabels.low : control.endLabels.high), \(percent) percent"
     }
 }
 
@@ -246,7 +260,7 @@ private struct AvatarOutfitPicker: View {
                     }
                 }
             }
-            Text("Garments are drawn from their photos on a simple body-hugging shape. Fit, size and drape are not simulated.")
+            Text("Garments are drawn from their front photos on the avatar's shape. Fit, size and drape are not simulated.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
