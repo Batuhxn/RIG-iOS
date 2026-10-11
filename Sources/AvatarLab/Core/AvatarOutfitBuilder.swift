@@ -86,8 +86,15 @@ struct AvatarOutfitBuilder: Sendable {
                 for (i, inner) in inners.enumerated() {
                     let innerPoints = garments[inner].positions
                     let innerNormals = garments[inner].normals
+                    // Only vertices within reach of the inner garment's bounds can need a push
+                    // (a tee over trousers overlaps them only around the waist).
+                    let lo = innerPoints.reduce(SIMD3<Float>(repeating: .infinity)) { pointwiseMin($0, $1) } - reach
+                    let hi = innerPoints.reduce(SIMD3<Float>(repeating: -.infinity)) { pointwiseMax($0, $1) } + reach
                     // A push can bring a different inner triangle into play; a few passes settle it.
-                    var pending = Array(mesh.positions.indices)
+                    var pending = mesh.positions.indices.filter { k in
+                        let p = mesh.positions[k]
+                        return all(p .>= lo) && all(p .<= hi)
+                    }
                     for _ in 0..<6 where !pending.isEmpty {
                         var moved: [Int] = []
                         for k in pending {
