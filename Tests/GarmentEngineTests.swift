@@ -228,6 +228,12 @@ final class GarmentEngineTests: XCTestCase {
         var through = 0, checked = 0
         for (k, p) in coat.positions.enumerated() {
             guard let j = grid.nearest(to: p, within: 0.06, in: tee.positions) else { continue }
+            // Only where the two surfaces face the same way. Under the arm the coat's sleeve
+            // faces the tee's side across the armpit; measuring along the coat's normal there
+            // rewards pushing the sleeve *through* the tee (Codex Atelier review, round 2),
+            // which the guard no longer does. The surface clearance itself is covered by
+            // AtelierGeometryAuditTests and AtelierFixTests.
+            guard (coat.normals[k] * tee.normals[j]).sum() >= 0.5 else { continue }
             checked += 1
             if ((p - tee.positions[j]) * coat.normals[k]).sum() < 0.005 { through += 1 }
         }

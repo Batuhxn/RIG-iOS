@@ -75,7 +75,8 @@ struct AvatarOutfitBuilder: Sendable {
     /// surface, so the inside of a large triangle counts (Atelier review), and along the
     /// vertex's own normal from the nearest inner vertex, as before. Only vertices that
     /// moved are checked again. Normals of a moved garment are recomputed at the end.
-    static func layer(_ garments: inout [AvatarMesh], cuts: [AvatarGarmentCut], gap: Float = 0.008, reach: Float = 0.06) {
+    static func layer(_ garments: inout [AvatarMesh], cuts: [AvatarGarmentCut], gap: Float = 0.008, reach: Float = 0.06,
+                      surfaceReach: Float = 0.03) {
         let order = cuts.indices.sorted { cuts[$0].layer < cuts[$1].layer }
         func yRange(_ m: AvatarMesh) -> ClosedRange<Float> {
             let ys = m.positions.map(\.y)
@@ -87,7 +88,9 @@ struct AvatarOutfitBuilder: Sendable {
                 cuts[$0].layer < cuts[outer].layer && yRange(garments[$0]).overlaps(yRange(garments[outer]))
             }
             guard !inners.isEmpty else { continue }
-            var surfaces = inners.map { TriangleGrid(mesh: garments[$0], cell: reach) }
+            // Surface queries look 3 cm around (27 cells of 3 cm); deeper penetration is still
+            // caught by the 6 cm nearest-vertex clearance. Keeps the guard near v1's cost.
+            var surfaces = inners.map { TriangleGrid(mesh: garments[$0], cell: surfaceReach) }
             let pointGrids = inners.map { HashGrid(points: garments[$0].positions, cell: reach / 2) }
             var mesh = garments[outer]
             // Pushes follow the vertex normals. Normals are recomputed from the moved
@@ -97,6 +100,7 @@ struct AvatarOutfitBuilder: Sendable {
                 var movedThisRound = false
                 for (i, inner) in inners.enumerated() {
                     let innerPoints = garments[inner].positions
+                    let innerNormals = garments[inner].normals
                     // A push can bring a different inner triangle into play; a few passes settle it.
                     var pending = Array(mesh.positions.indices)
                     for _ in 0..<6 where !pending.isEmpty {
@@ -104,10 +108,8 @@ struct AvatarOutfitBuilder: Sendable {
                         for k in pending {
                             var p = mesh.positions[k]
                             let n = mesh.normals[k]
-                            var compatible = true
-                            if let hit = surfaces[i].closest(to: p, within: reach) {
+                            if let hit = surfaces[i].closest(to: p, within: surfaceReach) {
                                 let depth = ((p - hit.point) * hit.normal).sum()
-                                compatible = (n * hit.normal).sum() >= 0.5
                                 if depth < gap {
                                     // Along our own normal while it roughly agrees with theirs; otherwise
                                     // straight out of their surface (a perpendicular or opposed normal
@@ -116,9 +118,11 @@ struct AvatarOutfitBuilder: Sendable {
                                     p += (gap - depth) * (along >= 0.5 ? n / along : hit.normal)
                                 }
                             }
-                            // The nearest-vertex clearance only applies along a normal that agrees
-                            // with the inner surface; otherwise it would undo the push above.
-                            if compatible, let j = pointGrids[i].nearest(to: p, within: reach, in: innerPoints) {
+                            // The nearest-vertex clearance only applies where that vertex faces the
+                            // same way (a sleeve facing the torso across the armpit would be pushed
+                            // through it, undoing the push above; Codex review).
+                            if let j = pointGrids[i].nearest(to: p, within: reach, in: innerPoints),
+                               (n * innerNormals[j]).sum() >= 0.5 {
                                 let depth = ((p - innerPoints[j]) * n).sum()
                                 if depth < gap { p += (gap - depth) * n }
                             }

@@ -353,3 +353,150 @@ def hidden_visible(shapes=("silhouette-1", "extreme")):
 
 if __name__ == "__main__" and sys.argv[1] == "holes":
     hidden_visible()
+
+
+# --- coat shell and layer guard (AvatarGarmentShell.swift / AvatarOutfitBuilder.layer) ---
+
+def compact(tris, P, offset):
+    T = np.array(tris).reshape(-1, 3)
+    N = vertex_normals(P, T)
+    used, inv = np.unique(T.reshape(-1), return_inverse=True)
+    return P[used] + offset * N[used], N[used].copy(), inv.reshape(-1, 3), used
+
+
+def coat_shell(P, subs):
+    src = subs["tights"].reshape(-1)
+    R = P  # selection uses rest positions in Swift; callers pass rest for the neutral test
+    out, t = [], 0
+    while t + 2 < len(src):
+        quad = t + 5 < len(src) and src[t + 3] == src[t] and src[t + 4] == src[t + 2]
+        cnt = 6 if quad else 3
+        idx = [src[t], src[t + 1], src[t + 2]] + ([src[t + 5]] if quad else [])
+        c = R[idx].mean(axis=0)
+        if 0.74 <= c[1] <= 1.42 and abs(c[0]) <= 0.39:
+            out += list(src[t:t + cnt])
+        t += cnt
+    T = np.array(out).reshape(-1, 3)
+    N = vertex_normals(P, T)
+    used = np.unique(T)
+    score = np.sum(N[used] * np.c_[P[used, 0], np.zeros(len(used)), P[used, 2]])
+    sign = 1.0 if score >= 0 else -1.0
+    pos, nrm, tri, used = compact(out, P, 0.018 * sign)
+    if sign < 0:
+        nrm = -nrm
+    # skin guard
+    from scipy.spatial import cKDTree
+    body = np.unique(subs["body"])
+    tree = cKDTree(P[body])
+    BN = vertex_normals(P, subs["body"].reshape(-1, 3).astype(np.int64))
+    _, j = tree.query(P[used])
+    anchor = body[j]
+    n = BN[anchor]
+    depth = np.sum((pos - P[anchor]) * n, axis=1)
+    push = depth < 0.018
+    pos[push] += ((0.018 - depth[push])[:, None]) * n[push]
+    # drape
+    cols = {}
+    for k in range(len(pos)):
+        if abs(pos[k, 0]) <= 0.19:
+            cols.setdefault(int(np.floor(pos[k, 0] / 0.012)), []).append(k)
+    for members in cols.values():
+        members.sort(key=lambda k: -pos[k, 1])
+        front = back = None
+        for k in members:
+            p = pos[k].copy()
+            if nrm[k, 2] >= 0:
+                limit = front[0] - 0.25 * (front[1] - p[1]) if front else -1e9
+                if p[2] > limit: front = (p[2], p[1])
+                else: p[2] = limit
+            else:
+                limit = back[0] + 0.25 * (back[1] - p[1]) if back else 1e9
+                if p[2] < limit: back = (p[2], p[1])
+                else: p[2] = limit
+            pos[k] = p
+    return pos, nrm, tri
+
+
+def recomputed_normals(pos, tris, old):
+    keys = {}
+    key = np.array([keys.setdefault(tuple(p), len(keys)) for p in map(tuple, pos)])
+    acc = np.zeros((len(keys), 3))
+    fn = np.cross(pos[tris[:, 1]] - pos[tris[:, 0]], pos[tris[:, 2]] - pos[tris[:, 0]])
+    for c in range(3):
+        np.add.at(acc, key[tris[:, c]], fn)
+    n = acc[key]
+    l = np.linalg.norm(n, axis=1, keepdims=True)
+    n = np.where(l > 1e-12, n / np.maximum(l, 1e-12), old)
+    if np.sum(n * old) < 0:
+        n = -n
+    return n
+
+
+def layer_guard(pos, nrm, tris, inner_pos, inner_nrm, inner_tris, gap=0.008, reach=0.06, rounds=3, final_recompute=False, surface_reach=0.03):
+    from scipy.spatial import cKDTree
+    A, B, C = inner_pos[inner_tris[:, 0]], inner_pos[inner_tris[:, 1]], inner_pos[inner_tris[:, 2]]
+    ctree = cKDTree((A + B + C) / 3)
+    vtree = cKDTree(inner_pos)
+    fn = np.cross(B - A, C - A); fn /= np.linalg.norm(fn, axis=1, keepdims=True) + 1e-12
+    orient = np.sign(np.sum(fn * (inner_nrm[inner_tris].sum(axis=1)), axis=1)); fn *= orient[:, None]
+    pos = pos.copy(); nrm = nrm.copy()
+    for rnd in range(rounds):
+        moved_round = False
+        pending = np.arange(len(pos))
+        for _ in range(6):
+            if len(pending) == 0: break
+            p = pos[pending]; n = nrm[pending]
+            _, cand = ctree.query(p, k=24)
+            m = cand.shape[1]
+            q = closest_points(np.repeat(p, m, axis=0), A[cand.reshape(-1)], B[cand.reshape(-1)], C[cand.reshape(-1)]).reshape(len(p), m, 3)
+            d = np.linalg.norm(q - p[:, None], axis=2)
+            best = d.argmin(axis=1)
+            hitp = q[np.arange(len(p)), best]; hitn = fn[cand[np.arange(len(p)), best]]
+            within = d[np.arange(len(p)), best] < surface_reach
+            depth = np.sum((p - hitp) * hitn, axis=1)
+            along = np.sum(n * hitn, axis=1)
+            newp = p.copy()
+            sel = within & (depth < gap)
+            dirv = np.where((along >= 0.5)[:, None], n / np.maximum(along, 1e-6)[:, None], hitn)
+            newp[sel] += ((gap - depth[sel])[:, None]) * dirv[sel]
+            dv, jv = vtree.query(newp)
+            compat = np.sum(n * inner_nrm[jv], axis=1) >= 0.5
+            vd = np.sum((newp - inner_pos[jv]) * n, axis=1)
+            sel2 = compat & (dv < reach) & (vd < gap)
+            newp[sel2] += ((gap - vd[sel2])[:, None]) * n[sel2]
+            changed = np.any(newp != p, axis=1)
+            pos[pending] = newp
+            pending = pending[changed]
+            if changed.any(): moved_round = True
+        if not moved_round: break
+        if rnd < rounds - 1 or final_recompute:
+            nrm = recomputed_normals(pos, tris, nrm)
+    return pos, nrm
+
+
+def coat_test(**kw):
+    """GarmentEngineTests.testOuterLayersStayOutsideInnerGarments, offline."""
+    from scipy.spatial import cKDTree
+    P0, subs, _ = pa.read_asset(str(BODY))
+    P = P0.astype(np.float64)
+    T = subs["body"].astype(np.int64).reshape(-1, 3)
+    BN = vertex_normals(P, T)
+    tee = read_templates()["tee"]
+    g = deform(tee, P, BN)
+    F = np.concatenate([tee["front"], tee["back"]])
+    gn = vertex_normals(g, F)  # close to runtime normals (canonical sharing aside)
+    cpos, cnrm, ctri = coat_shell(P, subs)
+    pos, nrm = layer_guard(cpos, cnrm, ctri, g, gn, F, **kw)
+    tree = cKDTree(g)
+    d, j = tree.query(pos)
+    ok = d < 0.06
+    clearance = np.sum((pos - g[j]) * nrm, axis=1)
+    through = ok & (clearance < 0.005)
+    print(kw, "checked", ok.sum(), "through", through.sum(), "worst mm", round(clearance[ok].min() * 1000, 2))
+    return pos, nrm, through
+
+
+if __name__ == "__main__" and sys.argv[1] == "coat":
+    coat_test(rounds=1, final_recompute=False)
+    coat_test(rounds=1, final_recompute=True)
+    coat_test(rounds=3, final_recompute=False)
