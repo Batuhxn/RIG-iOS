@@ -145,3 +145,22 @@ garment sits.
 - A-pose only: no posing or animation.
 - Hems follow the quad grid, so they are stepped rather than perfectly straight.
 - Not measured on a physical iPhone: frame time, memory and thermals are unknown.
+
+## RiG Atelier quality pass (2026-10-11)
+
+Changes to the Garment Engine v1 described above; details and evidence in
+`reports/atelier/RIG_ATELIER_QUALITY_REPORT.md`:
+
+- The photo ends in a crisp, anti-aliased side-seam line (garment-space surface angle,
+  never past the real photo/plain boundary); skirts and dresses map the photo by angle
+  around a fitted axis, so vertical stripes stay straight.
+- Templates: skin clearance at the armpits, crease relaxation, smoothed open edges;
+  hidden skin is skin the fabric occludes from every review camera direction on five
+  review bodies (`build_garment_templates.py`).
+- Layer guard: closest-triangle and compatible nearest-vertex clearance, normals
+  recomputed until stable (`AvatarOutfitBuilder.layer`).
+- Stage: `AvatarStageStyle` (light warm-grey mannequin, studio environment, soft key
+  shadows, lit garment interiors); `AvatarStageStyle.engineV1` reproduces the old look
+  for review renders.
+- Review tooling: `Tests/AtelierRenderMatrixTests.swift`, `Tools/AvatarAssets/atelier_lab.py`,
+  `Tools/AvatarAssets/audit_garment_geometry.py`, `Tools/CI/render_chunks.py`.
