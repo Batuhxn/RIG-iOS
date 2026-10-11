@@ -469,8 +469,7 @@ def layer_guard(pos, nrm, tris, inner_pos, inner_nrm, inner_tris, gap=0.008, rea
             pending = pending[changed]
             if changed.any(): moved_round = True
         if not moved_round: break
-        if rnd < rounds - 1 or final_recompute:
-            nrm = recomputed_normals(pos, tris, nrm)
+        nrm = recomputed_normals(pos, tris, nrm)
     return pos, nrm
 
 

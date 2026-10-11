@@ -23,6 +23,7 @@ struct AvatarOutfitBuilder: Sendable {
     ///   calling task is cancelled.
     /// How far skin bordering hidden skin is pulled in under the fabric.
     static let skinTuck: Float = 0.008
+    static let tuckTaper: Float = 0.04
 
     func build(shape: AvatarBodyShape, cuts: [AvatarGarmentCut]) -> (body: AvatarMesh, bareBody: AvatarMesh, garments: [AvatarMesh])? {
         let engine = AvatarMorphEngine(asset: asset)
@@ -60,8 +61,23 @@ struct AvatarOutfitBuilder: Sendable {
             for triangle in hidden {
                 for k in 0..<3 { covered[Int(bodyTriangles[Int(triangle) * 3 + k])] = true }
             }
-            for v in visible where covered[Int(v)] {
-                shown[Int(v)] = positions[Int(v)] - Self.skinTuck * bodyNormals[Int(v)]
+            // Tapered to nothing within 4 cm of a garment's open edge (hem, cuff, neckline),
+            // where tucked skin could come into view (Codex round 4).
+            var edgePoints: [SIMD3<Float>] = []
+            for garment in garments where !garment.backTriangles.isEmpty {
+                let open = garment.openEdgeVertices()
+                edgePoints += garment.positions.indices.filter { open[$0] }.map { garment.positions[$0] }
+            }
+            let edges = HashGrid(points: edgePoints, cell: Self.tuckTaper)
+            for v in Set(visible) where covered[Int(v)] {
+                let p = positions[Int(v)]
+                var amount: Float = 1
+                if let j = edges.nearest(to: p, within: Self.tuckTaper, in: edgePoints) {
+                    let d = p - edgePoints[j]
+                    let s = min((d * d).sum().squareRoot() / Self.tuckTaper, 1)
+                    amount = s * s * (3 - 2 * s)
+                }
+                shown[Int(v)] = p - amount * Self.skinTuck * bodyNormals[Int(v)]
             }
         }
         let body = AvatarMorphEngine.compact(triangles: visible, positions: shown, offset: 0)
@@ -93,10 +109,11 @@ struct AvatarOutfitBuilder: Sendable {
             var surfaces = inners.map { TriangleGrid(mesh: garments[$0], cell: surfaceReach) }
             let pointGrids = inners.map { HashGrid(points: garments[$0].positions, cell: reach / 2) }
             var mesh = garments[outer]
-            // Pushes follow the vertex normals. Normals are recomputed from the moved
-            // positions after the first two rounds; the last round checks clearance along
-            // those final normals, and its (sub-millimetre) moves keep them.
-            for round in 0..<3 {
+            // Pushes follow the vertex normals; after any round that moved something the
+            // normals are recomputed and clearance is checked again along them, until a
+            // round moves nothing (or four rounds), so the final normals always describe the
+            // final positions (Codex round 4: a last round without recompute moved up to 2 cm).
+            for _ in 0..<4 {
                 var movedThisRound = false
                 for (i, inner) in inners.enumerated() {
                     let innerPoints = garments[inner].positions
@@ -136,7 +153,7 @@ struct AvatarOutfitBuilder: Sendable {
                     }
                 }
                 guard movedThisRound else { break }
-                if round < 2 { mesh.normals = Self.recomputedNormals(mesh) }
+                mesh.normals = Self.recomputedNormals(mesh)
             }
             garments[outer] = mesh
         }
@@ -178,6 +195,37 @@ struct AvatarOutfitBuilder: Sendable {
         for k in normals.indices { agreement += (normals[k] * mesh.normals[k]).sum() }
         if agreement < 0 { normals = normals.map { -$0 } }
         return normals
+    }
+}
+
+extension AvatarMesh {
+    /// Vertices on open edges (hems, cuffs, necklines, armholes), over both triangle
+    /// groups, with coincident seam duplicates welded so panel seams are not open edges.
+    func openEdgeVertices() -> [Bool] {
+        var slot: [SIMD3<UInt32>: Int] = [:]
+        let key: [Int] = positions.map { p in
+            let bits = SIMD3(p.x.bitPattern, p.y.bitPattern, p.z.bitPattern)
+            if let s = slot[bits] { return s }
+            slot[bits] = slot.count
+            return slot.count - 1
+        }
+        var uses: [UInt64: Int] = [:]
+        for list in [triangles, backTriangles] {
+            var t = 0
+            while t + 2 < list.count {
+                for e in 0..<3 {
+                    let a = key[Int(list[t + e])], b = key[Int(list[t + (e + 1) % 3])]
+                    uses[UInt64(min(a, b)) << 32 | UInt64(max(a, b)), default: 0] += 1
+                }
+                t += 3
+            }
+        }
+        var onEdge = Set<Int>()
+        for (edge, count) in uses where count == 1 {
+            onEdge.insert(Int(edge >> 32))
+            onEdge.insert(Int(edge & 0xFFFF_FFFF))
+        }
+        return key.map { onEdge.contains($0) }
     }
 }
 

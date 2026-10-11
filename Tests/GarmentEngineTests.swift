@@ -239,6 +239,15 @@ final class GarmentEngineTests: XCTestCase {
         }
         XCTAssertGreaterThan(checked, 100)
         XCTAssertEqual(through, 0, "the coat stays outside the tee")
+        // And everywhere: no coat vertex within 3 cm of the tee's surface is less than
+        // 5 mm above it (closest point on the tee's triangles, along their normal).
+        var surface = TriangleGrid(mesh: tee, cell: 0.03)
+        var below = 0
+        for p in coat.positions {
+            guard let hit = surface.closest(to: p, within: 0.03) else { continue }
+            if ((p - hit.point) * hit.normal).sum() < 0.005 { below += 1 }
+        }
+        XCTAssertEqual(below, 0, "the coat clears the tee's surface")
     }
 
     func testMidiCutsKeepTheirLengthUntilAMidiTemplateExists() {

@@ -679,18 +679,18 @@ def camera_directions():
 
 def occluded(points, normals, tris, reach=1.0):
     """Whether the fabric hides each skin point from every review camera direction
-    that leaves the skin's front side (falls back to the normal ray if none does)."""
+    that leaves the skin's front side (falls back to the normal ray if none does).
+    Rays start just off the skin along the camera direction itself."""
     dirs = camera_directions()
     result = np.ones(len(points), bool)
-    origins = points + 0.002 * normals
-    facing = normals @ dirs.T > 0.05
+    facing = normals @ dirs.T > 0.0
     for k, d in enumerate(dirs):
         rows = np.nonzero(facing[:, k] & result)[0]
         if len(rows):
-            result[rows] &= rays_hit(origins[rows], np.repeat(d[None], len(rows), axis=0), tris, reach)
+            result[rows] &= rays_hit(points[rows] + 0.001 * d, np.repeat(d[None], len(rows), axis=0), tris, reach)
     none = ~facing.any(axis=1)
     if none.any():
-        result[none] &= rays_hit(origins[none], normals[none], tris, reach)
+        result[none] &= rays_hit(points[none] + 0.001 * normals[none], normals[none], tris, reach)
     return result
 
 
@@ -746,9 +746,13 @@ def build_template(name, P, body_tris, body_normals, sel_tris, new, allowed_body
             inside[cand] = occluded(Pb[cand], Nb[cand], G)
         tri_cand = [t for t in range(len(T)) if inside[T[t]].all() and (hidden_set is None or t in hidden_set)]
         if tri_cand:
-            centres = Pb[T[tri_cand]].mean(axis=1)
-            cn = Nb[T[tri_cand]].mean(axis=1)
+            # Centres use the face's own normal (oriented like its corners'): an averaged
+            # vertex normal skipped directions the face itself turns towards (Codex round 4).
+            corners = Pb[T[tri_cand]]
+            centres = corners.mean(axis=1)
+            cn = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
             cn /= np.linalg.norm(cn, axis=1, keepdims=True) + 1e-12
+            cn *= np.sign(np.einsum("ij,ij->i", cn, Nb[T[tri_cand]].sum(axis=1)))[:, None]
             keep = occluded(centres, cn, G)
             hidden_set = {t for t, k in zip(tri_cand, keep) if k}
         else:

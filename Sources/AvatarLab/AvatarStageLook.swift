@@ -133,34 +133,12 @@ extension AvatarStageCoordinator {
     /// 0 on the open edges (hems, cuffs, necklines), rising to 1 over `hemWidth`. Panel
     /// seams are not open edges: seam duplicates are welded by position first.
     static func hemWeights(_ mesh: AvatarMesh) -> [Float] {
-        var slot: [SIMD3<UInt32>: Int] = [:]
-        let key: [Int] = mesh.positions.map { p in
-            let bits = SIMD3(p.x.bitPattern, p.y.bitPattern, p.z.bitPattern)
-            if let s = slot[bits] { return s }
-            slot[bits] = slot.count
-            return slot.count - 1
-        }
-        var uses: [UInt64: Int] = [:]
-        for list in [mesh.triangles, mesh.backTriangles] {
-            var t = 0
-            while t + 2 < list.count {
-                for e in 0..<3 {
-                    let a = key[Int(list[t + e])], b = key[Int(list[t + (e + 1) % 3])]
-                    uses[UInt64(min(a, b)) << 32 | UInt64(max(a, b)), default: 0] += 1
-                }
-                t += 3
-            }
-        }
-        var onEdge = Set<Int>()
-        for (edge, count) in uses where count == 1 {
-            onEdge.insert(Int(edge >> 32))
-            onEdge.insert(Int(edge & 0xFFFF_FFFF))
-        }
-        let edgePoints = mesh.positions.indices.filter { onEdge.contains(key[$0]) }.map { mesh.positions[$0] }
+        let open = mesh.openEdgeVertices()
+        let edgePoints = mesh.positions.indices.filter { open[$0] }.map { mesh.positions[$0] }
         guard !edgePoints.isEmpty else { return [Float](repeating: 1, count: mesh.positions.count) }
         let grid = HashGrid(points: edgePoints, cell: hemWidth)
         return mesh.positions.indices.map { k in
-            if onEdge.contains(key[k]) { return 0 }
+            if open[k] { return 0 }
             guard let j = grid.nearest(to: mesh.positions[k], within: hemWidth, in: edgePoints) else { return 1 }
             let d = mesh.positions[k] - edgePoints[j]
             let s = min((d * d).sum().squareRoot() / hemWidth, 1)
