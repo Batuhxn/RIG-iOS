@@ -51,6 +51,20 @@ final class AtelierFixTests: XCTestCase {
         }
     }
 
+    /// Codex round 5: fabric 4 cm behind a large inner triangle, far from all of its
+    /// vertices, must still be pushed out (a 3 cm surface query missed it).
+    func testLayerGuardReachesDeepPenetrationFarFromInnerVertices() {
+        let inner = AvatarMesh(positions: [SIMD3(-1, -1, 0), SIMD3(1, -1, 0), SIMD3(0, 1, 0)],
+                               normals: Array(repeating: SIMD3(0, 0, 1), count: 3),
+                               uvs: Array(repeating: .zero, count: 3), triangles: [0, 1, 2])
+        let outer = AvatarMesh(positions: [SIMD3(0, 0, -0.04), SIMD3(0.01, 0, -0.04), SIMD3(0, 0.01, -0.04)],
+                               normals: Array(repeating: SIMD3(0, 0, 1), count: 3),
+                               uvs: Array(repeating: .zero, count: 3), triangles: [0, 1, 2])
+        var garments = [inner, outer]
+        AvatarOutfitBuilder.layer(&garments, cuts: [.top(sleeve: .short), .outerwear])
+        for p in garments[1].positions { XCTAssertGreaterThanOrEqual(p.z, 0.006, "pushed out of the inner surface") }
+    }
+
     /// One enormous triangle must not make the grid allocate millions of cells.
     func testTriangleGridCapsOversizedTriangles() {
         let huge = AvatarMesh(positions: [SIMD3(-10, -10, -10), SIMD3(10, -10, 10), SIMD3(0, 10, 0)],

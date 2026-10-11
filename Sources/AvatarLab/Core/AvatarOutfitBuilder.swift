@@ -21,9 +21,6 @@ struct AvatarOutfitBuilder: Sendable {
     /// - Returns: `body` without the skin garments cover (for 3D), `bareBody` complete
     ///   (for the 2D overlay, which draws no 3D garments), and the garments; nil once the
     ///   calling task is cancelled.
-    /// How far skin bordering hidden skin is pulled in under the fabric.
-    static let skinTuck: Float = 0.008
-    static let tuckTaper: Float = 0.04
 
     func build(shape: AvatarBodyShape, cuts: [AvatarGarmentCut]) -> (body: AvatarMesh, bareBody: AvatarMesh, garments: [AvatarMesh])? {
         let engine = AvatarMorphEngine(asset: asset)
@@ -52,35 +49,7 @@ struct AvatarOutfitBuilder: Sendable {
             if !hidden.contains(Int32(t / 3)) { visible += bodyTriangles[t..<(t + 3)] }
             t += 3
         }
-        // Skin on the edge of what garments hide is tucked in a little, so the visible
-        // triangles there slope under the fabric instead of poking through its edge
-        // (the jagged white teeth along necklines in the Atelier close-ups).
-        var shown = positions
-        if !hidden.isEmpty {
-            var covered = [Bool](repeating: false, count: positions.count)
-            for triangle in hidden {
-                for k in 0..<3 { covered[Int(bodyTriangles[Int(triangle) * 3 + k])] = true }
-            }
-            // Tapered to nothing within 4 cm of a garment's open edge (hem, cuff, neckline),
-            // where tucked skin could come into view (Codex round 4).
-            var edgePoints: [SIMD3<Float>] = []
-            for garment in garments where !garment.backTriangles.isEmpty {
-                let open = garment.openEdgeVertices()
-                edgePoints += garment.positions.indices.filter { open[$0] }.map { garment.positions[$0] }
-            }
-            let edges = HashGrid(points: edgePoints, cell: Self.tuckTaper)
-            for v in Set(visible) where covered[Int(v)] {
-                let p = positions[Int(v)]
-                var amount: Float = 1
-                if let j = edges.nearest(to: p, within: Self.tuckTaper, in: edgePoints) {
-                    let d = p - edgePoints[j]
-                    let s = min((d * d).sum().squareRoot() / Self.tuckTaper, 1)
-                    amount = s * s * (3 - 2 * s)
-                }
-                shown[Int(v)] = p - amount * Self.skinTuck * bodyNormals[Int(v)]
-            }
-        }
-        let body = AvatarMorphEngine.compact(triangles: visible, positions: shown, offset: 0)
+        let body = AvatarMorphEngine.compact(triangles: visible, positions: positions, offset: 0)
         let bare = hidden.isEmpty ? body : AvatarMorphEngine.compact(triangles: bodyTriangles, positions: positions, offset: 0)
         return (body, bare, garments)
     }
@@ -91,8 +60,7 @@ struct AvatarOutfitBuilder: Sendable {
     /// surface, so the inside of a large triangle counts (Atelier review), and along the
     /// vertex's own normal from the nearest inner vertex, as before. Only vertices that
     /// moved are checked again. Normals of a moved garment are recomputed at the end.
-    static func layer(_ garments: inout [AvatarMesh], cuts: [AvatarGarmentCut], gap: Float = 0.008, reach: Float = 0.06,
-                      surfaceReach: Float = 0.03) {
+    static func layer(_ garments: inout [AvatarMesh], cuts: [AvatarGarmentCut], gap: Float = 0.008, reach: Float = 0.06) {
         let order = cuts.indices.sorted { cuts[$0].layer < cuts[$1].layer }
         func yRange(_ m: AvatarMesh) -> ClosedRange<Float> {
             let ys = m.positions.map(\.y)
@@ -104,9 +72,9 @@ struct AvatarOutfitBuilder: Sendable {
                 cuts[$0].layer < cuts[outer].layer && yRange(garments[$0]).overlaps(yRange(garments[outer]))
             }
             guard !inners.isEmpty else { continue }
-            // Surface queries look 3 cm around (27 cells of 3 cm); deeper penetration is still
-            // caught by the 6 cm nearest-vertex clearance. Keeps the guard near v1's cost.
-            var surfaces = inners.map { TriangleGrid(mesh: garments[$0], cell: surfaceReach) }
+            // Surface queries look 6 cm around: a 3 cm cut-off missed deeper penetration far
+            // from any inner vertex (Codex round 5). TriangleGrid's sphere test keeps it cheap.
+            var surfaces = inners.map { TriangleGrid(mesh: garments[$0], cell: reach) }
             let pointGrids = inners.map { HashGrid(points: garments[$0].positions, cell: reach / 2) }
             var mesh = garments[outer]
             // Pushes follow the vertex normals; after any round that moved something the
@@ -125,7 +93,7 @@ struct AvatarOutfitBuilder: Sendable {
                         for k in pending {
                             var p = mesh.positions[k]
                             let n = mesh.normals[k]
-                            if let hit = surfaces[i].closest(to: p, within: surfaceReach) {
+                            if let hit = surfaces[i].closest(to: p, within: reach) {
                                 let depth = ((p - hit.point) * hit.normal).sum()
                                 if depth < gap {
                                     // Along our own normal while it roughly agrees with theirs; otherwise
@@ -240,6 +208,9 @@ struct TriangleGrid {
     private let positions: [SIMD3<Float>]
     private let normals: [SIMD3<Float>]
     private let corners: [SIMD3<Int32>]
+    /// Per triangle: bounding-sphere centre and radius, to skip triangles that cannot beat
+    /// the best distance so far without the full closest-point test.
+    private let spheres: [SIMD4<Float>]
     /// Per-triangle mark of the last query that tested it (no per-query set).
     private var stamps: [UInt32]
     private var query: UInt32 = 0
@@ -259,6 +230,12 @@ struct TriangleGrid {
         }
         self.corners = corners
         stamps = [UInt32](repeating: 0, count: corners.count)
+        spheres = corners.map { tri in
+            let a = mesh.positions[Int(tri.x)], b = mesh.positions[Int(tri.y)], c = mesh.positions[Int(tri.z)]
+            let centre = (a + b + c) / 3
+            let r = [a, b, c].map { (($0 - centre) * ($0 - centre)).sum() }.max() ?? 0
+            return SIMD4(centre.x, centre.y, centre.z, r.squareRoot())
+        }
         for (index, tri) in corners.enumerated() {
             let a = positions[Int(tri.x)], b = positions[Int(tri.y)], c = positions[Int(tri.z)]
             let lo = Self.key(pointwiseMin(a, pointwiseMin(b, c)), cell), hi = Self.key(pointwiseMax(a, pointwiseMax(b, c)), cell)
@@ -290,6 +267,10 @@ struct TriangleGrid {
             let t = Int(index)
             guard stamps[t] != query else { return }
             stamps[t] = query
+            let sphere = spheres[t]
+            let toCentre = p - SIMD3(sphere.x, sphere.y, sphere.z)
+            let gapToSphere = (toCentre * toCentre).sum().squareRoot() - sphere.w
+            guard gapToSphere <= 0 || gapToSphere * gapToSphere < bestDistance else { return }
             let tri = corners[t]
             let a = positions[Int(tri.x)], b = positions[Int(tri.y)], c = positions[Int(tri.z)]
             let q = Self.closestPoint(p, a, b, c)
