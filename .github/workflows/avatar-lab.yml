@@ -2,15 +2,14 @@
 # avatar renders on an iPhone simulator. Runs on GitHub's standard macOS runner,
 # which is free for public repositories.
 #
-# Manual dispatch. TEMPORARY: pushes to polish/rig-atelier also run it while the
-# RiG Atelier quality pass is in progress (remove before handing over).
+# Manual dispatch only. (A temporary push trigger was used during the RiG Atelier
+# quality pass and has been removed.) The review renders of a run are published as
+# annotations by the "Review renders" jobs: Tools/CI/render_chunks.py.
 
 name: Avatar Lab
 
 on:
   workflow_dispatch:
-  push:
-    branches: [polish/rig-atelier]
 
 permissions:
   contents: read
