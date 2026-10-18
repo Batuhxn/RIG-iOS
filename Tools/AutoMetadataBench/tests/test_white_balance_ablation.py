@@ -64,9 +64,10 @@ class WhiteBalanceAblationTests(unittest.TestCase):
         self.assertIsNone(majority_family(colors))
 
     def test_gain_bounds_prevent_unbounded_color_correction(self):
-        rgb, mask = scene((95, 140, 150), (30, 33, 43))
+        rgb, mask = scene((100, 140, 150), (30, 33, 43))
         gain = estimate_illuminant_gain(rgb, mask, "gray-world")
         self.assertIsNotNone(gain)
+        self.assertAlmostEqual(float(gain[0]), 1.30, places=10)
         self.assertTrue(np.all(gain >= 1 / 1.30))
         self.assertTrue(np.all(gain <= 1.30))
 
