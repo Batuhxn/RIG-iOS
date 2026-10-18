@@ -2,23 +2,6 @@ import Foundation
 import XCTest
 @testable import RIG
 
-final class MemoryWeatherStorage: WeatherCacheStorage, @unchecked Sendable {
-    private var values: [String: Data] = [:]
-    private let lock = NSLock()
-
-    func data(forKey key: String) -> Data? {
-        lock.lock()
-        defer { lock.unlock() }
-        return values[key]
-    }
-
-    func set(_ data: Data?, forKey key: String) {
-        lock.lock()
-        defer { lock.unlock() }
-        values[key] = data
-    }
-}
-
 final class StubWeatherProvider: WeatherProviding, @unchecked Sendable {
     private let lock = NSLock()
     private let result: Result<WeatherReport, WeatherFailure>
@@ -67,7 +50,7 @@ final class WeatherCacheTests: XCTestCase {
     private let city = WeatherCity.presets[0]
 
     private func cache() -> WeatherCache {
-        WeatherCache(storage: MemoryWeatherStorage())
+        WeatherCache(storage: InMemoryWeatherStorage())
     }
 
     func testAgeBoundaries() {
@@ -95,7 +78,7 @@ final class WeatherCacheTests: XCTestCase {
     }
 
     func testCorruptEntryIsIgnored() {
-        let storage = MemoryWeatherStorage()
+        let storage = InMemoryWeatherStorage()
         storage.set(Data("not json".utf8), forKey: "rig.weather.report.\(city.id)")
         XCTAssertNil(WeatherCache(storage: storage).report(for: city, now: WeatherFixture.start))
     }

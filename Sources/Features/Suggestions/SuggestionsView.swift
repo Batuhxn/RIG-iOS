@@ -10,6 +10,7 @@ struct SuggestionsView: View {
     @Query private var savedOutfits: [SavedOutfit]
 
     @State private var model = SuggestionsModel()
+    @State private var weather = WeatherModel()
 
     private var garmentsByID: [UUID: ClothingItem] {
         // Not `uniqueKeysWithValues`: that traps on a duplicate key, and a
@@ -34,6 +35,18 @@ struct SuggestionsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: RIGTheme.Spacing.l) {
+                WeatherCardView(
+                    state: weather.state,
+                    selectedCity: weather.selectedCity,
+                    isRefreshing: weather.isRefreshing,
+                    onSelect: { city in
+                        Task { await weather.select(city, using: services.weather) }
+                    },
+                    onRefresh: {
+                        Task { await weather.refresh(using: services.weather) }
+                    }
+                )
+
                 if let errorMessage = model.errorMessage {
                     RIGErrorBanner(message: errorMessage) {
                         model.errorMessage = nil
@@ -78,7 +91,8 @@ struct SuggestionsView: View {
                             recordedRating: ratingsBySignature[suggestion.signature],
                             isSaved: savedSignatures.contains(suggestion.signature),
                             onSave: { save(suggestion) },
-                            onRate: { rate(suggestion, $0) }
+                            onRate: { rate(suggestion, $0) },
+                            weatherNotes: weatherNotes(for: suggestion)
                         )
                     }
 
@@ -98,6 +112,14 @@ struct SuggestionsView: View {
         .task {
             await generate(startOver: true)
         }
+        .task {
+            await weather.start(using: services.weather)
+        }
+        // A new or refreshed forecast re-ranks from the top; losing the forecast
+        // falls back to the ordinary ranking rather than keeping stale order.
+        .onChange(of: weather.rankingContext) {
+            Task { await generate(startOver: true) }
+        }
     }
 
     @MainActor
@@ -105,8 +127,14 @@ struct SuggestionsView: View {
         await model.generate(
             wardrobe: items.map(\.snapshot),
             engine: services.engine,
-            startOver: startOver
+            startOver: startOver,
+            weather: weather.rankingContext
         )
+    }
+
+    private func weatherNotes(for suggestion: OutfitSuggestion) -> [String] {
+        guard let context = weather.rankingContext else { return [] }
+        return WeatherOutfitNote.notes(for: suggestion.items, weather: context)
     }
 
     private func save(_ suggestion: OutfitSuggestion) {

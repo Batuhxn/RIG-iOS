@@ -11,6 +11,8 @@ struct OutfitCardView: View {
     let isSaved: Bool
     let onSave: () -> Void
     let onRate: (OutfitRating) -> Void
+    /// Grounded weather notes from `WeatherOutfitNote`; empty without a forecast.
+    var weatherNotes: [String] = []
 
     private let columns = [GridItem(.adaptive(minimum: 76), spacing: RIGTheme.Spacing.s)]
 
@@ -51,6 +53,19 @@ struct OutfitCardView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if !weatherNotes.isEmpty {
+                VStack(alignment: .leading, spacing: RIGTheme.Spacing.xs) {
+                    ForEach(weatherNotes, id: \.self) { note in
+                        Label(note, systemImage: "cloud.sun")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Weather: " + weatherNotes.joined(separator: " "))
+            }
 
             HStack(spacing: RIGTheme.Spacing.s) {
                 Button {

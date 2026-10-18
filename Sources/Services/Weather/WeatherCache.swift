@@ -24,6 +24,24 @@ final class UserDefaultsWeatherStorage: WeatherCacheStorage, @unchecked Sendable
     }
 }
 
+/// Previews and tests: nothing is written outside the process.
+final class InMemoryWeatherStorage: WeatherCacheStorage, @unchecked Sendable {
+    private var values: [String: Data] = [:]
+    private let lock = NSLock()
+
+    func data(forKey key: String) -> Data? {
+        lock.lock()
+        defer { lock.unlock() }
+        return values[key]
+    }
+
+    func set(_ data: Data?, forKey key: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        values[key] = data
+    }
+}
+
 /// Last good forecast per city, with explicit age rules.
 ///
 /// - Younger than `freshInterval`: shown and ranked on without a network call.

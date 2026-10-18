@@ -82,6 +82,22 @@ struct WeatherRepository: Sendable {
     }
 }
 
+/// A fixed cool, showery forecast for SwiftUI previews. Never touches the network.
+struct PreviewWeatherProvider: WeatherProviding {
+    func forecast(for city: WeatherCity) async throws -> WeatherReport {
+        WeatherReport(
+            city: city,
+            observedLocalTime: "2026-10-19T08:00",
+            airTemperatureC: 11,
+            apparentTemperatureC: 9,
+            precipitationProbability: 65,
+            windSpeedKPH: 14,
+            weatherCode: 80,
+            fetchedAt: Date()
+        )
+    }
+}
+
 /// Lets only the most recent request publish its result.
 ///
 /// Switching from Ankara to İzmir while Ankara is still loading must never end

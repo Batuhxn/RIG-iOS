@@ -36,7 +36,8 @@ final class SuggestionsModel {
         wardrobe: [GarmentSnapshot],
         engine: OutfitEngine,
         limit: Int = 3,
-        startOver: Bool = false
+        startOver: Bool = false,
+        weather: WeatherContext? = nil
     ) async {
         if startOver {
             seenSignatures.removeAll()
@@ -52,17 +53,36 @@ final class SuggestionsModel {
         isLoading = true
         defer { isLoading = false }
 
-        var result = await engine.suggestions(from: wardrobe, limit: limit, excluding: seenSignatures)
+        var result = await Self.rank(wardrobe, engine: engine, limit: limit, excluding: seenSignatures, weather: weather)
 
         if result.isEmpty && !seenSignatures.isEmpty {
             seenSignatures.removeAll()
             hasWrappedAround = true
-            result = await engine.suggestions(from: wardrobe, limit: limit)
+            result = await Self.rank(wardrobe, engine: engine, limit: limit, excluding: [], weather: weather)
         } else {
             hasWrappedAround = false
         }
 
         suggestions = result
         seenSignatures.formUnion(result.map(\.signature))
+    }
+}
+
+extension SuggestionsModel {
+    /// With a usable forecast, the engine's weather-aware rule ranking; without
+    /// one, exactly the path RIG ran before weather existed. The weather path is
+    /// rules only: v0.1 wires no compatibility provider, so nothing is skipped
+    /// today, but enabling one later must revisit this (see PR #2 review).
+    nonisolated static func rank(
+        _ wardrobe: [GarmentSnapshot],
+        engine: OutfitEngine,
+        limit: Int,
+        excluding excluded: Set<String>,
+        weather: WeatherContext?
+    ) async -> [OutfitSuggestion] {
+        if let weather, weather.isUsable {
+            return engine.weatherRankedSuggestions(from: wardrobe, weather: weather, limit: limit, excluding: excluded)
+        }
+        return await engine.suggestions(from: wardrobe, limit: limit, excluding: excluded)
     }
 }

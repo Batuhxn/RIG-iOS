@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Runs the framework-free logic tests with a Linux Swift toolchain.
 #
-# This is NOT the iOS build. It compiles only the source files whose sole
-# import is Foundation, from Models, OutfitEngine, Services/Weather and
-# Features/Suggestions, into a throwaway SwiftPM package named RIG, so `@testable import RIG`
-# in the selected test files resolves unchanged. SwiftUI, SwiftData, Vision and
+# This is NOT the iOS build. It compiles only the source files whose imports
+# are Foundation (optionally plus Observation), from Models, OutfitEngine,
+# Services/Weather and Features/Suggestions, into a throwaway SwiftPM package
+# named RIG, so `@testable import RIG` in the selected test files resolves
+# unchanged. SwiftUI, SwiftData, Vision and
 # the app target are never compiled here; Xcode on macOS is still required.
 #
 # Run:  bash scripts/linux_logic_tests.sh
@@ -21,10 +22,11 @@ shim='#if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif'
 
+foundation_and_observation="$(printf 'Foundation\nObservation')"
 copied=0
 while IFS= read -r -d '' file; do
     imports="$(grep -E '^[[:space:]]*import[[:space:]]+' "$file" | awk '{print $2}' | sort -u)"
-    if [ "$imports" = "Foundation" ]; then
+    if [ "$imports" = "Foundation" ] || [ "$imports" = "$foundation_and_observation" ]; then
         name="$(echo "${file#"$root/Sources/"}" | tr '/' '_')"
         { echo "$shim"; cat "$file"; } > "$work/Sources/RIG/$name"
         copied=$((copied + 1))
@@ -44,6 +46,7 @@ tests=(
     WeatherForecastParsingTests.swift
     WeatherCacheTests.swift
     WeatherSuggestionTests.swift
+    WeatherModelTests.swift
 )
 for test in "${tests[@]}"; do
     if [ -f "$root/Tests/$test" ]; then
