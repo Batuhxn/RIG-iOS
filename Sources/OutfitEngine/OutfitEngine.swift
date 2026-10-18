@@ -94,6 +94,10 @@ struct OutfitEngine: Sendable {
 
     /// Weather-aware rules. Existing APIs remain unchanged and behave exactly
     /// as before when no valid forecast is available.
+    ///
+    /// This synchronous entry point deliberately bypasses the optional async
+    /// CompatibilityProvider. Before enabling such a provider in production,
+    /// add an async weather-aware path preserving the bounded provider behavior.
     func weatherRankedSuggestions(
         from wardrobe: [GarmentSnapshot],
         weather: WeatherContext,
