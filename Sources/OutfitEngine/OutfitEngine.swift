@@ -92,6 +92,32 @@ struct OutfitEngine: Sendable {
         return Self.diversify(Self.sorted(scored), limit: limit)
     }
 
+    /// Weather-aware rules. Existing APIs remain unchanged and behave exactly
+    /// as before when no valid forecast is available.
+    func weatherRankedSuggestions(
+        from wardrobe: [GarmentSnapshot],
+        weather: WeatherContext,
+        limit: Int = 3,
+        excluding excludedSignatures: Set<String> = []
+    ) -> [OutfitSuggestion] {
+        guard weather.isUsable else {
+            return rankedSuggestions(from: wardrobe, limit: limit, excluding: excludedSignatures)
+        }
+        let candidates = generator.candidates(from: wardrobe)
+            .filter { !excludedSignatures.contains($0.signature) }
+        let scored = candidates.map { candidate -> (suggestion: OutfitSuggestion, rank: Double) in
+            let breakdown = score(candidate.items)
+            let comfort = WeatherComfort.score(for: candidate.items, weather: weather)
+            return (OutfitSuggestion(candidate: candidate, breakdown: breakdown),
+                    breakdown.total * 0.75 + comfort * 0.25)
+        }
+        let ranked = scored.sorted { lhs, rhs in
+            if lhs.rank != rhs.rank { return lhs.rank > rhs.rank }
+            return lhs.suggestion.signature < rhs.suggestion.signature
+        }.map(\.suggestion)
+        return Self.diversify(ranked, limit: limit)
+    }
+
     /// Rules first, then — only if a provider is enabled — a capped signal on
     /// the strongest few candidates. Re-scoring every candidate through a model
     /// would be the expensive mistake; the provider only ever sees a shortlist.
