@@ -46,6 +46,8 @@ final class WeatherModel {
         }
         if let cached = repository.cachedState(for: city) {
             state = cached
+            // Fresh enough: no request, and no refresh spinner flashing by.
+            if case .ready(_, .fresh) = cached { return }
         }
         await load(city, using: repository, forceRefresh: false)
     }

@@ -74,6 +74,9 @@ struct OutfitCardView: View {
                     Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "checkmark" : "square.and.arrow.down")
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity, minHeight: 44)
+                        // A plain-style button only hit-tests opaque content; make the
+                        // whole 44 pt tile tappable.
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
@@ -86,22 +89,26 @@ struct OutfitCardView: View {
                 } label: {
                     Image(systemName: recordedRating == .liked ? "hand.thumbsup.fill" : "hand.thumbsup")
                         .frame(width: 52, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
                 .accessibilityLabel(OutfitRating.liked.recordingActionLabel)
+                .accessibilityAddTraits(recordedRating == .liked ? .isSelected : [])
 
                 Button {
                     onRate(.disliked)
                 } label: {
                     Image(systemName: recordedRating == .disliked ? "hand.thumbsdown.fill" : "hand.thumbsdown")
                         .frame(width: 52, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
                 .accessibilityLabel(OutfitRating.disliked.recordingActionLabel)
+                .accessibilityAddTraits(recordedRating == .disliked ? .isSelected : [])
             }
         }
         .padding(RIGTheme.Spacing.m)

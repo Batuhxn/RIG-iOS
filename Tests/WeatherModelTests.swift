@@ -16,6 +16,16 @@ final class DelayedWeatherProvider: WeatherProviding, @unchecked Sendable {
     }
 }
 
+/// Takes 300 ms to decline, so the rules-only async path is slow.
+struct SlowCompatibilityProvider: CompatibilityProvider {
+    let isEnabled = true
+
+    func compatibilitySignal(for items: [GarmentSnapshot]) async throws -> Double? {
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        return nil
+    }
+}
+
 @MainActor
 final class WeatherModelTests: XCTestCase {
     private var suiteName = ""
@@ -118,6 +128,42 @@ final class WeatherModelTests: XCTestCase {
             model.suggestions.map(\.signature),
             OutfitEngine().weatherRankedSuggestions(from: wardrobe, weather: cold).map(\.signature)
         )
+    }
+
+    /// The first, weatherless generate is slow (its engine consults a delayed
+    /// provider); a forecast arrives and a weather generate finishes first. The
+    /// late weatherless result must not replace the weather-ranked looks.
+    func testLateWeatherlessResultNeverOverwritesWeatherRanking() async {
+        let wardrobe = Fixture.smallWardrobe()
+        let cold = WeatherContext(apparentTemperatureC: 2, precipitationProbability: 10, windSpeedKPH: 5)
+        let slowEngine = OutfitEngine(compatibilityProvider: SlowCompatibilityProvider())
+        let model = SuggestionsModel()
+
+        let first = Task { await model.generate(wardrobe: wardrobe, engine: slowEngine, startOver: true, weather: nil) }
+        try? await Task.sleep(nanoseconds: 20_000_000)
+        await model.generate(wardrobe: wardrobe, engine: slowEngine, startOver: true, weather: cold)
+        await first.value
+
+        XCTAssertEqual(
+            model.suggestions.map(\.signature),
+            OutfitEngine().weatherRankedSuggestions(from: wardrobe, weather: cold).map(\.signature)
+        )
+        XCTAssertFalse(model.isLoading)
+    }
+
+    func testFreshCacheOnStartMakesNoRequest() async {
+        let city = WeatherCity.presets[0]
+        let cache = WeatherCache(storage: InMemoryWeatherStorage())
+        cache.store(WeatherFixture.report(city, fetchedAt: Date()))
+        let provider = StubWeatherProvider(.failure(.offline))
+        defaults.set(city.id, forKey: "rig.weather.selectedCityID")
+
+        let model = WeatherModel(defaultsSuiteName: suiteName)
+        await model.start(using: WeatherRepository(provider: provider, cache: cache))
+
+        XCTAssertEqual(provider.calls, 0)
+        XCTAssertFalse(model.isRefreshing)
+        XCTAssertNotNil(model.rankingContext)
     }
 
     func testSuggestionsWithoutWeatherAreUnchanged() async {

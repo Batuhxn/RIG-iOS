@@ -109,16 +109,15 @@ struct SuggestionsView: View {
         .background(RIGTheme.pageBackground)
         .navigationTitle("Suggestions")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
+        // Runs on first appearance and again whenever the ranking forecast
+        // changes (a new city, a refresh, or losing it), re-ranking from the top.
+        // SwiftUI cancels the previous run, and SuggestionsModel drops any
+        // result that a newer generate has superseded.
+        .task(id: weather.rankingContext) {
             await generate(startOver: true)
         }
         .task {
             await weather.start(using: services.weather)
-        }
-        // A new or refreshed forecast re-ranks from the top; losing the forecast
-        // falls back to the ordinary ranking rather than keeping stale order.
-        .onChange(of: weather.rankingContext) {
-            Task { await generate(startOver: true) }
         }
     }
 

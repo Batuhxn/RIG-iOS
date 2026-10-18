@@ -17,6 +17,9 @@ final class SuggestionsModel {
     var errorMessage: String?
 
     private var seenSignatures: Set<String> = []
+    /// Only the latest generate may publish. A re-rank triggered by a new
+    /// forecast must never be overwritten by an older run finishing late.
+    @ObservationIgnored private var generation = LatestRequestGate()
 
     /// Ready wardrobes can still return no looks (for example after filtering).
     /// That is not evidence that a particular category is missing.
@@ -39,6 +42,7 @@ final class SuggestionsModel {
         startOver: Bool = false,
         weather: WeatherContext? = nil
     ) async {
+        let ticket = generation.issue()
         if startOver {
             seenSignatures.removeAll()
             hasWrappedAround = false
@@ -51,18 +55,20 @@ final class SuggestionsModel {
         }
 
         isLoading = true
-        defer { isLoading = false }
 
         var result = await Self.rank(wardrobe, engine: engine, limit: limit, excluding: seenSignatures, weather: weather)
+        guard generation.isCurrent(ticket) else { return }
 
         if result.isEmpty && !seenSignatures.isEmpty {
             seenSignatures.removeAll()
             hasWrappedAround = true
             result = await Self.rank(wardrobe, engine: engine, limit: limit, excluding: [], weather: weather)
+            guard generation.isCurrent(ticket) else { return }
         } else {
             hasWrappedAround = false
         }
 
+        isLoading = false
         suggestions = result
         seenSignatures.formUnion(result.map(\.signature))
     }

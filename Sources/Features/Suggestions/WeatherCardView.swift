@@ -111,7 +111,7 @@ struct WeatherCardView: View {
             HStack(alignment: .center, spacing: RIGTheme.Spacing.m) {
                 Image(systemName: report.condition.symbolName)
                     .symbolRenderingMode(.hierarchical)
-                    .font(.system(size: 34, weight: .light))
+                    .font(.system(.largeTitle, weight: .light))
                     .foregroundStyle(.secondary)
                     .frame(width: 44)
                     .accessibilityHidden(true)
@@ -195,6 +195,7 @@ struct WeatherCardView: View {
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
+        .frame(minHeight: 44, alignment: .leading)
     }
 
     // MARK: - Copy
@@ -223,22 +224,42 @@ struct WeatherCardView: View {
     }
 }
 
-#Preview("States") {
+/// Every card state side by side. A struct rather than statements inside the
+/// preview closure, so the preview is a single expression in any Xcode.
+private struct WeatherCardPreviewGallery: View {
     let city = WeatherCity.presets[0]
     let report = WeatherReport(
-        city: city, observedLocalTime: "2026-10-19T08:00", observedAt: Date(), airTemperatureC: 11,
-        apparentTemperatureC: 9, precipitationProbability: 65, rainHoursCovered: 6, windSpeedKPH: 14,
-        weatherCode: 80, fetchedAt: Date().addingTimeInterval(-600)
+        city: WeatherCity.presets[0], observedLocalTime: "2026-10-19T08:00", observedAt: Date(),
+        airTemperatureC: 11, apparentTemperatureC: 9, precipitationProbability: 65, rainHoursCovered: 6,
+        windSpeedKPH: 14, weatherCode: 80, fetchedAt: Date().addingTimeInterval(-600)
     )
-    return ScrollView {
-        VStack(spacing: RIGTheme.Spacing.m) {
-            WeatherCardView(state: .noCity, selectedCity: nil, isRefreshing: false, onSelect: { _ in }, onRefresh: {})
-            WeatherCardView(state: .loading(city), selectedCity: city, isRefreshing: true, onSelect: { _ in }, onRefresh: {})
-            WeatherCardView(state: .ready(report, .fresh), selectedCity: city, isRefreshing: false, onSelect: { _ in }, onRefresh: {})
-            WeatherCardView(state: .staleAfterFailure(report, .offline), selectedCity: city, isRefreshing: false, onSelect: { _ in }, onRefresh: {})
-            WeatherCardView(state: .unavailable(city, .offline), selectedCity: city, isRefreshing: false, onSelect: { _ in }, onRefresh: {})
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: RIGTheme.Spacing.m) {
+                card(.noCity, hasCity: false)
+                card(.loading(city), refreshing: true)
+                card(.ready(report, .fresh))
+                card(.ready(report, .stale), refreshing: true)
+                card(.staleAfterFailure(report, .offline))
+                card(.unavailable(city, .offline))
+            }
+            .padding()
         }
-        .padding()
+        .background(RIGTheme.pageBackground)
     }
-    .background(RIGTheme.pageBackground)
+
+    private func card(_ state: WeatherState, hasCity: Bool = true, refreshing: Bool = false) -> some View {
+        WeatherCardView(
+            state: state,
+            selectedCity: hasCity ? city : nil,
+            isRefreshing: refreshing,
+            onSelect: { _ in },
+            onRefresh: {}
+        )
+    }
+}
+
+#Preview("States") {
+    WeatherCardPreviewGallery()
 }
