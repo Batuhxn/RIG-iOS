@@ -6,16 +6,20 @@ import Foundation
 /// person needs to judge the numbers: where, when, and how old they are.
 struct WeatherReport: Codable, Hashable, Sendable {
     let city: WeatherCity
-    /// Local wall-clock time of the "current" reading, as Open-Meteo reports it
-    /// (for example "2026-10-19T01:30"). Kept as text because it is already in
-    /// the city's own timezone and is only ever displayed.
+    /// The city's wall-clock time of the "current" reading, for example
+    /// "2026-10-19T01:30". Display only.
     let observedLocalTime: String
+    /// The instant of the "current" reading.
+    let observedAt: Date
     let airTemperatureC: Double
     let apparentTemperatureC: Double
-    /// Highest hourly precipitation probability from the current hour through
-    /// the next `rainLookaheadHours - 1` hours. People dress for the next few
-    /// hours, not for the current fifteen minutes.
+    /// Highest single-hour precipitation probability over `rainHoursCovered`
+    /// consecutive hours starting with the current one. It is NOT the chance of
+    /// any rain across the whole window, and the interface says so. People dress
+    /// for the next few hours, not for the current fifteen minutes.
     let precipitationProbability: Int
+    /// 3...`rainLookaheadHours`; fewer when the feed has a gap or ends early.
+    let rainHoursCovered: Int
     let windSpeedKPH: Double
     /// WMO weather interpretation code.
     let weatherCode: Int

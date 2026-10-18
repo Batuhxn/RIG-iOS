@@ -4,22 +4,32 @@ import XCTest
 
 final class WeatherForecastParsingTests: XCTestCase {
     private let istanbul = WeatherCity.presets[0]
-    private let fetchedAt = Date(timeIntervalSince1970: 1_800_000_000)
+    /// 2026-10-19T00:00:00Z.
+    static let midnightUTC = 1_792_368_000
+    static let offset = 10_800
 
-    /// Trimmed from a real Open-Meteo response (Istanbul, timezone=auto).
+    /// Shaped like a real Open-Meteo response with timeformat=unixtime.
+    /// `hours` lists the hourly timestamps as offsets in hours from midnight UTC.
     static func sampleJSON(
-        currentTime: String = "2026-10-19T01:30",
+        currentMinutesAfterMidnight: Int = 90,
         apparent: String = "13.2",
-        probabilities: String = "0,5,10,null,70,20,90,100"
+        hours: [Int] = Array(0..<8),
+        probabilities: String = "0,5,10,40,70,20,90,100"
     ) -> Data {
-        let hours = (0..<8).map { String(format: "\"2026-10-19T%02d:00\"", $0) }.joined(separator: ",")
+        let times = hours.map { String(midnightUTC + $0 * 3600) }.joined(separator: ",")
+        let current = midnightUTC + currentMinutesAfterMidnight * 60
         let json = """
-        {"latitude":41.02,"longitude":28.94,"utc_offset_seconds":10800,"timezone":"Europe/Istanbul",
-         "current":{"time":"\(currentTime)","interval":900,"temperature_2m":13.8,
+        {"latitude":41.02,"longitude":28.94,"utc_offset_seconds":\(offset),"timezone":"Europe/Istanbul",
+         "current":{"time":\(current),"interval":900,"temperature_2m":13.8,
                     "apparent_temperature":\(apparent),"weather_code":61,"wind_speed_10m":7.1},
-         "hourly":{"time":[\(hours)],"precipitation_probability":[\(probabilities)]}}
+         "hourly":{"time":[\(times)],"precipitation_probability":[\(probabilities)]}}
         """
         return Data(json.utf8)
+    }
+
+    /// The instant of `current` in the default sample.
+    private var observed: Date {
+        Date(timeIntervalSince1970: TimeInterval(Self.midnightUTC + 90 * 60))
     }
 
     func testDecodesCurrentReadings() throws {
@@ -27,41 +37,84 @@ final class WeatherForecastParsingTests: XCTestCase {
         XCTAssertEqual(forecast.current.apparentTemperature, 13.2)
         XCTAssertEqual(forecast.current.windSpeed10M, 7.1)
         XCTAssertEqual(forecast.current.weatherCode, 61)
+        XCTAssertEqual(forecast.utcOffsetSeconds, Self.offset)
     }
 
-    func testRainLookaheadStartsAtCurrentHourAndSkipsNulls() throws {
-        // Current 01:30 -> hours 01..06 -> [5, 10, null, 70, 20, 90] -> 90.
+    func testObservedLocalTimeUsesTheCityOffset() throws {
+        // 01:30 UTC + 3 h.
+        XCTAssertEqual(try OpenMeteoForecast.decode(Self.sampleJSON()).observedLocalTime, "2026-10-19T04:30")
+    }
+
+    func testRainWindowStartsAtTheHourContainingNow() throws {
+        // Current 01:30Z -> hours 01..06 -> [5, 10, 40, 70, 20, 90] -> 90 over 6 h.
         let forecast = try OpenMeteoForecast.decode(Self.sampleJSON())
-        XCTAssertEqual(forecast.precipitationProbability(lookaheadHours: 6), 90)
-        XCTAssertEqual(forecast.precipitationProbability(lookaheadHours: 2), 10)
+        XCTAssertEqual(forecast.rainWindow(lookaheadHours: 6), .init(maximumHourlyProbability: 90, hours: 6))
+        XCTAssertEqual(forecast.rainWindow(lookaheadHours: 3), .init(maximumHourlyProbability: 40, hours: 3))
     }
 
-    func testRainLookaheadIsClippedAtEndOfSeries() throws {
-        let forecast = try OpenMeteoForecast.decode(Self.sampleJSON(currentTime: "2026-10-19T07:00"))
-        XCTAssertEqual(forecast.precipitationProbability(lookaheadHours: 6), 100)
+    func testRainWindowShrinksAtEndOfSeriesButReportsItsCoverage() throws {
+        let forecast = try OpenMeteoForecast.decode(Self.sampleJSON(currentMinutesAfterMidnight: 5 * 60))
+        // Hours 05, 06, 07 only.
+        XCTAssertEqual(forecast.rainWindow(lookaheadHours: 6), .init(maximumHourlyProbability: 100, hours: 3))
     }
 
-    func testMissingCurrentHourRejectsTheForecast() throws {
-        let forecast = try OpenMeteoForecast.decode(Self.sampleJSON(currentTime: "2026-10-20T12:00"))
-        XCTAssertNil(forecast.precipitationProbability(lookaheadHours: 6))
-        XCTAssertNil(forecast.report(for: istanbul, fetchedAt: fetchedAt))
+    func testRainWindowStopsAtANullHour() throws {
+        let forecast = try OpenMeteoForecast.decode(Self.sampleJSON(probabilities: "0,5,10,40,null,20,90,100"))
+        // Hours 01, 02, 03 then null: max 40 over 3 h; the 90 after the gap is not used.
+        XCTAssertEqual(forecast.rainWindow(lookaheadHours: 6), .init(maximumHourlyProbability: 40, hours: 3))
     }
 
-    func testAllNullRainIsNotTreatedAsDry() throws {
+    func testTooFewUsableHoursRejectsTheForecast() throws {
+        let forecast = try OpenMeteoForecast.decode(Self.sampleJSON(probabilities: "0,5,null,40,70,20,90,100"))
+        XCTAssertNil(forecast.rainWindow(lookaheadHours: 6))
+        XCTAssertNil(forecast.report(for: istanbul, fetchedAt: observed))
+    }
+
+    func testRepeatedHourBreaksTheWindow() throws {
+        // A duplicated hour (fall-back DST or a feed glitch): 01, 02, 02, 03 ...
         let forecast = try OpenMeteoForecast.decode(
-            Self.sampleJSON(probabilities: "null,null,null,null,null,null,null,null")
+            Self.sampleJSON(hours: [0, 1, 2, 2, 3, 4, 5, 6], probabilities: "0,5,10,99,40,70,20,90")
         )
-        XCTAssertNil(forecast.report(for: istanbul, fetchedAt: fetchedAt))
+        // Window is 01, 02 then a 0 s step -> only 2 hours -> rejected.
+        XCTAssertNil(forecast.rainWindow(lookaheadHours: 6))
     }
 
-    func testReportCarriesEngineContext() throws {
+    func testSkippedHourBreaksTheWindow() throws {
+        // 01, 02, 03, then 05: the window ends at 03.
+        let forecast = try OpenMeteoForecast.decode(
+            Self.sampleJSON(hours: [0, 1, 2, 3, 5, 6, 7, 8], probabilities: "0,5,10,40,99,99,99,99")
+        )
+        XCTAssertEqual(forecast.rainWindow(lookaheadHours: 6), .init(maximumHourlyProbability: 40, hours: 3))
+    }
+
+    func testCurrentOutsideTheSeriesRejectsTheForecast() throws {
+        let forecast = try OpenMeteoForecast.decode(Self.sampleJSON(currentMinutesAfterMidnight: 30 * 60))
+        XCTAssertNil(forecast.rainWindow(lookaheadHours: 6))
+        let early = try OpenMeteoForecast.decode(Self.sampleJSON(hours: Array(2..<10)))
+        XCTAssertNil(early.rainWindow(lookaheadHours: 6))
+    }
+
+    func testMismatchedSeriesLengthsAreRejected() throws {
+        let forecast = try OpenMeteoForecast.decode(Self.sampleJSON(probabilities: "0,5,10,40,70,20,90"))
+        XCTAssertNil(forecast.rainWindow(lookaheadHours: 6))
+    }
+
+    func testObservationFarFromFetchTimeIsRejected() throws {
+        let forecast = try OpenMeteoForecast.decode(Self.sampleJSON())
+        XCTAssertNotNil(forecast.report(for: istanbul, fetchedAt: observed.addingTimeInterval(60 * 60)))
+        XCTAssertNil(forecast.report(for: istanbul, fetchedAt: observed.addingTimeInterval(3 * 60 * 60)))
+        XCTAssertNil(forecast.report(for: istanbul, fetchedAt: observed.addingTimeInterval(-3 * 60 * 60)))
+    }
+
+    func testReportCarriesEngineContextAndCoverage() throws {
         let report = try XCTUnwrap(
-            OpenMeteoForecast.decode(Self.sampleJSON()).report(for: istanbul, fetchedAt: fetchedAt)
+            OpenMeteoForecast.decode(Self.sampleJSON()).report(for: istanbul, fetchedAt: observed)
         )
         XCTAssertEqual(report.context, WeatherContext(apparentTemperatureC: 13.2, precipitationProbability: 90, windSpeedKPH: 7.1))
+        XCTAssertEqual(report.rainHoursCovered, 6)
         XCTAssertEqual(report.condition, .rain)
-        XCTAssertEqual(report.observedLocalTime, "2026-10-19T01:30")
-        XCTAssertEqual(report.fetchedAt, fetchedAt)
+        XCTAssertEqual(report.observedAt, observed)
+        XCTAssertEqual(report.fetchedAt, observed)
     }
 
     func testMalformedJSONThrows() {
@@ -80,12 +133,12 @@ final class WeatherForecastParsingTests: XCTestCase {
         XCTAssertEqual(request.timeoutInterval, OpenMeteoWeatherService.requestTimeout)
 
         let items = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
-        let names = Set(items.map(\.name))
-        XCTAssertEqual(names, [
+        XCTAssertEqual(Set(items.map(\.name)), [
             "latitude", "longitude", "current", "hourly", "temperature_unit",
-            "wind_speed_unit", "timezone", "forecast_days"
+            "wind_speed_unit", "timeformat", "timezone", "forecast_days"
         ])
         XCTAssertEqual(items.first { $0.name == "latitude" }?.value, "41.01")
+        XCTAssertEqual(items.first { $0.name == "timeformat" }?.value, "unixtime")
     }
 
     func testServiceMapsTransportErrorToOffline() async {
@@ -112,13 +165,13 @@ final class WeatherForecastParsingTests: XCTestCase {
     }
 
     func testServiceReturnsReportOnSuccess() async throws {
-        let fetchedAt = self.fetchedAt
+        let observed = self.observed
         let service = OpenMeteoWeatherService(
             transport: { request in
                 let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
                 return (Self.sampleJSON(), response)
             },
-            now: { fetchedAt }
+            now: { observed }
         )
         let report = try await service.forecast(for: istanbul)
         XCTAssertEqual(report.city, istanbul)

@@ -70,8 +70,9 @@ struct WeatherCache: Sendable {
     }
 
     /// The cached report and how old it is, or nil when nothing usable exists.
-    /// A report "from the future" (device clock moved back) is treated as stale
-    /// rather than fresh, so a wrong clock cannot pin an old forecast forever.
+    /// A report "from the future" (device clock moved back) is never fresh: it is
+    /// stale if it is less than `usableInterval` ahead, and discarded beyond that,
+    /// so a wrong clock cannot pin an old forecast.
     func report(for city: WeatherCity, now: Date) -> (report: WeatherReport, age: Age)? {
         guard let data = storage.data(forKey: keyPrefix + city.id),
               let report = try? JSONDecoder().decode(WeatherReport.self, from: data),
@@ -79,7 +80,7 @@ struct WeatherCache: Sendable {
         else { return nil }
 
         let elapsed = now.timeIntervalSince(report.fetchedAt)
-        if elapsed < 0 { return (report, .stale) }
+        if elapsed < 0 { return -elapsed < Self.usableInterval ? (report, .stale) : nil }
         if elapsed < Self.freshInterval { return (report, .fresh) }
         if elapsed < Self.usableInterval { return (report, .stale) }
         return nil

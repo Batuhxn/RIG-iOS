@@ -36,9 +36,11 @@ enum WeatherFixture {
         WeatherReport(
             city: city,
             observedLocalTime: "2026-10-19T08:00",
+            observedAt: fetchedAt,
             airTemperatureC: apparent + 1,
             apparentTemperatureC: apparent,
             precipitationProbability: rain,
+            rainHoursCovered: 6,
             windSpeedKPH: wind,
             weatherCode: 3,
             fetchedAt: fetchedAt
@@ -69,6 +71,15 @@ final class WeatherCacheTests: XCTestCase {
         let cache = cache()
         cache.store(WeatherFixture.report())
         XCTAssertEqual(cache.report(for: city, now: WeatherFixture.start - 600)?.age, .stale)
+        XCTAssertNil(cache.report(for: city, now: WeatherFixture.start - WeatherCache.usableInterval))
+    }
+
+    func testStaleCacheIsShownButNotRankedUntilRefreshFails() {
+        let report = WeatherFixture.report()
+        XCTAssertNil(WeatherState.ready(report, .stale).rankingContext)
+        XCTAssertNotNil(WeatherState.ready(report, .fresh).rankingContext)
+        XCTAssertNotNil(WeatherState.staleAfterFailure(report, .offline).rankingContext)
+        XCTAssertEqual(WeatherState.ready(report, .stale).report, report)
     }
 
     func testCitiesDoNotShareEntries() {

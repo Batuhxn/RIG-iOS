@@ -11,17 +11,17 @@ final class WeatherSuggestionTests: XCTestCase {
 
     func testColdLookWithoutLayerSaysSoPlainly() {
         let notes = WeatherOutfitNote.notes(for: base, weather: WeatherContext(apparentTemperatureC: 6))
-        XCTAssertEqual(notes.first, "No outer layer here, and it feels like 6°C outside.")
+        XCTAssertEqual(notes.first, "No outer layer; feels like 6°C.")
     }
 
     func testColdLookWithLayerNamesTheLayerNotItsWarmth() {
         let notes = WeatherOutfitNote.notes(for: layered, weather: WeatherContext(apparentTemperatureC: 6))
-        XCTAssertEqual(notes.first, "Includes an outer layer for a feels-like 6°C.")
+        XCTAssertEqual(notes.first, "Includes an outer layer; feels like 6°C.")
     }
 
     func testWarmLookWithoutLayer() {
         let notes = WeatherOutfitNote.notes(for: base, weather: WeatherContext(apparentTemperatureC: 29))
-        XCTAssertEqual(notes, ["No extra layer for a feels-like 29°C."])
+        XCTAssertEqual(notes, ["No extra layer; feels like 29°C."])
     }
 
     func testMildDryCalmWeatherAddsNothing() {
@@ -32,7 +32,7 @@ final class WeatherSuggestionTests: XCTestCase {
         let windy = WeatherContext(apparentTemperatureC: 16, windSpeedKPH: 32)
         XCTAssertEqual(
             WeatherOutfitNote.notes(for: base, weather: windy),
-            ["No outer layer here, and it feels like 16°C outside.", "Windy at 32 km/h."]
+            ["No outer layer; feels like 16°C.", "Wind 32 km/h."]
         )
     }
 
@@ -40,13 +40,21 @@ final class WeatherSuggestionTests: XCTestCase {
         let wet = WeatherContext(apparentTemperatureC: 8, precipitationProbability: 80, windSpeedKPH: 40)
         let notes = WeatherOutfitNote.notes(for: layered, weather: wet)
         XCTAssertEqual(notes.count, WeatherOutfitNote.maximumNotes)
-        XCTAssertTrue(notes[1].hasPrefix("80% chance of rain"))
+        XCTAssertTrue(notes[1].hasPrefix("Highest hourly rain chance in the next 6 h: 80%."))
         let banned = ["waterproof", "water-resistant", "warm enough", "keeps you", "protects", "dry"]
         for note in notes {
             for word in banned {
                 XCTAssertFalse(note.lowercased().contains(word), "\"\(note)\" contains \"\(word)\"")
             }
         }
+    }
+
+    func testRainNoteStatesPartialCoverage() {
+        let wet = WeatherContext(apparentTemperatureC: 20, precipitationProbability: 70)
+        XCTAssertEqual(
+            WeatherOutfitNote.notes(for: base, weather: wet, rainHours: 3),
+            ["Highest hourly rain chance in the next 3 h: 70%. Check your shoes and outer layer suit wet weather."]
+        )
     }
 
     func testUnusableForecastProducesNoNotes() {
@@ -72,7 +80,7 @@ final class WeatherSuggestionTests: XCTestCase {
             XCTAssertTrue(first.items.contains { $0.category == .outerwear })
             XCTAssertEqual(
                 WeatherOutfitNote.notes(for: first.items, weather: cold).first,
-                "Includes an outer layer for a feels-like 3°C."
+                "Includes an outer layer; feels like 3°C."
             )
         }
     }
@@ -80,7 +88,8 @@ final class WeatherSuggestionTests: XCTestCase {
     func testRankingContextOnlyFromUsableStates() {
         let city = WeatherCity.presets[0]
         let report = WeatherFixture.report(apparent: 5)
-        XCTAssertEqual(WeatherState.ready(report, .stale).rankingContext, report.context)
+        XCTAssertEqual(WeatherState.ready(report, .fresh).rankingContext, report.context)
+        XCTAssertNil(WeatherState.ready(report, .stale).rankingContext)
         XCTAssertNil(WeatherState.loading(city).rankingContext)
         XCTAssertNil(WeatherState.noCity.rankingContext)
         XCTAssertNil(WeatherState.unavailable(city, .offline).rankingContext)

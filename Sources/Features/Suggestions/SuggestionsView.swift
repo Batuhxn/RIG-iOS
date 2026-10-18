@@ -133,8 +133,8 @@ struct SuggestionsView: View {
     }
 
     private func weatherNotes(for suggestion: OutfitSuggestion) -> [String] {
-        guard let context = weather.rankingContext else { return [] }
-        return WeatherOutfitNote.notes(for: suggestion.items, weather: context)
+        guard let context = weather.rankingContext, let report = weather.state.report else { return [] }
+        return WeatherOutfitNote.notes(for: suggestion.items, weather: context, rainHours: report.rainHoursCovered)
     }
 
     private func save(_ suggestion: OutfitSuggestion) {

@@ -69,6 +69,25 @@ final class WeatherModelTests: XCTestCase {
         XCTAssertEqual(model.selectedCity, izmir)
     }
 
+    func testSupersededCityIsCancelledAndNotCached() async {
+        let ankara = WeatherCity.presets[1]
+        let izmir = WeatherCity.presets[2]
+        let cache = WeatherCache(storage: InMemoryWeatherStorage())
+        let repository = WeatherRepository(
+            provider: DelayedWeatherProvider(delays: ["ankara": 300_000_000, "izmir": 0]),
+            cache: cache
+        )
+        let model = WeatherModel(defaultsSuiteName: suiteName)
+
+        let slow = Task { await model.select(ankara, using: repository) }
+        try? await Task.sleep(nanoseconds: 20_000_000)
+        await model.select(izmir, using: repository)
+        await slow.value
+
+        XCTAssertNil(cache.report(for: ankara, now: Date()), "a superseded request must not write the cache")
+        XCTAssertNotNil(cache.report(for: izmir, now: Date()))
+    }
+
     func testOfflineWithoutCacheIsExplicit() async {
         let model = WeatherModel(defaultsSuiteName: suiteName)
         let city = WeatherCity.presets[0]

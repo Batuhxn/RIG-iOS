@@ -129,7 +129,7 @@ struct WeatherCardView: View {
                 metric(
                     symbol: "umbrella",
                     value: "\(report.precipitationProbability)%",
-                    caption: "Rain chance, next \(WeatherReport.rainLookaheadHours) h"
+                    caption: "Highest hourly rain chance, next \(report.rainHoursCovered) h"
                 )
                 metric(
                     symbol: "wind",
@@ -226,8 +226,8 @@ struct WeatherCardView: View {
 #Preview("States") {
     let city = WeatherCity.presets[0]
     let report = WeatherReport(
-        city: city, observedLocalTime: "2026-10-19T08:00", airTemperatureC: 11,
-        apparentTemperatureC: 9, precipitationProbability: 65, windSpeedKPH: 14,
+        city: city, observedLocalTime: "2026-10-19T08:00", observedAt: Date(), airTemperatureC: 11,
+        apparentTemperatureC: 9, precipitationProbability: 65, rainHoursCovered: 6, windSpeedKPH: 14,
         weatherCode: 80, fetchedAt: Date().addingTimeInterval(-600)
     )
     return ScrollView {

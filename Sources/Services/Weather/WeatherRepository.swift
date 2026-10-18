@@ -24,12 +24,16 @@ enum WeatherState: Equatable, Sendable {
     case unavailable(WeatherCity, WeatherFailure)
 
     /// The forecast suggestions may be ranked against, if any.
+    ///
+    /// A stale cached forecast is shown while a refresh is in flight but does not
+    /// drive ranking; it does so only once the refresh has failed. So ranking
+    /// uses either a fresh forecast or the best one left after a failed refresh.
     var rankingContext: WeatherContext? {
         switch self {
-        case .ready(let report, _), .staleAfterFailure(let report, _):
+        case .ready(let report, .fresh), .staleAfterFailure(let report, _):
             let context = report.context
             return context.isUsable ? context : nil
-        case .noCity, .loading, .unavailable:
+        case .ready(_, .stale), .noCity, .loading, .unavailable:
             return nil
         }
     }
@@ -70,7 +74,11 @@ struct WeatherRepository: Sendable {
             guard report.context.isUsable, report.city.id == city.id else {
                 throw WeatherFailure.unusableResponse
             }
-            cache.store(report)
+            // A superseded request (the user picked another city) still returns,
+            // but writes nothing.
+            if !Task.isCancelled {
+                cache.store(report)
+            }
             return .ready(report, .fresh)
         } catch {
             let failure = (error as? WeatherFailure) ?? .offline
@@ -88,9 +96,11 @@ struct PreviewWeatherProvider: WeatherProviding {
         WeatherReport(
             city: city,
             observedLocalTime: "2026-10-19T08:00",
+            observedAt: Date(),
             airTemperatureC: 11,
             apparentTemperatureC: 9,
             precipitationProbability: 65,
+            rainHoursCovered: 6,
             windSpeedKPH: 14,
             weatherCode: 80,
             fetchedAt: Date()

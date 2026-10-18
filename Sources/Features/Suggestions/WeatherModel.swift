@@ -12,7 +12,8 @@ final class WeatherModel {
     private(set) var isRefreshing = false
     private(set) var selectedCityID: String?
 
-    private var gate = LatestRequestGate()
+    @ObservationIgnored private var gate = LatestRequestGate()
+    @ObservationIgnored private var inFlight: Task<WeatherState, Never>?
     /// nil means `UserDefaults.standard`; tests pass a throwaway suite.
     nonisolated private let defaultsSuiteName: String?
     nonisolated private static let cityKey = "rig.weather.selectedCityID"
@@ -63,6 +64,8 @@ final class WeatherModel {
 
     func clearCity() {
         _ = gate.issue()
+        inFlight?.cancel()
+        inFlight = nil
         defaults.removeObject(forKey: Self.cityKey)
         selectedCityID = nil
         isRefreshing = false
@@ -71,15 +74,21 @@ final class WeatherModel {
 
     private func load(_ city: WeatherCity, using repository: WeatherRepository, forceRefresh: Bool) async {
         let ticket = gate.issue()
+        // Cancel the superseded request so it stops its network call and skips
+        // its cache write. The gate below is still what guarantees correctness.
+        inFlight?.cancel()
         isRefreshing = true
         if state.report == nil {
             state = .loading(city)
         }
 
-        let result = await repository.load(city, forceRefresh: forceRefresh)
+        let task = Task { await repository.load(city, forceRefresh: forceRefresh) }
+        inFlight = task
+        let result = await task.value
 
         // A newer request (another city, or a manual refresh) owns the card now.
         guard gate.isCurrent(ticket) else { return }
+        inFlight = nil
         isRefreshing = false
         state = result
     }
