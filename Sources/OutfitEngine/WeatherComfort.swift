@@ -41,7 +41,7 @@ enum WeatherComfort {
             layerFit = hasOuterwear ? 0.0 : 1.0
         } else {
             // In mild conditions either choice can be sensible.
-            layerFit = hasOuterwear ? 0.8 : 0.8
+            layerFit = 0.8
         }
 
         // Outerwear is not necessarily rainwear. This small weight does NOT
