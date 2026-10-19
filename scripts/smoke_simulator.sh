@@ -132,12 +132,12 @@ echo "Weather demo screenshot: RIG-weather-demo.png"
 publish_preview() {
   local name="$1" source="$2" preview encoded chunk total index
   preview="$RESULT_DIR/$name-preview.jpg"
-  sips -Z 520 -s format jpeg -s formatOptions 45 "$source" --out "$preview" >/dev/null 2>&1 || return 0
+  sips -Z 460 -s format jpeg -s formatOptions 40 "$source" --out "$preview" >/dev/null 2>&1 || return 0
   encoded="$(base64 -i "$preview" | tr -d '\n')"
-  total=$(( (${#encoded} + 5999) / 6000 ))
+  total=$(( (${#encoded} + 3999) / 4000 ))
   index=0
   while [ "$index" -lt "$total" ]; do
-    chunk="${encoded:$((index * 6000)):6000}"
+    chunk="${encoded:$((index * 4000)):4000}"
     echo "::notice title=$name $((index + 1))/$total::$chunk"
     index=$((index + 1))
   done
