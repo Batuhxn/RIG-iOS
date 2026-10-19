@@ -34,10 +34,14 @@ struct OutfitEngine: Sendable {
 
     /// Pure, synchronous, side-effect free. Given the same garments it always
     /// returns the same numbers.
-    func score(_ items: [GarmentSnapshot], compatibilitySignal: Double? = nil) -> OutfitScoreBreakdown {
+    func score(
+        _ items: [GarmentSnapshot],
+        compatibilitySignal: Double? = nil,
+        countingOuterwear: Bool = true
+    ) -> OutfitScoreBreakdown {
         let color = ColorHarmony.score(for: items.map(\.colorFamily))
         let season = SeasonCoherence.score(for: items.map(\.seasons))
-        let completeness = OutfitCompleteness.score(for: items)
+        let completeness = OutfitCompleteness.score(for: items, countingOuterwear: countingOuterwear)
         let preference = PreferenceWeighting.score(for: items)
 
         let weighted =
@@ -110,7 +114,8 @@ struct OutfitEngine: Sendable {
         let candidates = generator.candidates(from: wardrobe)
             .filter { !excludedSignatures.contains($0.signature) }
         let scored = candidates.map { candidate -> (suggestion: OutfitSuggestion, rank: Double) in
-            let breakdown = score(candidate.items)
+            // Outerwear is WeatherComfort's call here, not a completeness bonus.
+            let breakdown = score(candidate.items, countingOuterwear: false)
             let comfort = WeatherComfort.score(for: candidate.items, weather: weather)
             return (OutfitSuggestion(candidate: candidate, breakdown: breakdown),
                     breakdown.total * 0.75 + comfort * 0.25)
