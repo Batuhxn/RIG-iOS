@@ -15,8 +15,11 @@ name: iOS validation
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
+  # Temporary, CI-only branch: runs Gate A on the exact code of PR #6
+  # (test/weather-ranking-golden-matrix). Public repository, standard
+  # runner: no cost. Never merge this commit.
+  push:
+    branches: [ci/gate-a-golden-matrix]
   # pull_request:
 
 permissions:
