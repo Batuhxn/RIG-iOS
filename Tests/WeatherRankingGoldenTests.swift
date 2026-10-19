@@ -14,6 +14,13 @@ import XCTest
 /// These are behaviour-regression fixtures, NOT claims about what humans
 /// should wear at a given temperature. Review the expected signatures when
 /// changing weather rules rather than blindly regenerating them.
+///
+/// KNOWN PRODUCT DEBT: The 'mild' (18°C) and 'mild-rain' (20°C) snapshot
+/// currently ranks an optional outer layer first because OutfitCompleteness
+/// rewards it, while WeatherComfort scores layering neutrally in mild weather.
+/// These two golden outputs document *current* behaviour, not an approved
+/// product policy. Rework the scoring, review the resulting looks, then update
+/// these expectations deliberately. They are not a veto on that improvement.
 final class WeatherRankingGoldenTests: XCTestCase {
     private struct Scenario {
         let label: String
