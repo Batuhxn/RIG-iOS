@@ -2,8 +2,9 @@ import SwiftData
 import SwiftUI
 
 /// The way in. One clear action, an honest summary of what RIG actually knows,
-/// and recent looks. No weather card, no score, no personalisation claim —
-/// v0.1 has none of those and will not imply otherwise.
+/// and recent looks. No score and no personalisation claim. The only weather
+/// here is a one-line glance at a forecast the Suggestions screen already
+/// cached; the home screen itself never fetches.
 struct HomeView: View {
     @Environment(\.rigServices) private var services
     @Query private var items: [ClothingItem]
@@ -11,6 +12,7 @@ struct HomeView: View {
 
     @State private var hasSweptOrphanedImages = false
     @State private var isPresentingImport = false
+    @State private var weather = WeatherModel()
 
     private var readiness: WardrobeReadiness {
         WardrobeReadiness.evaluate(items.map(\.snapshot))
@@ -37,6 +39,11 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .task {
                 await sweepOrphanedImagesOnce()
+            }
+            // onAppear, not task: it runs again when returning from Suggestions,
+            // which is where the forecast is fetched.
+            .onAppear {
+                weather.showCached(using: services.weather)
             }
             .sheet(isPresented: $isPresentingImport) {
                 PhotoImportFlow()
@@ -72,6 +79,14 @@ struct HomeView: View {
     private var suggestAction: some View {
         VStack(alignment: .leading, spacing: RIGTheme.Spacing.s) {
             if readiness.canSuggest {
+                if let report = weather.state.report {
+                    NavigationLink {
+                        SuggestionsView()
+                    } label: {
+                        WeatherGlanceView(report: report, isStale: isWeatherStale)
+                    }
+                    .buttonStyle(.plain)
+                }
                 NavigationLink {
                     SuggestionsView()
                 } label: {
@@ -127,6 +142,11 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private var isWeatherStale: Bool {
+        if case .ready(_, .fresh) = weather.state { return false }
+        return true
     }
 
     private var categoriesWithCounts: [(category: GarmentCategory, count: Int)] {

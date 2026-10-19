@@ -10,6 +10,8 @@ struct RIGServices: Sendable {
     let backgroundRemover: any GarmentBackgroundRemoving
     let engine: OutfitEngine
     let similarityMatcher: any GarmentSimilarityMatching
+    /// Manual-city forecast. The only networked service; see OpenMeteoWeatherService.
+    let weather: WeatherRepository
 
     var importService: GarmentImportService {
         GarmentImportService(store: imageStore, backgroundRemover: backgroundRemover)
@@ -22,7 +24,11 @@ struct RIGServices: Sendable {
             imageStore: try GarmentImageStore.applicationSupport(),
             backgroundRemover: VisionBackgroundRemover(),
             engine: OutfitEngine(configuration: .default, compatibilityProvider: nil),
-            similarityMatcher: VisionFeaturePrintSimilarityMatcher()
+            similarityMatcher: VisionFeaturePrintSimilarityMatcher(),
+            weather: WeatherRepository(
+                provider: OpenMeteoWeatherService(),
+                cache: WeatherCache(storage: UserDefaultsWeatherStorage())
+            )
         )
     }
 
@@ -35,7 +41,11 @@ struct RIGServices: Sendable {
             imageStore: GarmentImageStore(baseDirectory: directory),
             backgroundRemover: PassthroughBackgroundRemover(),
             engine: OutfitEngine(),
-            similarityMatcher: PassthroughSimilarityMatcher()
+            similarityMatcher: PassthroughSimilarityMatcher(),
+            weather: WeatherRepository(
+                provider: PreviewWeatherProvider(),
+                cache: WeatherCache(storage: InMemoryWeatherStorage())
+            )
         )
     }
 }

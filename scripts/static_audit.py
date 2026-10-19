@@ -36,6 +36,21 @@ FORBIDDEN_PATTERNS = {
     "machine-learning runtime": r"\b(CoreML|MLModel|MLMultiArray)\b",
 }
 
+# The single exception to "no network": the weather forecast. One production
+# file may use URLSession, only against Open-Meteo, only with GET, and must not
+# mention anything garment- or photo-shaped. One test file may build requests
+# and responses to exercise it, but may not open a session.
+NETWORK_ALLOWLIST = {
+    "Sources/Services/Weather/OpenMeteoWeatherService.swift": "production",
+    "Tests/WeatherForecastParsingTests.swift": "test",
+}
+ALLOWED_WEATHER_HOSTS = {"api.open-meteo.com", "open-meteo.com"}
+WEATHER_FILE_FORBIDDEN = {
+    "garment or photo data": r"\b(Garment\w*|ClothingItem|UIImage|CGImage|imageData|photo\w*|Photo\w*)\b",
+    "non-GET method": r"httpMethod\s*=\s*\"(?!GET\")",
+    "request body": r"\b(httpBody|httpBodyStream|upload(Task)?)\b",
+    "persistent session": r"URLSessionConfiguration\.(default|background)",
+}
 FORCE_PATTERNS = {
     "force try": r"\btry!\s",
     "force cast": r"\bas!\s",
@@ -93,6 +108,35 @@ def strip_swift(source: str) -> str:
         out.append(char)
         index += 1
     return "".join(out)
+
+
+def network_findings(relative: str, raw: str, code: str) -> list[str]:
+    """Network rule for one file. `code` has comments and strings blanked out."""
+    found: list[str] = []
+    role = NETWORK_ALLOWLIST.get(relative)
+    network = re.compile(FORBIDDEN_PATTERNS["network call"])
+    if role is None:
+        for match in network.finditer(code):
+            line = code[: match.start()].count("\n") + 1
+            found.append(f"{relative}:{line}: network call ({match.group(0)})")
+        return found
+
+    if role == "test":
+        for match in re.finditer(r"\bURLSession\b", code):
+            line = code[: match.start()].count("\n") + 1
+            found.append(f"{relative}:{line}: tests must stub the transport, not open a URLSession")
+        return found
+
+    hosts = set(re.findall(r"https?://([^/\"\s:]+)", raw))
+    hosts |= set(re.findall(r"\bhost\s*=\s*\"([^\"]+)\"", raw))
+    for host in sorted(hosts - ALLOWED_WEATHER_HOSTS):
+        found.append(f"{relative}: weather networking may only reach Open-Meteo, found '{host}'")
+    for label, pattern in WEATHER_FILE_FORBIDDEN.items():
+        source = raw if label == "non-GET method" else code
+        for match in re.finditer(pattern, source):
+            line = source[: match.start()].count("\n") + 1
+            found.append(f"{relative}:{line}: weather networking must not include {label} ({match.group(0)})")
+    return found
 
 
 def check_delimiters(path: Path, code: str) -> None:
@@ -157,7 +201,10 @@ def main() -> int:
         test_functions += len(re.findall(r"\bfunc\s+test[A-Z]\w*\s*\(", code))
 
         is_test = path in tests
+        failures.extend(network_findings(path.relative_to(ROOT).as_posix(), raw, code))
         for label, pattern in FORBIDDEN_PATTERNS.items():
+            if label == "network call":
+                continue
             for match in re.finditer(pattern, code):
                 line = code[: match.start()].count("\n") + 1
                 failures.append(f"{path.relative_to(ROOT)}:{line}: {label} ({match.group(0)})")
