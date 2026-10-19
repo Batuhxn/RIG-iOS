@@ -1,0 +1,78 @@
+# Auto Metadata end to end: fetch the pinned model from its Release asset, build the
+# app with it bundled, and run the app's own Swift pipeline (UIKit letterbox ->
+# Core ML -> decision) on 311 fixtures in the simulator. Compares with the same model
+# run from Python and with reviewed ground truth. No secrets, no signing, no publishing.
+
+name: Auto Metadata end to end
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automd-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Swift pipeline with the pinned model
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          PREFERRED="/Applications/Xcode_16.4.app"
+          if [ -d "$PREFERRED" ]; then SELECTED="$PREFERRED"
+          else SELECTED="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1 || true)"; fi
+          [ -n "${SELECTED:-}" ] && [ -d "$SELECTED" ] || { echo "No Xcode 16.x" >&2; exit 1; }
+          sudo xcode-select --switch "$SELECTED/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Fetch the pinned model, required as in a release build
+        run: bash scripts/fetch_metadata_model.sh --require-model
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prepare fixtures and the Python Core ML reference
+        run: |
+          set -euo pipefail
+          python -m pip install torch==2.5.0 coremltools==8.3.0 pillow==11.0.0 numpy==1.26.4 pyarrow==19.0.1
+          python Tools/AutoMetadataBench/scripts/e2e.py prepare "$RUNNER_TEMP/automd-e2e"
+
+      - name: Build and test with the model bundled
+        env:
+          TEST_RUNNER_RIG_METADATA_FIXTURES: ${{ runner.temp }}/automd-e2e/manifest.json
+          TEST_RUNNER_RIG_METADATA_OUTPUT: ${{ runner.temp }}/automd-e2e/observations.json
+        run: bash scripts/validate_macos.sh
+
+      - name: Compare Swift decisions
+        run: python Tools/AutoMetadataBench/scripts/e2e.py summarize "$RUNNER_TEMP/automd-e2e"
+
+      - name: Release build packages the model, prompts and notices
+        run: |
+          set -euo pipefail
+          xcodebuild build -project RIG.xcodeproj -scheme RIG -configuration Release \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/release-dd \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO > build/release-build.log 2>&1 \
+            || { tail -n 40 build/release-build.log; exit 1; }
+          app="$(find build/release-dd/Build/Products/Release-iphonesimulator -maxdepth 1 -name 'RIG.app' | head -n 1)"
+          [ -d "$app/RIGGarmentEncoder.mlmodelc" ] || { echo "::error::Release app lacks RIGGarmentEncoder.mlmodelc"; exit 1; }
+          [ -f "$app/RIGGarmentPrompts.json" ] || { echo "::error::Release app lacks RIGGarmentPrompts.json"; exit 1; }
+          [ -f "$app/Settings.bundle/Acknowledgements.plist" ] || { echo "::error::Release app lacks the acknowledgements"; exit 1; }
+          [ ! -e "$app/MODEL_LOCK.json" ] || { echo "::error::MODEL_LOCK.json leaked into the app"; exit 1; }
+          model_id="$(python -c 'import json; print(json.load(open("Resources/Models/RIGGarmentPrompts.json"))["modelID"])')"
+          grep -rqF "$model_id" "$app/RIGGarmentEncoder.mlmodelc" || { echo "::error::compiled model metadata does not carry $model_id"; exit 1; }
+          size="$(du -sk "$app" | cut -f1)"
+          echo "::notice title=Release packaging::RIG.app ${size} KB; encoder $(du -sk "$app/RIGGarmentEncoder.mlmodelc" | cut -f1) KB; modelID matches; notices present"

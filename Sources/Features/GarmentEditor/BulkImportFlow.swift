@@ -256,8 +256,16 @@ struct BulkImportFlow: View {
                 // already filed under an identifier the clean-up sweep covers.
                 return
             }
+            guard queue.current?.id == item.id else {
+                try? services.imageStore.removeAll(for: item.id)
+                return
+            }
+            var draft = drafts[item.id] ?? GarmentMetadataFields()
+            if let metadata = result.metadata { draft.fillEmptyFields(from: metadata) }
+            drafts[item.id] = draft
             queue.markReady(result)
         } catch {
+            guard !Task.isCancelled, queue.current?.id == item.id else { return }
             let described = (error as? LocalizedError)?.errorDescription
             queue.markFailed(described ?? "That photo could not be processed. Skip it or try again.")
         }
@@ -283,7 +291,7 @@ struct BulkImportFlow: View {
             subtype: fields.subtype.trimmingCharacters(in: .whitespacesAndNewlines),
             category: category,
             primaryColor: colorFamily,
-            seasons: fields.seasons,
+            seasons: fields.effectiveSeasons,
             isFavorite: fields.isFavorite,
             notes: fields.notes,
             originalImageRelativePath: result.originalRelativePath,
@@ -291,6 +299,7 @@ struct BulkImportFlow: View {
             thumbnailRelativePath: presentation.thumbnailRelativePath,
             isBackgroundRemoved: presentation.usesCutout
         )
+        fields.applyAutoMetadata(to: garment)
         modelContext.insert(garment)
 
         do {

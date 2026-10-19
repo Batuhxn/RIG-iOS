@@ -7,11 +7,20 @@ import SwiftUI
 /// so RIG asks for a category and a colour family and does not ask anyone to
 /// write prose about their trousers.
 struct GarmentMetadataFields: Equatable {
+    enum EditedField: Hashable { case name, category, subtype, length, primaryColor, secondaryColor }
+    var editedFields: Set<EditedField> = []
     var displayName: String = ""
     var subtype: String = ""
     var category: GarmentCategory?
     var colorFamily: ColorFamily?
-    var seasons: SeasonSet = []
+    var secondaryColor: ColorFamily?
+    var length: GarmentLength?
+    var autoMetadata: AutoMetadataResult?
+    /// The last name RIG wrote for the user; a name equal to it is still RIG's to update.
+    var generatedName: String?
+    /// New garments default to all year. Season is not visible in a photo, and asking
+    /// for it would turn a one-tap save back into a form.
+    var seasons: SeasonSet = .all
     var isFavorite: Bool = false
     var notes: String = ""
 
@@ -20,8 +29,11 @@ struct GarmentMetadataFields: Equatable {
     }
 
     var isValid: Bool {
-        !trimmedName.isEmpty && category != nil && colorFamily != nil && !seasons.isEmpty
+        !trimmedName.isEmpty && category != nil && colorFamily != nil
     }
+
+    /// What is stored: clearing every season means "no particular season", i.e. all year.
+    var effectiveSeasons: SeasonSet { seasons.isEmpty ? .all : seasons }
 
     mutating func setSeason(_ season: Season, selected: Bool) {
         if selected {
@@ -42,6 +54,9 @@ struct GarmentMetadataFields: Equatable {
         subtype = item.subtype
         category = item.category
         colorFamily = item.primaryColor
+        secondaryColor = item.secondaryColorRaw.flatMap(ColorFamily.init(rawValue:))
+        length = item.lengthRaw.flatMap(GarmentLength.init(rawValue:))
+        autoMetadata = item.autoMetadataJSON.flatMap { try? JSONDecoder().decode(AutoMetadataResult.self, from: $0) }
         seasons = item.seasons
         isFavorite = item.isFavorite
         notes = item.notes
@@ -54,7 +69,8 @@ struct GarmentMetadataFields: Equatable {
         item.subtype = subtype.trimmingCharacters(in: .whitespacesAndNewlines)
         item.category = category
         item.primaryColor = colorFamily
-        item.seasons = seasons
+        applyAutoMetadata(to: item)
+        item.seasons = effectiveSeasons
         item.isFavorite = isFavorite
         item.notes = notes
         item.touch(now)
@@ -69,14 +85,16 @@ struct GarmentMetadataForm: View {
 
     var body: some View {
         Group {
+            suggestionSummary
+
             Section("Garment") {
-                TextField("Name", text: $fields.displayName)
+                TextField("Name", text: nameBinding)
                     .textInputAutocapitalization(.sentences)
                     .accessibilityLabel("Garment name")
-                TextField("Kind, for example crewneck (optional)", text: $fields.subtype)
+                TextField("Kind, for example crewneck (optional)", text: subtypeBinding)
                     .textInputAutocapitalization(.sentences)
                     .accessibilityLabel("Garment kind")
-                Picker("Category (required)", selection: $fields.category) {
+                Picker("Category (required)", selection: categoryBinding) {
                     Text("Choose a category").tag(nil as GarmentCategory?)
                     ForEach(GarmentCategory.allCases.sorted { $0.displayOrder < $1.displayOrder }) { category in
                         Text(category.displayName).tag(Optional(category))
@@ -92,6 +110,10 @@ struct GarmentMetadataForm: View {
                             isSelected: fields.colorFamily == family
                         ) {
                             fields.colorFamily = family
+                            fields.editedFields.insert(.primaryColor)
+                            fields.autoMetadata?.primaryColor = nil
+                            if fields.secondaryColor == family { fields.secondaryColor = nil; fields.autoMetadata?.secondaryColor = nil }
+                            fields.refreshSuggestedName()
                         }
                     }
                 }
@@ -99,7 +121,7 @@ struct GarmentMetadataForm: View {
             } header: {
                 Text("Primary colour (required)")
             } footer: {
-                Text("Choose one colour family. RIG does not guess it from the photo.")
+                Text("Suggested colours come from the garment cutout. Check them in natural light; every field can be changed.")
             }
 
             Section {
@@ -108,10 +130,12 @@ struct GarmentMetadataForm: View {
                 }
                 Toggle("All year", isOn: allSeasonBinding)
             } header: {
-                Text("Seasons (required)")
+                Text("Seasons")
             } footer: {
-                Text("Choose at least one season. All year selects all four. This is not a weather forecast.")
+                Text("All year unless you narrow it down. This is not a weather forecast.")
             }
+
+            autoMetadataFields
 
             Section("Optional") {
                 Toggle("Favourite", isOn: $fields.isFavorite)

@@ -1,0 +1,2703 @@
+[
+ {
+  "id": "cc0-2df565b9",
+  "index": 0,
+  "image": "data/cc0_cut/2df565b9-1115-4dc7-bd4a-060f9490a8fe.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "orange"
+  }
+ },
+ {
+  "id": "cc0-8519fc6c",
+  "index": 1,
+  "image": "data/cc0_cut/8519fc6c-b5c6-4e10-b2c8-e2e04ba80663.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-7e1b6f54",
+  "index": 2,
+  "image": "data/cc0_cut/7e1b6f54-a706-4c84-9653-124cf3e8a2d3.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-5f0a3fa0",
+  "index": 3,
+  "image": "data/cc0_cut/5f0a3fa0-6a3d-4b68-b213-72766a643de7.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-788825c1",
+  "index": 4,
+  "image": "data/cc0_cut/788825c1-9d04-4c01-bc63-312a461dca78.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "cc0-6eb2176e",
+  "index": 5,
+  "image": "data/cc0_cut/6eb2176e-dd45-4e27-b5aa-a87e08870ac2.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-58e51574",
+  "index": 6,
+  "image": "data/cc0_cut/58e51574-d451-4a2c-a5d4-c6675781cb54.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-d90a72b6",
+  "index": 7,
+  "image": "data/cc0_cut/d90a72b6-288f-470e-b478-530bbd635826.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-c226f48f",
+  "index": 8,
+  "image": "data/cc0_cut/c226f48f-ae09-425f-bf2c-6e4c7dd56b52.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-91b1ab10",
+  "index": 9,
+  "image": "data/cc0_cut/91b1ab10-19de-4262-9560-5c0ae1351612.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-84971313",
+  "index": 10,
+  "image": "data/cc0_cut/84971313-7ca7-4193-b8a5-0926e1a5ac0d.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-dc982c2d",
+  "index": 11,
+  "image": "data/cc0_cut/dc982c2d-49e9-4c08-8b49-4bcc0671c355.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-cb37ff0a",
+  "index": 12,
+  "image": "data/cc0_cut/cb37ff0a-73c1-4a90-8420-d12baec45ac8.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-7b016eb0",
+  "index": 13,
+  "image": "data/cc0_cut/7b016eb0-ff0d-4d43-8fff-008cb02f050c.png",
+  "source": "cc0",
+  "weak_label": "T-Shirt",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "t-shirt"
+  }
+ },
+ {
+  "id": "cc0-7274c3e4",
+  "index": 14,
+  "image": "data/cc0_cut/7274c3e4-817d-4667-96db-4b79ffddb3fd.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-f000dafc",
+  "index": 15,
+  "image": "data/cc0_cut/f000dafc-8ea1-4354-8c2b-afea5e07f354.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": true,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "cardigan"
+  }
+ },
+ {
+  "id": "cc0-b24c37e0",
+  "index": 16,
+  "image": "data/cc0_cut/b24c37e0-2175-445b-9801-2fd517253f2b.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "primaryColor": "burgundy"
+  }
+ },
+ {
+  "id": "cc0-a94791db",
+  "index": 17,
+  "image": "data/cc0_cut/a94791db-897f-4f65-9741-200ee61e911d.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-ec196957",
+  "index": 18,
+  "image": "data/cc0_cut/ec196957-56c2-4ebf-acfe-c13b620f79cc.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-54a7aa48",
+  "index": 19,
+  "image": "data/cc0_cut/54a7aa48-feef-4689-93ba-cc475f93c4e7.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-2ccdf961",
+  "index": 20,
+  "image": "data/cc0_cut/2ccdf961-afe2-47a3-bf38-5e84ae6e9b0a.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-7155bc52",
+  "index": 21,
+  "image": "data/cc0_cut/7155bc52-d5f2-42a2-9caa-0f485a02f5bc.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-9bfe2ccf",
+  "index": 22,
+  "image": "data/cc0_cut/9bfe2ccf-a192-4ab3-baba-0e07016e2428.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": true,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-a6a09210",
+  "index": 23,
+  "image": "data/cc0_cut/a6a09210-3242-4f00-820b-cda15b5383c1.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-909f9c2f",
+  "index": 24,
+  "image": "data/cc0_cut/909f9c2f-3564-4a30-a891-85601707f188.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-b2986b3e",
+  "index": 25,
+  "image": "data/cc0_cut/b2986b3e-4fc1-4eb4-85b3-8a6776b659e3.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "sweater",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "cc0-ea1a27dd",
+  "index": 27,
+  "image": "data/cc0_cut/ea1a27dd-f340-4f24-ba49-4ec1ef5d20ee.png",
+  "source": "cc0",
+  "weak_label": "Longsleeve",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "sweater"
+  }
+ },
+ {
+  "id": "cc0-e77efa63",
+  "index": 28,
+  "image": "data/cc0_cut/e77efa63-0477-4af2-b56d-c15da31bdad6.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-a6153f06",
+  "index": 29,
+  "image": "data/cc0_cut/a6153f06-bb9a-4303-b36c-80ffb61a9565.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "cc0-31547719",
+  "index": 30,
+  "image": "data/cc0_cut/31547719-bfd1-404d-bc3f-d341489be26d.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": true,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-de929bc4",
+  "index": 31,
+  "image": "data/cc0_cut/de929bc4-1c06-4a46-9401-a1681cda0aff.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-e1243518",
+  "index": 32,
+  "image": "data/cc0_cut/e1243518-e811-4662-aabb-c2fc5f7d8151.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-111622d7",
+  "index": 33,
+  "image": "data/cc0_cut/111622d7-2852-4162-a972-3ddc2c01b4e6.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-d9603b7a",
+  "index": 34,
+  "image": "data/cc0_cut/d9603b7a-b32e-401a-bb59-b59c6b7de571.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-4db14d3d",
+  "index": 35,
+  "image": "data/cc0_cut/4db14d3d-05ca-48b1-9257-204b447c27bb.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-c23545ad",
+  "index": 36,
+  "image": "data/cc0_cut/c23545ad-1b46-478f-b6b8-d37eaea6a5e1.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-00143901",
+  "index": 37,
+  "image": "data/cc0_cut/00143901-a14c-4600-960f-7747b4a3a8cd.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-ad219457",
+  "index": 38,
+  "image": "data/cc0_cut/ad219457-e072-41b6-8b71-97637c38f478.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-69a2aafb",
+  "index": 39,
+  "image": "data/cc0_cut/69a2aafb-a8ef-4734-9b78-ed7289171319.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-ceb9e75d",
+  "index": 40,
+  "image": "data/cc0_cut/ceb9e75d-b804-472e-9869-98b2c698b370.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-ee23222a",
+  "index": 41,
+  "image": "data/cc0_cut/ee23222a-f46f-4044-abb2-0a5d1795da36.png",
+  "source": "cc0",
+  "weak_label": "Shirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-3163669a",
+  "index": 42,
+  "image": "data/cc0_cut/3163669a-a958-45d2-af43-b1fd70d21727.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-1347965a",
+  "index": 43,
+  "image": "data/cc0_cut/1347965a-cf67-4b29-9038-4816e7fd5b86.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-91774b48",
+  "index": 44,
+  "image": "data/cc0_cut/91774b48-eacb-4fd1-92a6-2073882a019f.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-0527af7c",
+  "index": 45,
+  "image": "data/cc0_cut/0527af7c-3a7c-4c87-9e1c-bee2d9db0e98.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-ea4298ea",
+  "index": 46,
+  "image": "data/cc0_cut/ea4298ea-8f39-4bb5-976b-1f4f804e4f8a.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-92d4a750",
+  "index": 47,
+  "image": "data/cc0_cut/92d4a750-0aab-43b7-997f-e5ebe9c9a92e.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-d5eeaaed",
+  "index": 48,
+  "image": "data/cc0_cut/d5eeaaed-97fe-4fea-a3cb-17a086cc8167.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-9568b507",
+  "index": 49,
+  "image": "data/cc0_cut/9568b507-e113-4670-ae39-30a444e41cac.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-0ef80b69",
+  "index": 50,
+  "image": "data/cc0_cut/0ef80b69-2c18-435d-b091-91f401e01ed4.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-c5b80186",
+  "index": 51,
+  "image": "data/cc0_cut/c5b80186-15fa-4b9a-9ca4-88005b0db7bf.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-6110bc5f",
+  "index": 52,
+  "image": "data/cc0_cut/6110bc5f-2101-4382-a79c-d2158d052b23.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-4ef0dece",
+  "index": 53,
+  "image": "data/cc0_cut/4ef0dece-adfc-4036-ad34-922d607d4bd5.png",
+  "source": "cc0",
+  "weak_label": "Blouse",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "blouse"
+  }
+ },
+ {
+  "id": "cc0-3e9d7e85",
+  "index": 54,
+  "image": "data/cc0_cut/3e9d7e85-075c-4720-bd0e-7735d30859a1.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-d0a1b45e",
+  "index": 55,
+  "image": "data/cc0_cut/d0a1b45e-f6d3-4402-aad1-e921b9ee3589.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-000d31f6",
+  "index": 56,
+  "image": "data/cc0_cut/000d31f6-44b5-4758-8d86-c4fcfb234392.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "cc0-405cc200",
+  "index": 57,
+  "image": "data/cc0_cut/405cc200-8f74-4917-adaa-d43cca8e8ba4.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-fd576f74",
+  "index": 58,
+  "image": "data/cc0_cut/fd576f74-65ea-4c1f-95dc-1b541a9b7988.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "burgundy"
+  }
+ },
+ {
+  "id": "cc0-b1236b80",
+  "index": 59,
+  "image": "data/cc0_cut/b1236b80-4b3d-45e3-8c39-4e5ff1e169e1.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-8b2f6c39",
+  "index": 60,
+  "image": "data/cc0_cut/8b2f6c39-2726-478e-a489-cb02a7bd1b7f.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-3902b16f",
+  "index": 61,
+  "image": "data/cc0_cut/3902b16f-a0e4-49c4-adba-75a2ba07d224.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "cc0-9f80e84d",
+  "index": 64,
+  "image": "data/cc0_cut/9f80e84d-74a5-4d3e-bcb0-0bf201b92b8f.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-de484f70",
+  "index": 65,
+  "image": "data/cc0_cut/de484f70-c1ef-4f66-9435-8ac433940881.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-709126d8",
+  "index": 66,
+  "image": "data/cc0_cut/709126d8-270b-4393-84d3-765a9df3b3b8.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "hoodie"
+  }
+ },
+ {
+  "id": "cc0-7b61cc39",
+  "index": 67,
+  "image": "data/cc0_cut/7b61cc39-72e3-4e09-9288-edfffb0785e2.png",
+  "source": "cc0",
+  "weak_label": "Hoodie",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-7c801522",
+  "index": 68,
+  "image": "data/cc0_cut/7c801522-2ef0-40b8-ae76-76c3f68cb1da.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top"
+  }
+ },
+ {
+  "id": "cc0-6bbcfcef",
+  "index": 69,
+  "image": "data/cc0_cut/6bbcfcef-9b5d-4ba7-abb5-ed1881479959.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top"
+  }
+ },
+ {
+  "id": "cc0-fcd8821f",
+  "index": 70,
+  "image": "data/cc0_cut/fcd8821f-80ff-4b8a-8f87-8be36ae7288d.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top"
+  }
+ },
+ {
+  "id": "cc0-e56c1cd4",
+  "index": 71,
+  "image": "data/cc0_cut/e56c1cd4-4852-4310-ae2c-9bcaf7bab68b.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-5d8bacce",
+  "index": 72,
+  "image": "data/cc0_cut/5d8bacce-65eb-4bff-9f89-3d023d881d37.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-6b1355ff",
+  "index": 73,
+  "image": "data/cc0_cut/6b1355ff-cc52-4e2a-a870-e91e75b926fe.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "cc0-2617b57c",
+  "index": 74,
+  "image": "data/cc0_cut/2617b57c-b899-4758-a512-c8cc516da560.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-1e53d9cf",
+  "index": 75,
+  "image": "data/cc0_cut/1e53d9cf-bacd-4675-8e7c-5563ce2f743f.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": true,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-235161c9",
+  "index": 76,
+  "image": "data/cc0_cut/235161c9-4d33-4c76-8fb1-cee0355aee45.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top"
+  }
+ },
+ {
+  "id": "cc0-1a6601f1",
+  "index": 77,
+  "image": "data/cc0_cut/1a6601f1-4ad2-43c9-b1b6-d46e09995c7a.png",
+  "source": "cc0",
+  "weak_label": "Top",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top"
+  }
+ },
+ {
+  "id": "cc0-ae596614",
+  "index": 78,
+  "image": "data/cc0_cut/ae596614-9997-47d9-9203-b90214b5ae32.png",
+  "source": "cc0",
+  "weak_label": "Polo",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-6a06dfe2",
+  "index": 79,
+  "image": "data/cc0_cut/6a06dfe2-5e0f-4e2f-875d-56f159de38ab.png",
+  "source": "cc0",
+  "weak_label": "Polo",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "shirt"
+  }
+ },
+ {
+  "id": "cc0-0925fb2c",
+  "index": 80,
+  "image": "data/cc0_cut/0925fb2c-d509-4791-9770-48b398c68511.png",
+  "source": "cc0",
+  "weak_label": "Polo",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-85287925",
+  "index": 81,
+  "image": "data/cc0_cut/85287925-224a-4f67-b34d-507b3859f962.png",
+  "source": "cc0",
+  "weak_label": "Polo",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-0cab4de0",
+  "index": 82,
+  "image": "data/cc0_cut/0cab4de0-5818-4680-a00a-35dbc6e95525.png",
+  "source": "cc0",
+  "weak_label": "Polo",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-45fb7ce0",
+  "index": 83,
+  "image": "data/cc0_cut/45fb7ce0-9203-4f83-9554-49ddb0f15929.png",
+  "source": "cc0",
+  "weak_label": "Polo",
+  "hard": false,
+  "expected": {
+   "category": "top"
+  }
+ },
+ {
+  "id": "cc0-358457f4",
+  "index": 84,
+  "image": "data/cc0_cut/358457f4-e6c1-4a58-bbcf-09b5776e3c51.png",
+  "source": "cc0",
+  "weak_label": "Undershirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-bfb145d2",
+  "index": 85,
+  "image": "data/cc0_cut/bfb145d2-ac67-4ce0-b193-747d0fa563a3.png",
+  "source": "cc0",
+  "weak_label": "Undershirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "cc0-808175a1",
+  "index": 86,
+  "image": "data/cc0_cut/808175a1-9a46-4dbf-971e-d641d2c4818a.png",
+  "source": "cc0",
+  "weak_label": "Undershirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-9bdac063",
+  "index": 87,
+  "image": "data/cc0_cut/9bdac063-6c07-4bfc-a04a-e45224c503df.png",
+  "source": "cc0",
+  "weak_label": "Undershirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-b5856585",
+  "index": 88,
+  "image": "data/cc0_cut/b5856585-87b2-4c0e-904d-9a6fbf549a96.png",
+  "source": "cc0",
+  "weak_label": "Undershirt",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-4a963327",
+  "index": 89,
+  "image": "data/cc0_cut/4a963327-44c6-4bd6-bf02-e7a3d74c1586.png",
+  "source": "cc0",
+  "weak_label": "Undershirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top"
+  }
+ },
+ {
+  "id": "cc0-94fbfd0a",
+  "index": 90,
+  "image": "data/cc0_cut/94fbfd0a-290b-4034-b788-abab0a3dd19a.png",
+  "source": "cc0",
+  "weak_label": "Undershirt",
+  "hard": false,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-ce5fecb7",
+  "index": 91,
+  "image": "data/cc0_cut/ce5fecb7-7b60-41a5-b517-7cf21f389c68.png",
+  "source": "cc0",
+  "weak_label": "Undershirt",
+  "hard": true,
+  "expected": {
+   "category": "top",
+   "subtype": "tank top",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "cc0-7fa97b45",
+  "index": 92,
+  "image": "data/cc0_cut/7fa97b45-380a-4c9c-8de4-522976cb4972.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans"
+  }
+ },
+ {
+  "id": "cc0-d119997f",
+  "index": 93,
+  "image": "data/cc0_cut/d119997f-3466-4948-9aec-7cc2bf5a9acc.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-0c99f0b4",
+  "index": 94,
+  "image": "data/cc0_cut/0c99f0b4-3a0d-4d24-bfdd-e9e98914892c.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers"
+  }
+ },
+ {
+  "id": "cc0-ef6d60c5",
+  "index": 95,
+  "image": "data/cc0_cut/ef6d60c5-7fae-4bd8-a991-d750f0e9091a.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers"
+  }
+ },
+ {
+  "id": "cc0-5638d782",
+  "index": 96,
+  "image": "data/cc0_cut/5638d782-4a13-49be-9318-77c40aab7a3c.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "primaryColor": "purple"
+  }
+ },
+ {
+  "id": "cc0-9fb287ae",
+  "index": 97,
+  "image": "data/cc0_cut/9fb287ae-c15a-4d3b-8b5b-6898a44d4e27.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans"
+  }
+ },
+ {
+  "id": "cc0-ad22bcd3",
+  "index": 98,
+  "image": "data/cc0_cut/ad22bcd3-abd8-4b31-9605-2cc460b93e4a.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-29ea96da",
+  "index": 99,
+  "image": "data/cc0_cut/29ea96da-0051-47ba-adea-76ff6c5b817c.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-26ee6859",
+  "index": 100,
+  "image": "data/cc0_cut/26ee6859-a0f8-42ce-8604-a263882e6d96.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers"
+  }
+ },
+ {
+  "id": "cc0-a3e47bc3",
+  "index": 101,
+  "image": "data/cc0_cut/a3e47bc3-ba2d-480d-a2bd-1c9d2c96abd8.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers"
+  }
+ },
+ {
+  "id": "cc0-34b08259",
+  "index": 102,
+  "image": "data/cc0_cut/34b08259-f999-45c8-bf2f-be3becec7fe4.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": true,
+  "expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-dad82d38",
+  "index": 103,
+  "image": "data/cc0_cut/dad82d38-a305-4baf-9e54-cb6b894deb11.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": true,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-69c9f814",
+  "index": 104,
+  "image": "data/cc0_cut/69c9f814-934a-47b7-a3d5-d107401207ff.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers"
+  }
+ },
+ {
+  "id": "cc0-93ee0d8b",
+  "index": 105,
+  "image": "data/cc0_cut/93ee0d8b-f24e-4ee5-a6fa-a11e82d96757.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers"
+  }
+ },
+ {
+  "id": "cc0-a5111c97",
+  "index": 106,
+  "image": "data/cc0_cut/a5111c97-2304-4432-9846-3dea021ef2e0.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": true,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers"
+  }
+ },
+ {
+  "id": "cc0-245a3c16",
+  "index": 107,
+  "image": "data/cc0_cut/245a3c16-7c5e-423b-b5af-b8f12d89a59f.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": true,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-5d6be0e5",
+  "index": 108,
+  "image": "data/cc0_cut/5d6be0e5-7d7c-4105-b00c-251d62737863.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-5cb0fa87",
+  "index": 109,
+  "image": "data/cc0_cut/5cb0fa87-7669-44bd-94a7-4bcdec2049ad.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "jeans",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-b2283dee",
+  "index": 110,
+  "image": "data/cc0_cut/b2283dee-271e-44b1-a0e4-1f3b717af614.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "cc0-cd3e5c86",
+  "index": 111,
+  "image": "data/cc0_cut/cd3e5c86-c3e3-46aa-b7fc-9c825f7fbfd8.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-831722d0",
+  "index": 112,
+  "image": "data/cc0_cut/831722d0-3e3c-4ecd-b3b3-14dd0ea222bc.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": true,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-38dbb71c",
+  "index": 113,
+  "image": "data/cc0_cut/38dbb71c-2e31-4f17-af08-90719ad818d0.png",
+  "source": "cc0",
+  "weak_label": "Pants",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "trousers",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-dfb9288a",
+  "index": 114,
+  "image": "data/cc0_cut/dfb9288a-faa2-435b-85a0-dbaf8031b705.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-9e29f08f",
+  "index": 115,
+  "image": "data/cc0_cut/9e29f08f-0e9a-42ff-86f3-7330babc2c6f.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-dca066cf",
+  "index": 116,
+  "image": "data/cc0_cut/dca066cf-b564-4b86-a75e-34b9b0bf01b0.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-367f402d",
+  "index": 117,
+  "image": "data/cc0_cut/367f402d-cf3d-4a39-8717-d5f30d9b8560.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-23916e8a",
+  "index": 118,
+  "image": "data/cc0_cut/23916e8a-6b1f-4b78-a4dd-a70f5ea8c88b.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-b21eba8d",
+  "index": 119,
+  "image": "data/cc0_cut/b21eba8d-0bde-44c5-b689-01fbc1ffc4be.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-97620b7f",
+  "index": 120,
+  "image": "data/cc0_cut/97620b7f-54ba-445a-9817-b39c8684f890.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": true,
+  "expected": {
+   "category": "bottom",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-52a76d18",
+  "index": 121,
+  "image": "data/cc0_cut/52a76d18-122b-4b19-9643-da4948434667.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-157f5e09",
+  "index": 122,
+  "image": "data/cc0_cut/157f5e09-784d-45c8-a6bd-6029920ef0fd.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-eae092a5",
+  "index": 123,
+  "image": "data/cc0_cut/eae092a5-8a1c-49d6-88f6-1ee8c71c0e07.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-9dc5e144",
+  "index": 124,
+  "image": "data/cc0_cut/9dc5e144-c3d2-4fde-8dac-a5f8c3b37c59.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "cc0-671603f9",
+  "index": 125,
+  "image": "data/cc0_cut/671603f9-b503-4d14-a389-3c46ff8bf163.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-273d37f5",
+  "index": 126,
+  "image": "data/cc0_cut/273d37f5-1f5f-4ab2-bfbf-1e5a4648500c.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-3179d873",
+  "index": 127,
+  "image": "data/cc0_cut/3179d873-a710-41a9-8773-98f01184d016.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts"
+  }
+ },
+ {
+  "id": "cc0-7d829cd3",
+  "index": 128,
+  "image": "data/cc0_cut/7d829cd3-ea26-4d40-a03f-3eb7367a5ad1.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": true,
+  "expected": {
+   "category": "bottom"
+  }
+ },
+ {
+  "id": "cc0-547cba07",
+  "index": 129,
+  "image": "data/cc0_cut/547cba07-80cb-43cf-ae23-c7a126a6b766.png",
+  "source": "cc0",
+  "weak_label": "Shorts",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "shorts",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-2459a9ab",
+  "index": 130,
+  "image": "data/cc0_cut/2459a9ab-b654-4aef-be7c-89340da78cec.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "cc0-667a7349",
+  "index": 131,
+  "image": "data/cc0_cut/667a7349-f0a7-43bc-bb70-246b61e6354b.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-f4b934fc",
+  "index": 132,
+  "image": "data/cc0_cut/f4b934fc-e326-4f72-b535-53288b8b82d3.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-95e66e02",
+  "index": 133,
+  "image": "data/cc0_cut/95e66e02-b4ed-4fe9-b538-db6bac4fb7df.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "cc0-ce118595",
+  "index": 134,
+  "image": "data/cc0_cut/ce118595-1373-463c-9be5-0b7d62ce1f0d.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "cc0-bb361f03",
+  "index": 135,
+  "image": "data/cc0_cut/bb361f03-abc9-4a8e-a2a4-ff306a5b4612.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "cc0-f1ff2780",
+  "index": 136,
+  "image": "data/cc0_cut/f1ff2780-2ab1-401f-8089-089b5dfa1cf2.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": true,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-910268c2",
+  "index": 137,
+  "image": "data/cc0_cut/910268c2-a132-4d25-80b1-59812c52e65c.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-2fdb6ac9",
+  "index": 138,
+  "image": "data/cc0_cut/2fdb6ac9-dfe4-4824-baab-6bf4e1d2f802.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "maxi"
+  }
+ },
+ {
+  "id": "cc0-491982c3",
+  "index": 139,
+  "image": "data/cc0_cut/491982c3-3e90-431e-99e6-b14ecea36384.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "cc0-5e2b335d",
+  "index": 140,
+  "image": "data/cc0_cut/5e2b335d-2f5e-4356-9aba-a735af742b6a.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "cc0-1d08ddfe",
+  "index": 141,
+  "image": "data/cc0_cut/1d08ddfe-dfd4-4bf9-81a7-9cc8dfa2833f.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-7e77ec6d",
+  "index": 142,
+  "image": "data/cc0_cut/7e77ec6d-2bd6-45c7-9904-cf1fae288afc.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "midi",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-8d173264",
+  "index": 143,
+  "image": "data/cc0_cut/8d173264-bc7d-4175-8130-711c94d3f1ca.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-48895e87",
+  "index": 144,
+  "image": "data/cc0_cut/48895e87-ae51-4c7e-98ae-2855991264d1.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini"
+  }
+ },
+ {
+  "id": "cc0-c938f1ac",
+  "index": 145,
+  "image": "data/cc0_cut/c938f1ac-6e47-41a9-8546-9ca7c27477aa.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt"
+  }
+ },
+ {
+  "id": "cc0-8a7353cf",
+  "index": 146,
+  "image": "data/cc0_cut/8a7353cf-f8e3-4a73-b72e-239ed04d4e2d.png",
+  "source": "cc0",
+  "weak_label": "Skirt",
+  "hard": false,
+  "expected": {
+   "category": "bottom",
+   "subtype": "skirt",
+   "length": "mini",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-d2db3c6a",
+  "index": 148,
+  "image": "data/cc0_cut/d2db3c6a-605a-450c-b21f-dc5af1a513b1.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "length": "mini",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-b2279dec",
+  "index": 149,
+  "image": "data/cc0_cut/b2279dec-874d-4571-a8b5-8e7d704e596d.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "cc0-a1190e56",
+  "index": 150,
+  "image": "data/cc0_cut/a1190e56-0e53-41e3-ad16-a63575173747.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-bcb839e0",
+  "index": 151,
+  "image": "data/cc0_cut/bcb839e0-9055-4760-b5a4-b7fd703b716f.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-2bc3b252",
+  "index": 152,
+  "image": "data/cc0_cut/2bc3b252-bec7-4dbc-beb3-f7977e71000f.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": true,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-160c2e1c",
+  "index": 153,
+  "image": "data/cc0_cut/160c2e1c-48d5-4e31-8155-83152e2ad649.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-354f2a8e",
+  "index": 154,
+  "image": "data/cc0_cut/354f2a8e-8ecb-4284-9ab9-e39399e36afb.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-824014f4",
+  "index": 156,
+  "image": "data/cc0_cut/824014f4-825b-4bf2-835e-e3b8b7d0f387.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-58caa9fd",
+  "index": 157,
+  "image": "data/cc0_cut/58caa9fd-a3df-44ac-b296-05dbd8d02d47.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-af7c9c78",
+  "index": 158,
+  "image": "data/cc0_cut/af7c9c78-220e-4242-bc54-b0559838a0b3.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-833cea61",
+  "index": 159,
+  "image": "data/cc0_cut/833cea61-c79a-4481-8082-8c0fe309c194.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "cc0-f28fb711",
+  "index": 160,
+  "image": "data/cc0_cut/f28fb711-b7bf-4d6e-9935-6970a311a14e.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": true,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-d356b8a6",
+  "index": 161,
+  "image": "data/cc0_cut/d356b8a6-b8bf-4666-81b9-a957aea03f98.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-7fc487f9",
+  "index": 163,
+  "image": "data/cc0_cut/7fc487f9-81a1-4285-aef9-45574cc8adce.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": true,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-05d361f6",
+  "index": 164,
+  "image": "data/cc0_cut/05d361f6-9518-4bf7-a644-6dba9402adf4.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-e4f8a796",
+  "index": 165,
+  "image": "data/cc0_cut/e4f8a796-8963-4a43-8e20-de6430d33780.png",
+  "source": "cc0",
+  "weak_label": "Dress",
+  "hard": false,
+  "expected": {
+   "category": "dress",
+   "subtype": "dress"
+  }
+ },
+ {
+  "id": "cc0-60e4697b",
+  "index": 166,
+  "image": "data/cc0_cut/60e4697b-f69b-4f9e-a0c9-4e707d0b0f2f.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-c2f138b8",
+  "index": 167,
+  "image": "data/cc0_cut/c2f138b8-9581-4ad4-b370-efee47b5752d.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket"
+  }
+ },
+ {
+  "id": "cc0-42518e91",
+  "index": 168,
+  "image": "data/cc0_cut/42518e91-c969-49f5-ac68-dfe394d7451e.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "primaryColor": "olive"
+  }
+ },
+ {
+  "id": "cc0-90d2529c",
+  "index": 169,
+  "image": "data/cc0_cut/90d2529c-7bdb-4ca3-8292-696346706ad9.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-d29d1b88",
+  "index": 170,
+  "image": "data/cc0_cut/d29d1b88-0268-43cb-9674-cde9cb1e4922.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-96239b9d",
+  "index": 171,
+  "image": "data/cc0_cut/96239b9d-c1fd-4c6a-ad74-1d61e9a4503a.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "cc0-f4f59703",
+  "index": 172,
+  "image": "data/cc0_cut/f4f59703-4f85-40f5-8ff4-79f2eca93684.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-ed518faf",
+  "index": 173,
+  "image": "data/cc0_cut/ed518faf-4e7a-4b38-90c6-18164211f952.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-8dd4871d",
+  "index": 174,
+  "image": "data/cc0_cut/8dd4871d-7522-4152-b837-cffb5f2cc261.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-90716fe4",
+  "index": 175,
+  "image": "data/cc0_cut/90716fe4-7c08-4156-9a30-629cfbfc463d.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "primaryColor": "pink"
+  }
+ },
+ {
+  "id": "cc0-b167f39f",
+  "index": 176,
+  "image": "data/cc0_cut/b167f39f-eea8-4f69-9494-e2346bd7e2c5.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-febae8c9",
+  "index": 177,
+  "image": "data/cc0_cut/febae8c9-1a36-4303-90aa-9fc306278cb2.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket"
+  }
+ },
+ {
+  "id": "cc0-d74b5597",
+  "index": 178,
+  "image": "data/cc0_cut/d74b5597-9fd8-4d25-ae3d-1af31ea70507.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-01420fed",
+  "index": 179,
+  "image": "data/cc0_cut/01420fed-89b3-4801-9d91-af5507322fa3.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket"
+  }
+ },
+ {
+  "id": "cc0-21c78c7e",
+  "index": 180,
+  "image": "data/cc0_cut/21c78c7e-a927-49ea-94d4-9ceeaa847bb2.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "cc0-3b67cb0e",
+  "index": 181,
+  "image": "data/cc0_cut/3b67cb0e-eb7c-4f4e-a67a-804ae460932d.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "cc0-0cb4fc9c",
+  "index": 182,
+  "image": "data/cc0_cut/0cb4fc9c-7d38-4f11-95ea-71b61d0ae54c.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-161e35df",
+  "index": 183,
+  "image": "data/cc0_cut/161e35df-93d4-4b30-817e-de03c8c1d55a.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "red"
+  }
+ },
+ {
+  "id": "cc0-bdbe8d4b",
+  "index": 184,
+  "image": "data/cc0_cut/bdbe8d4b-a830-4d90-bc43-625b1ea2d0e3.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket"
+  }
+ },
+ {
+  "id": "cc0-cb8ad9eb",
+  "index": 185,
+  "image": "data/cc0_cut/cb8ad9eb-0347-42bf-8b49-6695f4a16dd0.png",
+  "source": "cc0",
+  "weak_label": "Outwear",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket"
+  }
+ },
+ {
+  "id": "cc0-a58bc314",
+  "index": 186,
+  "image": "data/cc0_cut/a58bc314-45f6-434f-af5b-9ae0998de9ad.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": true,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-c7f0e9ee",
+  "index": 187,
+  "image": "data/cc0_cut/c7f0e9ee-507b-4b89-b7d1-7669a680560e.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "beige"
+  }
+ },
+ {
+  "id": "cc0-7a203e8c",
+  "index": 188,
+  "image": "data/cc0_cut/7a203e8c-a607-44f1-803c-e524bbcee6ad.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": true,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket"
+  }
+ },
+ {
+  "id": "cc0-c14d5954",
+  "index": 189,
+  "image": "data/cc0_cut/c14d5954-a90e-40a0-9412-5e70c4bbef8f.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-e3348ff1",
+  "index": 190,
+  "image": "data/cc0_cut/e3348ff1-c8b0-47ea-9136-7de3df84c805.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "navy"
+  }
+ },
+ {
+  "id": "cc0-7fe3f9b7",
+  "index": 191,
+  "image": "data/cc0_cut/7fe3f9b7-ccee-4d88-a165-389762f3d77a.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer"
+  }
+ },
+ {
+  "id": "cc0-3087f582",
+  "index": 192,
+  "image": "data/cc0_cut/3087f582-6895-41a2-93b5-145b1f209942.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "cc0-18741138",
+  "index": 193,
+  "image": "data/cc0_cut/18741138-5ba2-46c3-af17-ea9450ff4356.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-6db59125",
+  "index": 194,
+  "image": "data/cc0_cut/6db59125-aec0-4fd7-aca6-337a28277e44.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": true,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "jacket",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-644a1b3b",
+  "index": 195,
+  "image": "data/cc0_cut/644a1b3b-b434-4bbf-8d12-b81dc1a77bd8.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "subtype": "blazer",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-71d79b5f",
+  "index": 196,
+  "image": "data/cc0_cut/71d79b5f-d1ec-4f0e-be31-deb86883573f.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": false,
+  "expected": {
+   "category": "outerwear",
+   "primaryColor": "green"
+  }
+ },
+ {
+  "id": "cc0-d55fe704",
+  "index": 197,
+  "image": "data/cc0_cut/d55fe704-5e35-4eea-a0a6-fa09f759a978.png",
+  "source": "cc0",
+  "weak_label": "Blazer",
+  "hard": true,
+  "expected": {
+   "category": "outerwear"
+  }
+ },
+ {
+  "id": "cc0-dc0d9ba1",
+  "index": 198,
+  "image": "data/cc0_cut/dc0d9ba1-165e-46d8-bdb1-fba1d753ead8.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-5e577f40",
+  "index": 199,
+  "image": "data/cc0_cut/5e577f40-dd22-4b40-9827-ce6cae5ac3fd.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "cc0-e454baf3",
+  "index": 200,
+  "image": "data/cc0_cut/e454baf3-5081-42fe-a145-e244e9a5edd2.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "purple"
+  }
+ },
+ {
+  "id": "cc0-ecd45864",
+  "index": 201,
+  "image": "data/cc0_cut/ecd45864-ec3c-4193-90c4-2bc4b3a38eb1.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats"
+  }
+ },
+ {
+  "id": "cc0-38cf3258",
+  "index": 202,
+  "image": "data/cc0_cut/38cf3258-0817-4a90-917c-5bda3c93bc99.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots"
+  }
+ },
+ {
+  "id": "cc0-bbd52702",
+  "index": 203,
+  "image": "data/cc0_cut/bbd52702-8038-4658-bcab-d6ee6586dd01.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "gray"
+  }
+ },
+ {
+  "id": "cc0-10d807a5",
+  "index": 204,
+  "image": "data/cc0_cut/10d807a5-fdbd-4b90-a70d-8e58c4d981d3.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "heels",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-f72b6737",
+  "index": 205,
+  "image": "data/cc0_cut/f72b6737-47de-4b8f-a1f0-a874d3d591b6.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots"
+  }
+ },
+ {
+  "id": "cc0-a353e037",
+  "index": 206,
+  "image": "data/cc0_cut/a353e037-381a-46a0-b0d6-10e1f1a7ebbe.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-261b36f3",
+  "index": 207,
+  "image": "data/cc0_cut/261b36f3-5c90-4d89-93d2-0d20a7782287.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots"
+  }
+ },
+ {
+  "id": "cc0-fe177283",
+  "index": 208,
+  "image": "data/cc0_cut/fe177283-e19e-479e-a495-fdd3a477bd4a.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "blue"
+  }
+ },
+ {
+  "id": "cc0-50f6bd8d",
+  "index": 209,
+  "image": "data/cc0_cut/50f6bd8d-cf7a-4cb7-a1e8-190618947ef4.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-962253ff",
+  "index": 210,
+  "image": "data/cc0_cut/962253ff-260f-45bc-98b3-119468d98354.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": true,
+  "expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-33a07241",
+  "index": 211,
+  "image": "data/cc0_cut/33a07241-01ee-4e64-97f6-e0cc65ae4f5c.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": true,
+  "expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-9016f21f",
+  "index": 212,
+  "image": "data/cc0_cut/9016f21f-b6d7-469e-991f-aafca7c6c9ae.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "sneakers"
+  }
+ },
+ {
+  "id": "cc0-fa5fe172",
+  "index": 213,
+  "image": "data/cc0_cut/fa5fe172-a5b0-465a-bf25-7e22e7af43cf.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": true,
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-c1480bd3",
+  "index": 214,
+  "image": "data/cc0_cut/c1480bd3-e7cb-421e-a58b-1b3cb7e4ff27.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "boots",
+   "primaryColor": "brown"
+  }
+ },
+ {
+  "id": "cc0-2b54e651",
+  "index": 215,
+  "image": "data/cc0_cut/2b54e651-5d43-4f24-9e9e-a58ce16d7c88.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": true,
+  "expected": {
+   "category": "shoes",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-75557d1e",
+  "index": 216,
+  "image": "data/cc0_cut/75557d1e-b607-4918-82d0-b3f14f31d5a7.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "sandals",
+   "primaryColor": "black"
+  }
+ },
+ {
+  "id": "cc0-7e970ea2",
+  "index": 217,
+  "image": "data/cc0_cut/7e970ea2-6f5e-484b-a0d0-ed8da34d78fd.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": true,
+  "expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-48d77020",
+  "index": 218,
+  "image": "data/cc0_cut/48d77020-2f4f-4ee5-b824-fded1bd3e5b0.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": false,
+  "expected": {
+   "category": "shoes",
+   "subtype": "flats"
+  }
+ },
+ {
+  "id": "cc0-29003421",
+  "index": 219,
+  "image": "data/cc0_cut/29003421-15e6-41f1-9c65-c0abdfcfaa6e.png",
+  "source": "cc0",
+  "weak_label": "Shoes",
+  "hard": true,
+  "expected": {
+   "category": "shoes"
+  }
+ },
+ {
+  "id": "cc0-22745622",
+  "index": 220,
+  "image": "data/cc0_cut/22745622-ae32-407f-9af1-9a25eb79d7b3.png",
+  "source": "cc0",
+  "weak_label": "Hat",
+  "hard": false,
+  "expected": {
+   "category": "accessory",
+   "primaryColor": "white"
+  }
+ },
+ {
+  "id": "cc0-86a3f65f",
+  "index": 221,
+  "image": "data/cc0_cut/86a3f65f-8c08-48b6-a783-0e38ffa006ef.png",
+  "source": "cc0",
+  "weak_label": "Hat",
+  "hard": true,
+  "expected": {
+   "category": "accessory"
+  }
+ },
+ {
+  "id": "cc0-ceb6ea8b",
+  "index": 222,
+  "image": "data/cc0_cut/ceb6ea8b-5289-4305-a52b-b4b44d3beeb9.png",
+  "source": "cc0",
+  "weak_label": "Hat",
+  "hard": false,
+  "expected": {
+   "category": "accessory"
+  }
+ },
+ {
+  "id": "cc0-324b3d8f",
+  "index": 223,
+  "image": "data/cc0_cut/324b3d8f-3a20-4668-b58b-b4083ed1039a.png",
+  "source": "cc0",
+  "weak_label": "Hat",
+  "hard": false,
+  "expected": {
+   "category": "accessory",
+   "primaryColor": "beige"
+  }
+ }
+]

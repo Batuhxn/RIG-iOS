@@ -15,11 +15,11 @@ name: iOS validation
 
 on:
   workflow_dispatch:
-  # Temporary, CI-only branch: the whole weather stack (#2, #6, #8, #4)
+  # Temporary, CI-only branch: the weather stack (#2, #6, #8, #4) plus auto metadata (#1)
   # merged together. Public repository, standard runner: no cost.
   # Never merge this commit.
   push:
-    branches: [ci/gate-a-weather-stack]
+    branches: [ci/gate-a-stack-plus-automd]
   # pull_request:
 
 permissions:

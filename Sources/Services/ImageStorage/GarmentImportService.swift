@@ -10,6 +10,7 @@ struct GarmentImportResult: Hashable, Sendable {
     /// Present when background removal did not succeed. Shown to the user as an
     /// explanation, never as a failure that blocks saving the garment.
     let backgroundRemovalMessage: String?
+    var metadata: AutoMetadataResult? = nil
 }
 
 enum GarmentImportError: LocalizedError, Equatable {
@@ -36,7 +37,11 @@ struct GarmentImportService: Sendable {
     let store: GarmentImageStore
     let backgroundRemover: any GarmentBackgroundRemoving
 
-    init(store: GarmentImageStore, backgroundRemover: any GarmentBackgroundRemoving) {
+    let metadataAnalyzer: (any GarmentMetadataAnalyzing)?
+
+    init(store: GarmentImageStore, backgroundRemover: any GarmentBackgroundRemoving,
+         metadataAnalyzer: (any GarmentMetadataAnalyzing)? = nil) {
+        self.metadataAnalyzer = metadataAnalyzer
         self.store = store
         self.backgroundRemover = backgroundRemover
     }
@@ -89,13 +94,23 @@ struct GarmentImportService: Sendable {
             thumbnailPath = try? store.write(thumbnailData, for: garmentID, kind: .thumbnail)
         }
 
+        if Task.isCancelled {
+            try? store.removeAll(for: garmentID)
+            throw CancellationError()
+        }
+        let metadata = await metadataAnalyzer?.analyze(cutout: isolated ? cutoutPath.flatMap { store.data(atRelativePath: $0) } : nil)
+        if Task.isCancelled {
+            try? store.removeAll(for: garmentID)
+            throw CancellationError()
+        }
         return GarmentImportResult(
             garmentID: garmentID,
             originalRelativePath: originalPath,
             cutoutRelativePath: cutoutPath,
             thumbnailRelativePath: thumbnailPath,
             isBackgroundRemoved: isolated,
-            backgroundRemovalMessage: isolated ? nil : failureMessage
+            backgroundRemovalMessage: isolated ? nil : failureMessage,
+            metadata: metadata
         )
     }
 }
