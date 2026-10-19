@@ -125,5 +125,25 @@ xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULT_DIR/RIG-weather-demo.png"
 test -s "$RESULT_DIR/RIG-weather-demo.png" || { echo "Weather demo screenshot is empty." >&2; exit 1; }
 echo "Weather demo screenshot: RIG-weather-demo.png"
 
+# CI-ONLY: artifacts and logs need a signed-in admin, but annotations on a
+# public repository are readable by anyone. Publish small JPEG previews of
+# both screenshots as base64 chunks in notice annotations, so reviewers
+# without access can reassemble and see them.
+publish_preview() {
+  local name="$1" source="$2" preview encoded chunk total index
+  preview="$RESULT_DIR/$name-preview.jpg"
+  sips -Z 520 -s format jpeg -s formatOptions 45 "$source" --out "$preview" >/dev/null 2>&1 || return 0
+  encoded="$(base64 -i "$preview" | tr -d '\n')"
+  total=$(( (${#encoded} + 5999) / 6000 ))
+  index=0
+  while [ "$index" -lt "$total" ]; do
+    chunk="${encoded:$((index * 6000)):6000}"
+    echo "::notice title=$name $((index + 1))/$total::$chunk"
+    index=$((index + 1))
+  done
+}
+publish_preview weather-demo "$RESULT_DIR/RIG-weather-demo.png"
+publish_preview home "$RESULT_DIR/RIG-home.png"
+
 echo "PASS: RIG installed, launched, stayed alive for 10 seconds, and produced a screenshot."
 echo "Inspect RIG-home.png to confirm the Home screen rather than StartupFailureView."
