@@ -3,6 +3,10 @@ name: iOS simulator smoke (Gate A2)
 
 on:
   workflow_dispatch:
+  # CI-ONLY branch, never merged: run Gate A2 on PR #4 code plus the weather
+  # demo screenshot. Public repository, standard runner: no cost.
+  push:
+    branches: [ci/gate-a-weather-ui-claude]
 
 permissions:
   contents: read

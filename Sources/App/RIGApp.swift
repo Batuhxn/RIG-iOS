@@ -10,17 +10,22 @@ struct RIGApp: App {
 
     init() {
         startup = StartupResult.make()
+        if RIGWeatherDemo.isRequested { RIGWeatherDemo.prepare() }
     }
 
     var body: some Scene {
         WindowGroup {
-            switch startup {
-            case let .ready(container, services):
-                RootView()
-                    .environment(\.rigServices, services)
-                    .modelContainer(container)
-            case let .failed(message):
-                StartupFailureView(message: message)
+            if RIGWeatherDemo.isRequested {
+                RIGWeatherDemo()
+            } else {
+                switch startup {
+                case let .ready(container, services):
+                    RootView()
+                        .environment(\.rigServices, services)
+                        .modelContainer(container)
+                case let .failed(message):
+                    StartupFailureView(message: message)
+                }
             }
         }
     }

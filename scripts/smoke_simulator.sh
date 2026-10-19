@@ -105,5 +105,25 @@ xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULT_DIR/RIG-home.png"
 test -s "$RESULT_DIR/RIG-home.png" || { echo "Simulator screenshot is empty." >&2; exit 1; }
 kill -0 "$APP_PID" 2>/dev/null || { echo "RIG terminated before smoke completion." >&2; exit 1; }
 
+# CI-ONLY (ci/gate-a-weather-ui-claude): relaunch on preview data with the
+# fixed preview forecast and screenshot the weather card on Suggestions.
+xcrun simctl terminate "$SIMULATOR_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+DEMO_OUTPUT="$(xcrun simctl launch "$SIMULATOR_ID" "$BUNDLE_ID" -RIGWeatherDemo 2>&1)" || {
+  printf '%s\n' "$DEMO_OUTPUT" | tee "$RESULT_DIR/demo-launch.log" >&2
+  exit 1
+}
+printf '%s\n' "$DEMO_OUTPUT" | tee "$RESULT_DIR/demo-launch.log"
+if [[ "$DEMO_OUTPUT" =~ dev\.rig\.app:[[:space:]]*([0-9]+) ]]; then
+  DEMO_PID="${BASH_REMATCH[1]}"
+else
+  echo "simctl launch (demo) did not report an app PID." >&2
+  exit 1
+fi
+sleep 8
+kill -0 "$DEMO_PID" 2>/dev/null || { echo "RIG weather demo terminated shortly after launch." >&2; exit 1; }
+xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULT_DIR/RIG-weather-demo.png"
+test -s "$RESULT_DIR/RIG-weather-demo.png" || { echo "Weather demo screenshot is empty." >&2; exit 1; }
+echo "Weather demo screenshot: RIG-weather-demo.png"
+
 echo "PASS: RIG installed, launched, stayed alive for 10 seconds, and produced a screenshot."
 echo "Inspect RIG-home.png to confirm the Home screen rather than StartupFailureView."
