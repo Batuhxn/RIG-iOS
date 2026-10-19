@@ -15,8 +15,11 @@ name: iOS validation
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
+  # Temporary, CI-only branch: the whole weather stack (#2, #6, #8, #4)
+  # merged together. Public repository, standard runner: no cost.
+  # Never merge this commit.
+  push:
+    branches: [ci/gate-a-weather-stack]
   # pull_request:
 
 permissions:
