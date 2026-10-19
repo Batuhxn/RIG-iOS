@@ -125,7 +125,9 @@ struct WeatherCardView: View {
             }
             .accessibilityElement(children: .combine)
 
-            HStack(spacing: RIGTheme.Spacing.s) {
+            // Equal-height tiles: the rain caption wraps to two lines while the
+            // wind caption does not (seen in the Gate A2 simulator screenshot).
+            HStack(alignment: .top, spacing: RIGTheme.Spacing.s) {
                 metric(
                     symbol: "umbrella",
                     value: "\(report.precipitationProbability)%",
@@ -137,6 +139,7 @@ struct WeatherCardView: View {
                     caption: "Wind"
                 )
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -150,7 +153,7 @@ struct WeatherCardView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(RIGTheme.Spacing.s)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(RIGTheme.tileBackground)
         .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.tile, style: .continuous))
         .accessibilityElement(children: .ignore)
@@ -218,9 +221,11 @@ struct WeatherCardView: View {
     }
 
     private static func relativeAge(since date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        return formatter.localizedString(for: date, relativeTo: Date())
+        WeatherFreshness.age(of: date, now: Date()) { fetchedAt, now in
+            let formatter = RelativeDateTimeFormatter()
+            formatter.unitsStyle = .full
+            return formatter.localizedString(for: fetchedAt, relativeTo: now)
+        }
     }
 }
 

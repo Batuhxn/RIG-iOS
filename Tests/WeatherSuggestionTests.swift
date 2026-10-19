@@ -57,6 +57,17 @@ final class WeatherSuggestionTests: XCTestCase {
         )
     }
 
+    func testFreshnessSaysJustNowForTinyOrFutureAges() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let relative: (Date, Date) -> String = { fetched, now in "\(Int(now.timeIntervalSince(fetched)))s ago" }
+        // The Gate A2 screenshot read "Updated in 0 seconds" for this case.
+        XCTAssertEqual(WeatherFreshness.age(of: now.addingTimeInterval(0.004), now: now, relative: relative), "just now")
+        XCTAssertEqual(WeatherFreshness.age(of: now.addingTimeInterval(-59), now: now, relative: relative), "just now")
+        XCTAssertEqual(WeatherFreshness.age(of: now.addingTimeInterval(600), now: now, relative: relative), "just now")
+        XCTAssertEqual(WeatherFreshness.age(of: now.addingTimeInterval(-60), now: now, relative: relative), "60s ago")
+        XCTAssertEqual(WeatherFreshness.age(of: now.addingTimeInterval(-7200), now: now, relative: relative), "7200s ago")
+    }
+
     func testUnusableForecastProducesNoNotes() {
         XCTAssertTrue(WeatherOutfitNote.notes(for: base, weather: WeatherContext(apparentTemperatureC: .nan)).isEmpty)
         XCTAssertTrue(WeatherOutfitNote.notes(for: [], weather: WeatherContext(apparentTemperatureC: 5)).isEmpty)
