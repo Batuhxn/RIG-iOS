@@ -19,7 +19,7 @@ on:
   # merged together. Public repository, standard runner: no cost.
   # Never merge this commit.
   push:
-    branches: [ci/gate-a-stack-plus-automd]
+    branches: [ci/gate-a-stack-plus-automd-unused]
   # pull_request:
 
 permissions:

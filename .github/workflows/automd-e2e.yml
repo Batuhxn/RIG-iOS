@@ -7,6 +7,11 @@ name: Auto Metadata end to end
 
 on:
   workflow_dispatch:
+  # Temporary, CI-only branch: model end-to-end on the weather stack plus
+  # #1. Public repo, standard runner, public Release asset: no cost.
+  # Never merge this commit.
+  push:
+    branches: [ci/automd-e2e-stack]
 
 permissions:
   contents: read
