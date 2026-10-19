@@ -13,8 +13,10 @@ struct RIGServices: Sendable {
     /// Manual-city forecast. The only networked service; see OpenMeteoWeatherService.
     let weather: WeatherRepository
 
+    var metadataAnalyzer: (any GarmentMetadataAnalyzing)? = nil
+
     var importService: GarmentImportService {
-        GarmentImportService(store: imageStore, backgroundRemover: backgroundRemover)
+        GarmentImportService(store: imageStore, backgroundRemover: backgroundRemover, metadataAnalyzer: metadataAnalyzer)
     }
 
     /// Production wiring. Note the compatibility provider: v0.1 passes none, so
@@ -28,7 +30,8 @@ struct RIGServices: Sendable {
             weather: WeatherRepository(
                 provider: OpenMeteoWeatherService(),
                 cache: WeatherCache(storage: UserDefaultsWeatherStorage())
-            )
+            ),
+            metadataAnalyzer: AutoMetadataService(classifier: CoreMLGarmentClassifier())
         )
     }
 

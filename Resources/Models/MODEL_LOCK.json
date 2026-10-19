@@ -1,0 +1,19 @@
+{
+ "file": "RIGGarmentEncoder.mlmodel",
+ "sha256": "acbb62c69c448d52b24f30edc2a010ace06f16fd36ab05699c1a2433bac77992",
+ "bytes": 88786674,
+ "modelID": "fashion-clip:7e3ba62ce16b:prompts-3b82f6ce2c0c06a7:letterbox-v1:nn-int8",
+ "prompts": "RIGGarmentPrompts.json",
+ "source": "huggingface.co/patrickjohncyh/fashion-clip@7e3ba62ce16b379a1ab479346b66f192e76f51b7",
+ "license": "MIT (FashionCLIP 2.0 weights, fine-tuned from laion/CLIP-ViT-B-32-laion2B, MIT). Provenance notes: docs/FASHIONCLIP_LEGAL_RISK.md",
+ "generator": "Tools/AutoMetadataBench/scripts/export_fashionclip.py --variant=nn-int8 via .github/workflows/automd-publish-model.yml",
+ "url": "https://github.com/Batuhxn/RIG-iOS/releases/download/automd-model-v1/RIGGarmentEncoder-v1.mlmodel",
+ "coremlRuntimeParity": "PASSED on macOS 15 arm64 (run 37757956663): 0 prefill value flips, cosine p5 0.9932",
+ "version": "v1",
+ "tag": "automd-model-v1",
+ "promptsSha256": "76e6a03a9e348f0f55f66ddaada224ece69c94fc8956bf8f0da0f5642187d138",
+ "provenance": "https://github.com/Batuhxn/RIG-iOS/actions/runs/37757956663 (Core ML parity gate passed)",
+ "format": "Core ML neural network (iOS 14+ spec), 8-bit linear weights on linear/conv layers",
+ "promptsID": "ensemble-v2-gemini-r1:7ffdb68299474cdd",
+ "promptsNote": "Prompt vectors are versioned separately (Tools/AutoMetadataBench/scripts/build_prompts.py); modelID names the encoder."
+}

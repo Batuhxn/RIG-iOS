@@ -49,6 +49,35 @@ converted, was never run on Apple hardware, and its checkpoint licensing is
 unresolved. So v0.1 ranks with explicit rules, and `CompatibilityProvider`
 exists with no implementation attached.
 
+## One garment encoder, delivered outside git (v0.3)
+
+Auto Metadata is the first exception to "no bundled model", and it is narrow:
+one image encoder that *describes* a garment the user is adding. It still never
+ranks outfits, and `CompatibilityProvider` stays inert.
+
+- **Model:** FashionCLIP (MIT) image tower, 8-bit weights, ~89 MB, with fixed
+  prompt-ensemble text vectors in `RIGGarmentPrompts.json`. No text encoder ships.
+  MobileCLIP was smaller but its weights are research-only.
+- **Evidence:** AutoMetadataBench (294 hand-verified catalogue cutouts + 17 phone
+  photos). Prefill precision at the 0.7 gate: category 99.3%, kind 96.4%, length
+  93.1%, colour 96.2%; phone photos 100% / 92% / colour 89%. 8-bit matched fp32
+  within the parity gate. Core ML *runtime* parity and iPhone latency are still
+  unmeasured.
+- **Colour comes from the same embedding.** Pixel thresholds read white tees as
+  grey under indoor light (36–55% on phone photos). Pixels now only supply a
+  secondary colour when they agree with the primary. Metallic is not guessed from
+  pixels.
+- **Delivery:** the `.mlmodel` is git-ignored. `Resources/Models/MODEL_LOCK.json`
+  pins the URL and SHA-256 of Release `automd-model-v1`.
+  `scripts/fetch_metadata_model.sh` fetches it and fails the build on a mismatch.
+  The asset is built by `.github/workflows/automd-publish-model.yml`, which exports
+  with a pinned toolchain, runs the Core ML parity gate, and uploads those exact
+  bytes (export is not byte-deterministic). Tags are never overwritten.
+  The static audit allows exactly that file and only with matching bytes. With
+  no model present the app builds and the form is simply manual.
+- **Season** is no longer required: drafts default to all year. It cannot be seen
+  in a photo, and requiring it turned a one-tap save back into a form.
+
 ## A compatibility signal can never exceed 15% of a score
 
 The cap is enforced in `OutfitEngineConfiguration.effectiveCompatibilitySignalWeight`

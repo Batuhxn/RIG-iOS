@@ -1,0 +1,19 @@
+[
+ {"id": "real-01", "source": "cc0-phone", "image": "data/real/cut/01-tee-white-on-light-carpet.png", "expected": {"category": "top", "subtype": "t-shirt", "primaryColor": "white"}},
+ {"id": "real-02", "source": "cc0-phone", "image": "data/real/cut/02-tee-black-held-in-hand.png", "expected": {"category": "top", "subtype": "t-shirt", "primaryColor": "white"}},
+ {"id": "real-03", "source": "cc0-phone", "image": "data/real/cut/03-tee-on-patterned-carpet.png", "expected": {"category": "top", "subtype": "t-shirt", "primaryColor": "white"}},
+ {"id": "real-04", "source": "cc0-phone", "image": "data/real/cut/04-tee-olive-shadowed-sheet.png", "expected": {"category": "top", "subtype": "t-shirt", "primaryColor": "olive"}},
+ {"id": "real-05", "source": "cc0-phone", "image": "data/real/cut/05-hoodie-beige-on-beige.png", "expected": {"category": "top", "subtype": "hoodie"}},
+ {"id": "real-06", "source": "cc0-phone", "image": "data/real/cut/06-longsleeve-green-on-hanger.png", "expected": {"category": "top", "subtype": "sweater", "primaryColor": "green"}},
+ {"id": "real-07", "source": "cc0-phone", "image": "data/real/cut/07-pants-dark-on-tile.png", "expected": {"category": "bottom"}},
+ {"id": "real-08", "source": "cc0-phone", "image": "data/real/cut/08-dress-grey-on-hanger.png", "expected": {"category": "dress", "subtype": "dress", "primaryColor": "gray"}},
+ {"id": "real-09", "source": "cc0-phone", "image": "data/real/cut/09-dress-black-on-cream-bedding.png", "expected": {"category": "dress", "subtype": "dress", "primaryColor": "black"}},
+ {"id": "real-10", "source": "cc0-phone", "image": "data/real/cut/10-camisole-pink-thin-straps.png", "expected": {"category": "top", "subtype": "tank top", "primaryColor": "pink"}},
+ {"id": "real-11", "source": "cc0-phone", "image": "data/real/cut/11-coat-fur-cream-on-blanket.png", "expected": {"category": "outerwear", "subtype": "coat"}},
+ {"id": "real-12", "source": "cc0-phone", "image": "data/real/cut/12-vest-grey-hanger-dark-wall.png", "expected": {"category": "outerwear", "primaryColor": "gray"}},
+ {"id": "real-13", "source": "cc0-phone", "image": "data/real/cut/13-jacket-teal-wire-hanger.png", "expected": {"category": "outerwear", "subtype": "jacket"}},
+ {"id": "real-14", "source": "cc0-phone", "image": "data/real/cut/14-boots-suede-dark-on-dark.png", "expected": {"category": "shoes", "subtype": "boots", "primaryColor": "gray"}},
+ {"id": "real-15", "source": "cc0-phone", "image": "data/real/cut/15-sandals-white-on-white-tile.png", "expected": {"category": "shoes", "subtype": "sandals"}},
+ {"id": "real-16", "source": "cc0-phone", "image": "data/real/cut/16-sneakers-white-laces-carpet.png", "expected": {"category": "shoes", "subtype": "sneakers", "primaryColor": "white"}},
+ {"id": "real-17", "source": "cc0-phone", "image": "data/real/cut/17-shoes-brown-on-white-floor.png", "expected": {"category": "shoes", "subtype": "boots"}}
+]
