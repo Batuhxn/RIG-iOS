@@ -34,10 +34,14 @@ struct OutfitEngine: Sendable {
 
     /// Pure, synchronous, side-effect free. Given the same garments it always
     /// returns the same numbers.
-    func score(_ items: [GarmentSnapshot], compatibilitySignal: Double? = nil) -> OutfitScoreBreakdown {
+    func score(
+        _ items: [GarmentSnapshot],
+        compatibilitySignal: Double? = nil,
+        countingOuterwear: Bool = true
+    ) -> OutfitScoreBreakdown {
         let color = ColorHarmony.score(for: items.map(\.colorFamily))
         let season = SeasonCoherence.score(for: items.map(\.seasons))
-        let completeness = OutfitCompleteness.score(for: items)
+        let completeness = OutfitCompleteness.score(for: items, countingOuterwear: countingOuterwear)
         let preference = PreferenceWeighting.score(for: items)
 
         let weighted =
@@ -90,6 +94,47 @@ struct OutfitEngine: Sendable {
             .filter { !excludedSignatures.contains($0.signature) }
         let scored = candidates.map { OutfitSuggestion(candidate: $0, breakdown: score($0.items)) }
         return Self.diversify(Self.sorted(scored), limit: limit)
+    }
+
+    /// Weather-aware rules. Existing APIs remain unchanged and behave exactly
+    /// as before when no valid forecast is available.
+    ///
+    /// This synchronous entry point deliberately bypasses the optional async
+    /// CompatibilityProvider. Before enabling such a provider in production,
+    /// add an async weather-aware path preserving the bounded provider behavior.
+    func weatherRankedSuggestions(
+        from wardrobe: [GarmentSnapshot],
+        weather: WeatherContext,
+        limit: Int = 3,
+        excluding excludedSignatures: Set<String> = []
+    ) -> [OutfitSuggestion] {
+        guard weather.isUsable else {
+            return rankedSuggestions(from: wardrobe, limit: limit, excluding: excludedSignatures)
+        }
+        let candidates = generator.candidates(from: wardrobe)
+            .filter { !excludedSignatures.contains($0.signature) }
+        let scored = candidates.map { candidate -> (suggestion: OutfitSuggestion, rank: Double) in
+            // Outerwear is WeatherComfort's call here, not a completeness bonus.
+            let breakdown = score(candidate.items, countingOuterwear: false)
+            let comfort = WeatherComfort.score(for: candidate.items, weather: weather)
+            return (OutfitSuggestion(candidate: candidate, breakdown: breakdown),
+                    breakdown.total * 0.75 + comfort * 0.25)
+        }
+        let ranked = scored.sorted { lhs, rhs in
+            if lhs.rank != rhs.rank { return lhs.rank > rhs.rank }
+            // On an exact tie the look with fewer garments comes first. This is
+            // a general product rule, not a jacket rule: it applies to any
+            // optional piece (outer layer, bag, accessory) that adds nothing to
+            // the score. It exists because a bare look and the same look plus
+            // an optional layer tie in mild weather, and the order otherwise
+            // fell to garment UUIDs (#7, ChatGPT's review of #8). A layer the
+            // weather calls for never ties: it wins on WeatherComfort first.
+            if lhs.suggestion.items.count != rhs.suggestion.items.count {
+                return lhs.suggestion.items.count < rhs.suggestion.items.count
+            }
+            return lhs.suggestion.signature < rhs.suggestion.signature
+        }.map(\.suggestion)
+        return Self.diversify(ranked, limit: limit)
     }
 
     /// Rules first, then — only if a provider is enabled — a capped signal on

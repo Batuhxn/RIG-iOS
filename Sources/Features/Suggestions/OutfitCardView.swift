@@ -11,6 +11,8 @@ struct OutfitCardView: View {
     let isSaved: Bool
     let onSave: () -> Void
     let onRate: (OutfitRating) -> Void
+    /// Grounded weather notes from `WeatherOutfitNote`; empty without a forecast.
+    var weatherNotes: [String] = []
 
     private let columns = [GridItem(.adaptive(minimum: 76), spacing: RIGTheme.Spacing.s)]
 
@@ -52,6 +54,19 @@ struct OutfitCardView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if !weatherNotes.isEmpty {
+                VStack(alignment: .leading, spacing: RIGTheme.Spacing.xs) {
+                    ForEach(weatherNotes, id: \.self) { note in
+                        Label(note, systemImage: "cloud.sun")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Weather: " + weatherNotes.joined(separator: " "))
+            }
+
             HStack(spacing: RIGTheme.Spacing.s) {
                 Button {
                     onSave()
@@ -59,6 +74,9 @@ struct OutfitCardView: View {
                     Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "checkmark" : "square.and.arrow.down")
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity, minHeight: 44)
+                        // A plain-style button only hit-tests opaque content; make the
+                        // whole 44 pt tile tappable.
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
@@ -71,22 +89,26 @@ struct OutfitCardView: View {
                 } label: {
                     Image(systemName: recordedRating == .liked ? "hand.thumbsup.fill" : "hand.thumbsup")
                         .frame(width: 52, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
                 .accessibilityLabel(OutfitRating.liked.recordingActionLabel)
+                .accessibilityAddTraits(recordedRating == .liked ? .isSelected : [])
 
                 Button {
                     onRate(.disliked)
                 } label: {
                     Image(systemName: recordedRating == .disliked ? "hand.thumbsdown.fill" : "hand.thumbsdown")
                         .frame(width: 52, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .background(RIGTheme.tileBackground)
                 .clipShape(RoundedRectangle(cornerRadius: RIGTheme.Radius.control, style: .continuous))
                 .accessibilityLabel(OutfitRating.disliked.recordingActionLabel)
+                .accessibilityAddTraits(recordedRating == .disliked ? .isSelected : [])
             }
         }
         .padding(RIGTheme.Spacing.m)
