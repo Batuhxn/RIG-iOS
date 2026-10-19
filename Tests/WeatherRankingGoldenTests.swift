@@ -158,6 +158,32 @@ final class WeatherRankingGoldenTests: XCTestCase {
         XCTAssertLessThan(coldLayered, coldBare, "5°C: weather must put the layered look first")
     }
 
+    /// ChatGPT's review of #8: with every piece all-season, the bare and the
+    /// layered look tie exactly in mild weather, so order fell to the
+    /// signature string, i.e. to garment UUIDs. Here the jacket has the
+    /// SMALLEST identifier, the reverse of the main fixture. A tie must still
+    /// resolve to the bare look, and cold weather must still layer.
+    func testMildTieDoesNotDependOnGarmentIdentifiers() {
+        let engine = OutfitEngine()
+        let reversed = [
+            Fixture.garment(30, .top, .black, seasons: .all),
+            Fixture.garment(40, .bottom, .black, seasons: .all),
+            Fixture.garment(10, .outerwear, .black, seasons: .all)
+        ]
+        let bare = OutfitSignature.signature(forGarmentIDs: [Fixture.id(30), Fixture.id(40)])
+        let layered = OutfitSignature.signature(forGarmentIDs: [Fixture.id(30), Fixture.id(40), Fixture.id(10)])
+        XCTAssertLessThan(layered, bare, "fixture precondition: the layered signature sorts first")
+
+        let mild = engine.weatherRankedSuggestions(
+            from: reversed, weather: WeatherContext(apparentTemperatureC: 20, windSpeedKPH: 8), limit: 2
+        ).map(\.signature)
+        let cold = engine.weatherRankedSuggestions(
+            from: reversed, weather: WeatherContext(apparentTemperatureC: 5, windSpeedKPH: 8), limit: 2
+        ).map(\.signature)
+        XCTAssertEqual(mild.first, bare, "20°C tie: the bare look, regardless of identifiers")
+        XCTAssertEqual(cold.first, layered, "5°C: the layered look")
+    }
+
     /// The no-forecast path keeps its original completeness scoring.
     func testRankingWithoutWeatherStillCountsOuterwearCompleteness() {
         let items = [Fixture.garment(1, .top), Fixture.garment(4, .bottom), Fixture.garment(5, .outerwear)]

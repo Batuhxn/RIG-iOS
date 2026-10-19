@@ -122,6 +122,14 @@ struct OutfitEngine: Sendable {
         }
         let ranked = scored.sorted { lhs, rhs in
             if lhs.rank != rhs.rank { return lhs.rank > rhs.rank }
+            // On an exact tie the simpler look comes first. Without this, a
+            // bare look and the same look plus an optional layer tie in mild
+            // weather and the order falls to garment UUIDs (#7, ChatGPT's
+            // review of #8). A layer the weather calls for is never tied: it
+            // wins on WeatherComfort before this line is reached.
+            if lhs.suggestion.items.count != rhs.suggestion.items.count {
+                return lhs.suggestion.items.count < rhs.suggestion.items.count
+            }
             return lhs.suggestion.signature < rhs.suggestion.signature
         }.map(\.suggestion)
         return Self.diversify(ranked, limit: limit)
