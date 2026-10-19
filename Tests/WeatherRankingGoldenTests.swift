@@ -136,6 +136,28 @@ final class WeatherRankingGoldenTests: XCTestCase {
         }
     }
 
+    /// Acceptance (issue #7), paired: the same pieces with and without the
+    /// jacket. At 20°C in light wind the jacket must not win on completeness;
+    /// at 5°C the weather must put it first.
+    func testSamePiecesWithAndWithoutJacketFollowTheWeather() {
+        let engine = OutfitEngine()
+        let bare = OutfitSignature.signature(forGarmentIDs: [Fixture.id(3), Fixture.id(4)])
+        let layered = OutfitSignature.signature(forGarmentIDs: [Fixture.id(3), Fixture.id(4), Fixture.id(5)])
+
+        func order(_ weather: WeatherContext) -> [String] {
+            engine.weatherRankedSuggestions(from: wardrobe, weather: weather, limit: 20).map(\.signature)
+        }
+        let mild = order(WeatherContext(apparentTemperatureC: 20, precipitationProbability: 10, windSpeedKPH: 8))
+        let cold = order(WeatherContext(apparentTemperatureC: 5, precipitationProbability: 10, windSpeedKPH: 8))
+
+        guard let mildBare = mild.firstIndex(of: bare), let mildLayered = mild.firstIndex(of: layered),
+              let coldBare = cold.firstIndex(of: bare), let coldLayered = cold.firstIndex(of: layered) else {
+            return XCTFail("both variants of the same look must be ranked: mild \(mild), cold \(cold)")
+        }
+        XCTAssertLessThan(mildBare, mildLayered, "20°C: jacket must not win on completeness alone")
+        XCTAssertLessThan(coldLayered, coldBare, "5°C: weather must put the layered look first")
+    }
+
     /// The no-forecast path keeps its original completeness scoring.
     func testRankingWithoutWeatherStillCountsOuterwearCompleteness() {
         let items = [Fixture.garment(1, .top), Fixture.garment(4, .bottom), Fixture.garment(5, .outerwear)]
