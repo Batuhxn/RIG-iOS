@@ -15,8 +15,12 @@ name: iOS validation
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
+  # Temporary, CI-only branch: runs Gate A on the exact code of PR #4
+  # (feat/weather-ui-claude) because no one on the overnight shift could
+  # dispatch manually. Public repository, standard runner: no cost. Never
+  # merge this commit.
+  push:
+    branches: [ci/gate-a-weather-ui-claude]
   # pull_request:
 
 permissions:
