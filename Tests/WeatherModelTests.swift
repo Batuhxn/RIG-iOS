@@ -98,6 +98,27 @@ final class WeatherModelTests: XCTestCase {
         XCTAssertNotNil(cache.report(for: izmir, now: Date()))
     }
 
+    func testHomeGlanceReadsCacheOnlyAndNeverFetches() {
+        let city = WeatherCity.presets[0]
+        let cache = WeatherCache(storage: InMemoryWeatherStorage())
+        let provider = StubWeatherProvider(.success(WeatherFixture.report(city)))
+        let repository = WeatherRepository(provider: provider, cache: cache)
+        let model = WeatherModel(defaultsSuiteName: suiteName)
+
+        model.showCached(using: repository)
+        XCTAssertEqual(model.state, .noCity, "no saved city: nothing to show")
+
+        defaults.set(city.id, forKey: "rig.weather.selectedCityID")
+        model.showCached(using: repository)
+        XCTAssertEqual(model.state, .noCity, "saved city but empty cache: still nothing, and no request")
+
+        let report = WeatherFixture.report(city, fetchedAt: Date())
+        cache.store(report)
+        model.showCached(using: repository)
+        XCTAssertEqual(model.state.report, report)
+        XCTAssertEqual(provider.calls, 0)
+    }
+
     func testOfflineWithoutCacheIsExplicit() async {
         let model = WeatherModel(defaultsSuiteName: suiteName)
         let city = WeatherCity.presets[0]

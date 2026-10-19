@@ -52,6 +52,17 @@ final class WeatherModel {
         await load(city, using: repository, forceRefresh: false)
     }
 
+    /// Home screen glance: the saved city's cached forecast, if any. Never
+    /// touches the network; a missing or expired cache simply shows nothing.
+    func showCached(using repository: WeatherRepository) {
+        selectedCityID = defaults.string(forKey: Self.cityKey)
+        guard let city = selectedCity else {
+            state = .noCity
+            return
+        }
+        state = repository.cachedState(for: city) ?? .noCity
+    }
+
     func select(_ city: WeatherCity, using repository: WeatherRepository) async {
         defaults.set(city.id, forKey: Self.cityKey)
         selectedCityID = city.id
